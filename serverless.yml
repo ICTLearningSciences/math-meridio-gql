@@ -1,0 +1,116 @@
+# serverless.yml
+
+service: mathmeridio-gql
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-domain-manager
+
+custom:
+  domain:
+    dev: api-dev.mathmeridio.org
+    qa: api-qa.mathmeridio.org
+    prod: api.mathmeridio.org
+  customDomain:
+    domainName: ${self:custom.domain.${opt:stage, 'dev'}}
+    basePath: "graphql" # api root url becomes: api.mentorpal.org/graphql
+    # certificateName: '*.mentorpal.org' didnt work
+    # certificateName: 'c6107db7-c2ef-4e85-a21f-bee7d1ac008a' didnt work either
+    stage: ${self:provider.stage}
+    endpointType: regional
+    apiType: rest
+    createRoute53Record: true
+    securityPolicy: tls_1_2
+    autoDomain: false #true if preserveExternalPathMappings is true
+    # Using same domain in multiple services. https://github.com/amplify-education/serverless-domain-manager/issues/484#issuecomment-1028713546
+    # preserveExternalPathMappings: true
+
+  stages:
+    dev:
+      MONGO_URI: ${ssm:/mathmeridio/dev/mongo_uri, ''}
+      CORS_ORIGIN: "https://dev.mathmeridio.org,https://dev.mathmeridio.org/,.dev.mathmeridio.org,.dev.mathmeridio.org/,https://api-dev.mathmeridio.org,https://api-dev.mathmeridio.org/,http://local.mathmeridio.org,http://local.mathmeridio.org/"
+      DOMAIN: "mathmeridio.org"
+      WEBACL_ARN: ${ssm:/mathmeridio/api_firewall_arn, ''}
+
+    qa:
+      MONGO_URI: ${ssm:/mathmeridio/qa/mongo_uri, ''}
+      CORS_ORIGIN: "https://qa.mathmeridio.org,https://qa.mathmeridio.org/,.qa.mathmeridio.org,.qa.mathmeridio.org/,https://api-qa.mathmeridio.org,https://api-qa.mathmeridio.org/"
+      DOMAIN: "mathmeridio.org"
+      WEBACL_ARN: ${ssm:/mathmeridio/api_firewall_arn, ''}
+
+    prod:
+      MONGO_URI: ${ssm:/mathmeridio/prod/mongo_uri, ''}
+      CORS_ORIGIN: "https://mathmeridio.org,https://mathmeridio.org/,.mathmeridio.org,.mathmeridio.org/,https://api.mathmeridio.org,https://api.mathmeridio.org/"
+      DOMAIN: "mathmeridio.org"
+      WEBACL_ARN: ${ssm:/mathmeridio/api_firewall_arn, ''}
+
+provider:
+  name: aws
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  runtime: nodejs16.x
+  endpointType: regional
+  tracing:
+    lambda: true
+    apiGateway: true
+  apiGateway:
+    minimumCompressionSize: 1024
+  logs:
+    restApi:
+      # Enables HTTP access logs (default: true)
+      accessLogging: true
+      # # Log format to use for access logs
+      # format: 'requestId: $context.requestId'
+      # Enable execution logging (default: true)
+      executionLogging: true
+      level: INFO # INFO or ERROR
+      # Log full requests/responses for execution logging (default: true)
+      fullExecutionData: true
+  environment:
+    MONGO_URI: ${self:custom.stages.${self:provider.stage}.MONGO_URI}
+    CORS_ORIGIN: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+    DOMAIN: ${self:custom.stages.${self:provider.stage}.DOMAIN}
+
+functions:
+  graphql:
+    timeout: 20
+    handler: src/lambda.handler
+    events:
+      - http:
+          path: /
+          method: GET
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors:
+            origins:
+              # "*"
+              - "https://*.mathmeridio.org"
+              - "https://*.mathmeridio.org/"
+              - "https://mathmeridio.org"
+              - "https://mathmeridio.org/"
+              - "http://local.mathmeridio.org"
+              - "http://local.mathmeridio.org/"
+            allowCredentials: true
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Amzn-Trace-Id
+# # TODO: re-enable after first deployment
+# resources:
+#   Resources:
+#     # this fails on first deploy because CloudFormation tries to create
+#     # association but the gateway does not yet exist
+#     # Workaround: Disable this resource on first deploy, when first deploy is successful, enable this resource and deploy again
+#     FirewallAssociation:
+#       Type: AWS::WAFv2::WebACLAssociation
+#       DependsOn: "ApiGatewayRestApi"
+#       Properties:
+#         ResourceArn:
+#           Fn::Sub: "arn:aws:apigateway:${AWS::Region}::/restapis/${ApiGatewayRestApi}/stages/${self:provider.stage}"
+#         WebACLArn: "${self:custom.stages.${self:provider.stage}.WEBACL_ARN}"
