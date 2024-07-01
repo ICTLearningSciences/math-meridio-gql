@@ -12,7 +12,7 @@ dotenv.config();
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",")
-  : ["https://dev.mathmeridio.org"];
+  : ["https://dev.meridiomath.org"];
 
 //START MIDDLEWARE
 import mongoose from "mongoose";

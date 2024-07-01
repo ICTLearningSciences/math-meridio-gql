@@ -1,6 +1,6 @@
 # serverless.yml
 
-service: mathmeridio-gql
+service: meridiomath-gql
 
 plugins:
   - serverless-plugin-typescript
@@ -8,9 +8,9 @@ plugins:
 
 custom:
   domain:
-    dev: api-dev.mathmeridio.org
-    qa: api-qa.mathmeridio.org
-    prod: api.mathmeridio.org
+    dev: api-dev.meridiomath.org
+    qa: api-qa.meridiomath.org
+    prod: api.meridiomath.org
   customDomain:
     domainName: ${self:custom.domain.${opt:stage, 'dev'}}
     basePath: "graphql" # api root url becomes: api.mentorpal.org/graphql
@@ -27,22 +27,22 @@ custom:
 
   stages:
     dev:
-      MONGO_URI: ${ssm:/mathmeridio/dev/mongo_uri, ''}
-      CORS_ORIGIN: "https://dev.mathmeridio.org,https://dev.mathmeridio.org/,.dev.mathmeridio.org,.dev.mathmeridio.org/,https://api-dev.mathmeridio.org,https://api-dev.mathmeridio.org/,http://local.mathmeridio.org,http://local.mathmeridio.org/"
-      DOMAIN: "mathmeridio.org"
-      WEBACL_ARN: ${ssm:/mathmeridio/api_firewall_arn, ''}
+      MONGO_URI: ${ssm:/meridiomath/dev/mongo_uri, ''}
+      CORS_ORIGIN: "https://dev.meridiomath.org,https://dev.meridiomath.org/,.dev.meridiomath.org,.dev.meridiomath.org/,https://api-dev.meridiomath.org,https://api-dev.meridiomath.org/,http://local.meridiomath.org,http://local.meridiomath.org/"
+      DOMAIN: "meridiomath.org"
+      WEBACL_ARN: ${ssm:/meridiomath/api_firewall_arn, ''}
 
     qa:
-      MONGO_URI: ${ssm:/mathmeridio/qa/mongo_uri, ''}
-      CORS_ORIGIN: "https://qa.mathmeridio.org,https://qa.mathmeridio.org/,.qa.mathmeridio.org,.qa.mathmeridio.org/,https://api-qa.mathmeridio.org,https://api-qa.mathmeridio.org/"
-      DOMAIN: "mathmeridio.org"
-      WEBACL_ARN: ${ssm:/mathmeridio/api_firewall_arn, ''}
+      MONGO_URI: ${ssm:/meridiomath/qa/mongo_uri, ''}
+      CORS_ORIGIN: "https://qa.meridiomath.org,https://qa.meridiomath.org/,.qa.meridiomath.org,.qa.meridiomath.org/,https://api-qa.meridiomath.org,https://api-qa.meridiomath.org/"
+      DOMAIN: "meridiomath.org"
+      WEBACL_ARN: ${ssm:/meridiomath/api_firewall_arn, ''}
 
     prod:
-      MONGO_URI: ${ssm:/mathmeridio/prod/mongo_uri, ''}
-      CORS_ORIGIN: "https://mathmeridio.org,https://mathmeridio.org/,.mathmeridio.org,.mathmeridio.org/,https://api.mathmeridio.org,https://api.mathmeridio.org/"
-      DOMAIN: "mathmeridio.org"
-      WEBACL_ARN: ${ssm:/mathmeridio/api_firewall_arn, ''}
+      MONGO_URI: ${ssm:/meridiomath/prod/mongo_uri, ''}
+      CORS_ORIGIN: "https://meridiomath.org,https://meridiomath.org/,.meridiomath.org,.meridiomath.org/,https://api.meridiomath.org,https://api.meridiomath.org/"
+      DOMAIN: "meridiomath.org"
+      WEBACL_ARN: ${ssm:/meridiomath/api_firewall_arn, ''}
 
 provider:
   name: aws
@@ -86,12 +86,12 @@ functions:
           cors:
             origins:
               # "*"
-              - "https://*.mathmeridio.org"
-              - "https://*.mathmeridio.org/"
-              - "https://mathmeridio.org"
-              - "https://mathmeridio.org/"
-              - "http://local.mathmeridio.org"
-              - "http://local.mathmeridio.org/"
+              - "https://*.meridiomath.org"
+              - "https://*.meridiomath.org/"
+              - "https://meridiomath.org"
+              - "https://meridiomath.org/"
+              - "http://local.meridiomath.org"
+              - "http://local.meridiomath.org/"
             allowCredentials: true
             headers:
               - Content-Type
