@@ -39,7 +39,6 @@ describe("create new room", () => {
         }
       }`,
       });
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.createNewRoom._id).to.be.a("string");
     expect(response.body.data.createNewRoom.users).to.be.an("array");
