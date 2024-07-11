@@ -14,7 +14,7 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 
-describe("create new room", () => {
+describe("fetch players", () => {
   let app: Express;
 
   beforeEach(async () => {
@@ -28,19 +28,35 @@ describe("create new room", () => {
     await mongoUnit.drop();
   });
 
-  it(`can create a new room`, async () => {
+  it(`can fetch existing players`, async () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `mutation {
-        createNewRoom {
-            _id
-            users
-        }
-      }`,
+        query: `query {
+          fetchPlayers {
+            edges {
+              node {
+                _id
+                clientId
+                name
+                description
+                avatar
+              }
+            }
+          }
+        }`,
       });
     expect(response.status).to.equal(200);
-    expect(response.body.data.createNewRoom._id).to.be.a("string");
-    expect(response.body.data.createNewRoom.users).to.be.an("array");
+    expect(response.body.data.fetchPlayers.edges).to.deep.include.members([
+      {
+        node: {
+          _id: "5f748650f4b3f1b9f1f1f1f1",
+          clientId: "1",
+          name: "Jonny Appleseed",
+          avatar: "man_apple_head",
+          description: "I want an avatar with an apple for a head",
+        },
+      },
+    ]);
   });
 });
