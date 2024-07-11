@@ -15,7 +15,7 @@ const PlayerInputType = new GraphQLInputObjectType({
   }),
 });
 
-export const updatePlayer = {
+export const addOrUpdatePlayer = {
   type: PlayerType,
   args: {
     player: { type: new GraphQLNonNull(PlayerInputType) },
@@ -36,4 +36,4 @@ export const updatePlayer = {
   },
 };
 
-export default updatePlayer;
+export default addOrUpdatePlayer;

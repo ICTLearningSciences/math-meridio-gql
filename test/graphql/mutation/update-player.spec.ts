@@ -33,8 +33,8 @@ describe("update or create player", () => {
       .post("/graphql")
       .send({
         query: `
-        mutation UpdatePlayer($player: PlayerInput!) {
-          updatePlayer(player: $player) {
+        mutation AddOrUpdatePlayer($player: PlayerInput!) {
+          addOrUpdatePlayer(player: $player) {
             clientId
             name
             avatar
@@ -51,7 +51,7 @@ describe("update or create player", () => {
         },
       });
     expect(updateResponse.status).to.equal(200);
-    expect(updateResponse.body.data.updatePlayer).to.eql({
+    expect(updateResponse.body.data.addOrUpdatePlayer).to.eql({
       clientId: "1",
       name: "Jenny Appleseed",
       avatar: "woman_apple_head",
@@ -92,8 +92,8 @@ describe("update or create player", () => {
       .post("/graphql")
       .send({
         query: `
-        mutation UpdatePlayer($player: PlayerInput!) {
-          updatePlayer(player: $player) {
+        mutation AddOrUpdatePlayer($player: PlayerInput!) {
+          addOrUpdatePlayer(player: $player) {
             clientId
             name
             avatar
@@ -110,7 +110,7 @@ describe("update or create player", () => {
         },
       });
     expect(updateResponse.status).to.equal(200);
-    expect(updateResponse.body.data.updatePlayer).to.eql({
+    expect(updateResponse.body.data.addOrUpdatePlayer).to.eql({
       clientId: "2",
       name: "Jenny Appleseed",
       avatar: "woman_apple_head",
