@@ -40,6 +40,7 @@ export const SystemMessageStageStepType = new GraphQLObjectType({
   fields: () => ({
     stepId: { type: GraphQLString },
     jumpToStepId: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
     stepType: {
       type: GraphQLString,
       value: DiscussionStageStepType.SYSTEM_MESSAGE,
@@ -53,6 +54,7 @@ export const SystemMessageStageStepTypeInput = new GraphQLInputObjectType({
   fields: () => ({
     stepId: { type: GraphQLString },
     jumpToStepId: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
     stepType: {
       type: GraphQLString,
       value: DiscussionStageStepType.SYSTEM_MESSAGE,
@@ -96,6 +98,7 @@ export const RequestUserInputStageStepType = new GraphQLObjectType({
   fields: () => ({
     stepId: { type: GraphQLString },
     jumpToStepId: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
     stepType: {
       type: GraphQLString,
       value: DiscussionStageStepType.REQUEST_USER_INPUT,
@@ -112,6 +115,7 @@ export const RequestUserInputStageStepTypeInput = new GraphQLInputObjectType({
   fields: () => ({
     stepId: { type: GraphQLString },
     jumpToStepId: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
     stepType: {
       type: GraphQLString,
       value: DiscussionStageStepType.REQUEST_USER_INPUT,
@@ -128,7 +132,7 @@ export const PromptStageStepType = new GraphQLObjectType({
   fields: () => ({
     stepId: { type: GraphQLString },
     jumpToStepId: { type: GraphQLString },
-
+    lastStep: { type: GraphQLBoolean },
     stepType: { type: GraphQLString, value: DiscussionStageStepType.PROMPT },
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
@@ -143,6 +147,7 @@ export const PromptStageStepTypeInput = new GraphQLInputObjectType({
   name: "PromptStageStepTypeInput",
   fields: () => ({
     stepId: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
     jumpToStepId: { type: GraphQLString },
     stepType: { type: GraphQLString, value: DiscussionStageStepType.PROMPT },
     promptText: { type: GraphQLString },
@@ -161,6 +166,7 @@ const StageBuilderStepSchema = new Schema(
     stepId: { type: String },
     stepType: { type: String },
     jumpToStepId: { type: String },
+    lastStep: { type: Boolean, default: false },
     // other common fields...
   },
   { timestamps: true, discriminatorKey: "stepType" } // Use stepType as the discriminator key

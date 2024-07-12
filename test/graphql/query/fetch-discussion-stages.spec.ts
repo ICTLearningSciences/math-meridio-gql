@@ -26,6 +26,7 @@ export const fullDiscussionStageQueryData = `
                         name
                         steps{
                           ... on SystemMessageStageStepType {
+                              lastStep
                               stepId
                               stepType
                               jumpToStepId
@@ -33,6 +34,7 @@ export const fullDiscussionStageQueryData = `
                           }
 
                           ... on RequestUserInputStageStepType {
+                              lastStep
                               stepId
                               stepType
                               jumpToStepId
@@ -49,6 +51,7 @@ export const fullDiscussionStageQueryData = `
                           }
 
                           ... on PromptStageStepType{
+                              lastStep
                               stepId
                               stepType
                               jumpToStepId

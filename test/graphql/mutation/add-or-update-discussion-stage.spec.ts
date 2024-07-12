@@ -49,6 +49,7 @@ describe("update discussion stage", () => {
             jumpToStepId: "456",
             stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
             message: "message 1",
+            lastStep: false,
           },
           {
             stepId: "456",
@@ -66,6 +67,7 @@ describe("update discussion stage", () => {
                 responseWeight: "1",
               },
             ],
+            lastStep: false,
           },
           {
             stepId: "789",
@@ -77,6 +79,7 @@ describe("update discussion stage", () => {
             includeChatLogContext: true,
             outputDataType: "JSON",
             customSystemRole: "custom system role 1",
+            lastStep: true,
           },
         ],
       },
@@ -142,16 +145,19 @@ describe("update discussion stage", () => {
             stepId: "123",
             stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
             message: "message 1",
+            lastStep: false,
           },
           {
             stepId: "456",
             stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
             message: "message 2",
+            lastStep: false,
           },
           {
             stepId: "789",
             stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
             message: "prompt 1",
+            lastStep: true,
           },
         ],
       },
@@ -166,18 +172,21 @@ describe("update discussion stage", () => {
                         name
                           steps{
                             ... on SystemMessageStageStepType {
+                                lastStep
                                 stepId
                                 stepType
                                 message
                             }
 
                             ... on RequestUserInputStageStepType {
+                                lastStep
                                 stepId
                                 stepType
                                 message
                             }
 
                             ... on PromptStageStepType{
+                                lastStep
                                 stepId
                                 stepType
                                 promptText
