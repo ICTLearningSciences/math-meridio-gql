@@ -41,6 +41,7 @@ export interface StageBuilderStep {
   stepId: string;
   stepType: DiscussionStageStepType;
   jumpToStepId?: string;
+  lastStep: boolean;
 }
 
 export interface SystemMessageStageStep extends StageBuilderStep {
