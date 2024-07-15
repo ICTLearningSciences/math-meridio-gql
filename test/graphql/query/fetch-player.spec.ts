@@ -30,8 +30,13 @@ describe("fetch player", () => {
           fetchPlayer(id: $id) {
             clientId
             name
-            avatar
             description
+            avatar {
+              id
+            }
+            chatAvatar {
+              id
+            }
           }
         }`,
         variables: {
@@ -42,8 +47,9 @@ describe("fetch player", () => {
     expect(response.body.data.fetchPlayer).to.eql({
       clientId: "1",
       name: "Jonny Appleseed",
-      avatar: "man_apple_head",
       description: "I want an avatar with an apple for a head",
+      avatar: [{ id: "man_apple_head" }],
+      chatAvatar: [{ id: "man_apple_head" }],
     });
   });
 
@@ -56,8 +62,13 @@ describe("fetch player", () => {
           fetchPlayer(id: $id) {
             clientId
             name
-            avatar
             description
+            avatar {
+              id
+            }
+            chatAvatar {
+              id
+            }
           }
         }`,
         variables: {
