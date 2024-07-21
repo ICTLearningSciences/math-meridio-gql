@@ -7,6 +7,7 @@ import {
   GraphQLNonNull,
   GraphQLString,
   GraphQLList,
+  GraphQLInt,
 } from "graphql";
 import PlayerModel, { Player, PlayerType } from "../models/Player";
 
@@ -16,6 +17,8 @@ const AvatarInputType = new GraphQLInputObjectType({
     type: { type: GraphQLString },
     id: { type: GraphQLString },
     description: { type: GraphQLString },
+    variant: { type: GraphQLInt },
+    variants: { type: new GraphQLList(GraphQLString) },
   }),
 });
 
@@ -26,7 +29,6 @@ const PlayerInputType = new GraphQLInputObjectType({
     name: { type: GraphQLString },
     description: { type: GraphQLString },
     avatar: { type: new GraphQLList(AvatarInputType) },
-    chatAvatar: { type: new GraphQLList(AvatarInputType) },
   }),
 });
 

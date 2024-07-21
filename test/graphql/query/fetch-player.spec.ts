@@ -34,22 +34,18 @@ describe("fetch player", () => {
             avatar {
               id
             }
-            chatAvatar {
-              id
-            }
           }
         }`,
         variables: {
-          id: "1",
+          id: "Player 1",
         },
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchPlayer).to.eql({
-      clientId: "1",
+      clientId: "Player 1",
       name: "Jonny Appleseed",
       description: "I want an avatar with an apple for a head",
       avatar: [{ id: "man_apple_head" }],
-      chatAvatar: [{ id: "man_apple_head" }],
     });
   });
 
@@ -66,13 +62,10 @@ describe("fetch player", () => {
             avatar {
               id
             }
-            chatAvatar {
-              id
-            }
           }
         }`,
         variables: {
-          id: "2",
+          id: "Player 2",
         },
       });
     expect(response.status).to.equal(200);

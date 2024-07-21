@@ -8,6 +8,7 @@ import {
   GraphQLList,
   GraphQLObjectType,
   GraphQLID,
+  GraphQLInt,
 } from "graphql";
 import {
   PaginatedResolveResult,
@@ -22,6 +23,8 @@ export interface Avatar extends Document {
   type: string;
   id: string;
   description: string;
+  variant: number;
+  variants: string[];
 }
 
 export interface Player extends Document {
@@ -29,7 +32,6 @@ export interface Player extends Document {
   name: string;
   description: string;
   avatar: Avatar[];
-  chatAvatar: Avatar[];
 }
 
 export const AvatarSchema = new Schema<Avatar>(
@@ -37,6 +39,8 @@ export const AvatarSchema = new Schema<Avatar>(
     type: { type: String },
     id: { type: String },
     description: { type: String },
+    variant: { type: Number },
+    variants: { type: [String] },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -47,7 +51,6 @@ export const PlayerSchema = new Schema<Player, PlayerModel>(
     name: { type: String },
     description: { type: String },
     avatar: { type: [AvatarSchema] },
-    chatAvatar: { type: [AvatarSchema] },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -72,6 +75,8 @@ export const AvatarType = new GraphQLObjectType({
     type: { type: GraphQLString },
     id: { type: GraphQLString },
     description: { type: GraphQLString },
+    variant: { type: GraphQLInt },
+    variants: { type: new GraphQLList(GraphQLString) },
   }),
 });
 
@@ -83,6 +88,5 @@ export const PlayerType = new GraphQLObjectType({
     name: { type: GraphQLString },
     description: { type: GraphQLString },
     avatar: { type: new GraphQLList(AvatarType) },
-    chatAvatar: { type: new GraphQLList(AvatarType) },
   }),
 });

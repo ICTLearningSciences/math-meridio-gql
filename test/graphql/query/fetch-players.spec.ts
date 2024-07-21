@@ -36,9 +36,6 @@ describe("fetch players", () => {
                 avatar {
                   id
                 }
-                chatAvatar {
-                  id
-                }
               }
             }
           }
@@ -49,11 +46,10 @@ describe("fetch players", () => {
       {
         node: {
           _id: "5f748650f4b3f1b9f1f1f1f1",
-          clientId: "1",
+          clientId: "Player 1",
           name: "Jonny Appleseed",
           description: "I want an avatar with an apple for a head",
           avatar: [{ id: "man_apple_head" }],
-          chatAvatar: [{ id: "man_apple_head" }],
         },
       },
     ]);
