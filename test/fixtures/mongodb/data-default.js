@@ -10,19 +10,47 @@ module.exports = {
   players: [
     {
       _id: new ObjectId("5f748650f4b3f1b9f1f1f1f1"),
-      clientId: "1",
+      clientId: "Player 1",
       name: "Jonny Appleseed",
-      avatar: "man_apple_head",
       description: "I want an avatar with an apple for a head",
+      avatar: [{ id: "man_apple_head" }],
     },
   ],
 
   rooms: [
     {
       _id: new ObjectId("5f748650f4b3f1b9f1f1f1f1"),
-      users: ["5f748650f4b3f1b9f1f1f1f2", "5f748650f4b3f1b9f1f1f1f3"],
+      name: "Basketball Room 1",
+      gameData: {
+        gameId: "basketball",
+        players: ["Player 1"],
+        chat: [],
+        globalStateData: {
+          curStageId: "Stage 1",
+          curStepId: "Step 1",
+          gameStateData: [
+            {
+              key: "Global variable 1",
+              value: "Global variable 1 value",
+            },
+          ],
+        },
+        playerStateData: [
+          {
+            player: "Player 1",
+            animation: "",
+            gameStateData: [
+              {
+                key: "Player variable 1",
+                value: "Player variable 1 value",
+              },
+            ],
+          },
+        ],
+      },
     },
   ],
+
   discussionstages: [
     {
       _id: new ObjectId("5ffdf1231ee2c62320b49e2f"),

@@ -14,7 +14,7 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 
-describe("fetch rooms", () => {
+describe("delete room", () => {
   let app: Express;
 
   beforeEach(async () => {
@@ -28,31 +28,53 @@ describe("fetch rooms", () => {
     await mongoUnit.drop();
   });
 
-  it(`can fetch existing rooms`, async () => {
+  it(`can delete an existing room`, async () => {
+    const response1 = await request(app)
+      .post("/graphql")
+      .send({
+        query: `
+        mutation DeleteRoom($roomId: ID!) {
+          deleteRoom(roomId: $roomId)
+        }`,
+        variables: {
+          roomId: "5f748650f4b3f1b9f1f1f1f1",
+        },
+      });
+    expect(response1.status).to.equal(200);
+    expect(response1.body.data.deleteRoom).to.eql(true);
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `query {
-        fetchRooms {
-            edges{
-                  node{
-                      _id
-                      users
-                  
-
-                  }
-      }
+        query: `
+      query FetchRoom($roomId: ID!) {
+        fetchRoom(roomId: $roomId) {
+          _id
         }
       }`,
+        variables: {
+          roomId: "5f748650f4b3f1b9f1f1f1f1",
+        },
       });
     expect(response.status).to.equal(200);
-    expect(response.body.data.fetchRooms.edges).to.deep.include.members([
-      {
-        node: {
-          _id: "5f748650f4b3f1b9f1f1f1f1",
-          users: ["5f748650f4b3f1b9f1f1f1f2", "5f748650f4b3f1b9f1f1f1f3"],
+    expect(response.body.data.fetchRoom).to.eql(null);
+  });
+
+  it(`fails if non-existent room id`, async () => {
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: `
+        mutation DeleteRoom($roomId: ID!) {
+          deleteRoom(roomId: $roomId)
+        }`,
+        variables: {
+          roomId: "5f748650f4b3f1b9f1f1f1f2",
         },
-      },
-    ]);
+      });
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "Invalid room"
+    );
   });
 });

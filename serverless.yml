@@ -5,6 +5,7 @@ service: meridiomath-gql
 plugins:
   - serverless-plugin-typescript
   - serverless-domain-manager
+  - serverless-prune-plugin
 
 custom:
   domain:

@@ -7,29 +7,20 @@ import Json5 from "json5";
 
 export default new GraphQLScalarType({
   name: "AnythingScalarType",
-  description: "Represents an arbitrary object.",
-  parseValue: toObject,
-  serialize: toObject,
-  parseLiteral(ast) {
-    switch (ast.kind) {
-      case Kind.STRING:
-        return ast.value.charAt(0) === "{" ? Json5.parse(ast.value) : null;
-      case Kind.OBJECT:
-        return parseObject(ast);
+  description: "Represents an arbitrary value.",
+  parseValue(value) {
+    if (typeof value === "string" && value.charAt(0) === "{") {
+      return Json5.parse(value);
     }
-    return null;
+    return value;
+  },
+  serialize(value) {
+    return value;
+  },
+  parseLiteral(ast) {
+    return parseAst(ast);
   },
 });
-
-function toObject(value: string | object) {
-  if (typeof value === "object") {
-    return value;
-  }
-  if (typeof value === "string" && value.charAt(0) === "{") {
-    return Json5.parse(value);
-  }
-  return null;
-}
 
 function parseObject(ast: ObjectValueNode) {
   const value = Object.create(null);
@@ -43,9 +34,11 @@ function parseObject(ast: ObjectValueNode) {
 function parseAst(ast: ValueNode): any {
   switch (ast.kind) {
     case Kind.STRING:
+      return ast.value;
     case Kind.BOOLEAN:
       return ast.value;
     case Kind.INT:
+      return parseInt(ast.value);
     case Kind.FLOAT:
       return parseFloat(ast.value);
     case Kind.OBJECT:

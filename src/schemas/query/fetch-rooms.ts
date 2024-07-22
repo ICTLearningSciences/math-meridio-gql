@@ -2,12 +2,17 @@
 
 */
 
-import findAll from "./find-all";
-import RoomModel, { RoomType } from "../models/Room";
+import { GraphQLList, GraphQLString } from "graphql";
+import RoomModel, { Room, RoomType } from "../models/Room";
 
-export const fetchRooms = findAll({
-  nodeType: RoomType,
-  model: RoomModel,
-});
+export const fetchRooms = {
+  type: new GraphQLList(RoomType),
+  args: {
+    game: { type: GraphQLString },
+  },
+  resolve: async (_root: any, args: { game: string }): Promise<Room[]> => {
+    return await RoomModel.find({ "gameData.gameId": args.game });
+  },
+};
 
 export default fetchRooms;

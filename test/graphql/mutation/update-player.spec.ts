@@ -30,24 +30,26 @@ describe("update or create player", () => {
           addOrUpdatePlayer(player: $player) {
             clientId
             name
-            avatar
             description
+            avatar {
+              id
+            }
           }
         }`,
         variables: {
           player: {
-            clientId: "1",
+            clientId: "Player 1",
             name: "Jenny Appleseed",
-            avatar: "woman_apple_head",
+            avatar: [{ id: "woman_apple_head" }],
             description: "I want an avatar with an apple for a head",
           },
         },
       });
     expect(updateResponse.status).to.equal(200);
     expect(updateResponse.body.data.addOrUpdatePlayer).to.eql({
-      clientId: "1",
+      clientId: "Player 1",
       name: "Jenny Appleseed",
-      avatar: "woman_apple_head",
+      avatar: [{ id: "woman_apple_head" }],
       description: "I want an avatar with an apple for a head",
     });
 
@@ -61,7 +63,9 @@ describe("update or create player", () => {
               clientId
               name
               description
-              avatar
+              avatar {
+                id
+              }
             }
           }
         }
@@ -71,9 +75,9 @@ describe("update or create player", () => {
     expect(fetchResponse.body.data.fetchPlayers.edges).to.eql([
       {
         node: {
-          clientId: "1",
+          clientId: "Player 1",
           name: "Jenny Appleseed",
-          avatar: "woman_apple_head",
+          avatar: [{ id: "woman_apple_head" }],
           description: "I want an avatar with an apple for a head",
         },
       },
@@ -89,24 +93,26 @@ describe("update or create player", () => {
           addOrUpdatePlayer(player: $player) {
             clientId
             name
-            avatar
             description
+            avatar {
+              id
+            }
           }
         }`,
         variables: {
           player: {
-            clientId: "2",
+            clientId: "Player 2",
             name: "Jenny Appleseed",
-            avatar: "woman_apple_head",
+            avatar: [{ id: "woman_apple_head" }],
             description: "I want an avatar with an apple for a head",
           },
         },
       });
     expect(updateResponse.status).to.equal(200);
     expect(updateResponse.body.data.addOrUpdatePlayer).to.eql({
-      clientId: "2",
+      clientId: "Player 2",
       name: "Jenny Appleseed",
-      avatar: "woman_apple_head",
+      avatar: [{ id: "woman_apple_head" }],
       description: "I want an avatar with an apple for a head",
     });
 
@@ -120,7 +126,9 @@ describe("update or create player", () => {
               clientId
               name
               description
-              avatar
+              avatar {
+                id
+              }
             }
           }
         }
@@ -130,18 +138,18 @@ describe("update or create player", () => {
     expect(fetchResponse.body.data.fetchPlayers.edges).to.eql([
       {
         node: {
-          clientId: "2",
+          clientId: "Player 2",
           name: "Jenny Appleseed",
-          avatar: "woman_apple_head",
           description: "I want an avatar with an apple for a head",
+          avatar: [{ id: "woman_apple_head" }],
         },
       },
       {
         node: {
-          clientId: "1",
+          clientId: "Player 1",
           name: "Jonny Appleseed",
-          avatar: "man_apple_head",
           description: "I want an avatar with an apple for a head",
+          avatar: [{ id: "man_apple_head" }],
         },
       },
     ]);
