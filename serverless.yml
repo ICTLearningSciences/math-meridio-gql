@@ -86,7 +86,7 @@ functions:
           method: ANY
           cors:
             origins:
-              # "*"
+              - '*'
               - "https://*.meridiomath.org"
               - "https://*.meridiomath.org/"
               - "https://meridiomath.org"
@@ -102,6 +102,7 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
               - X-Amzn-Trace-Id
+              - Access-Control-Allow-Origin
 # # TODO: re-enable after first deployment
 # resources:
 #   Resources:

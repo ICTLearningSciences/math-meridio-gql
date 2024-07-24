@@ -11,7 +11,10 @@ export const fetchRooms = {
     game: { type: GraphQLString },
   },
   resolve: async (_root: any, args: { game: string }): Promise<Room[]> => {
-    return await RoomModel.find({ "gameData.gameId": args.game });
+    if (args.game) {
+      return await RoomModel.find({ "gameData.gameId": args.game });
+    }
+    return await RoomModel.find({});
   },
 };
 

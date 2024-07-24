@@ -33,7 +33,7 @@ describe("fetch rooms", () => {
       .post("/graphql")
       .send({
         query: `
-        query FetchRooms($game: String!) {
+        query FetchRooms($game: String) {
           fetchRooms(game: $game) {
             _id
             name
@@ -123,12 +123,105 @@ describe("fetch rooms", () => {
     ]);
   });
 
+  it(`can fetch existing rooms`, async () => {
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: `
+        query FetchRooms($game: String) {
+          fetchRooms(game: $game) {
+            _id
+            name
+            gameData {
+              gameId
+              players {
+                clientId
+                name
+                description
+                avatar {
+                  id
+                }
+              }
+              chat {
+                id
+                message
+                sender
+                senderId
+                senderName
+                displayType
+                disableUserInput
+                mcqChoices
+              }
+              globalStateData {
+                curStageId
+                curStepId
+                gameStateData {
+                  key
+                  value
+                }
+              }
+              playerStateData {
+                player
+                animation
+                gameStateData {
+                  key
+                  value
+                }
+              }
+            }
+          }
+        }`,
+        variables: {},
+      });
+    expect(response.status).to.equal(200);
+    expect(response.body.data.fetchRooms).to.eql([
+      {
+        _id: "5f748650f4b3f1b9f1f1f1f1",
+        name: "Basketball Room 1",
+        gameData: {
+          gameId: "basketball",
+          players: [
+            {
+              clientId: "Player 1",
+              name: "Jonny Appleseed",
+              description: "I want an avatar with an apple for a head",
+              avatar: [{ id: "man_apple_head" }],
+            },
+          ],
+          chat: [],
+          globalStateData: {
+            curStageId: "Stage 1",
+            curStepId: "Step 1",
+            gameStateData: [
+              {
+                key: "Global variable 1",
+                value: "Global variable 1 value",
+              },
+            ],
+          },
+          playerStateData: [
+            {
+              player: "Player 1",
+              animation: "",
+              gameStateData: [
+                {
+                  key: "Player variable 1",
+                  value: "Player variable 1 value",
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ]);
+  });
+
   it(`no rooms for game`, async () => {
     const response = await request(app)
       .post("/graphql")
       .send({
         query: `
-        query FetchRooms($game: String!) {
+        query FetchRooms($game: String) {
           fetchRooms(game: $game) {
             _id
             name
