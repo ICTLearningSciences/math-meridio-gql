@@ -18,7 +18,7 @@ import fetchPlayers from "./query/fetch-players";
 import addOrUpdatePlayer from "./mutation/add-or-update-player";
 
 import fetchDiscussionStages from "./query/fetch-discussion-stages";
-import addOrUpdateDiscussionStage from "./mutation/add-or-update-stage";
+import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
