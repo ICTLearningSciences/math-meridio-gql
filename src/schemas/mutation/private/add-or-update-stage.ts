@@ -35,8 +35,7 @@ export const addOrUpdateDiscussionStage = {
     }
   ) {
     if (
-      context.req.headers["Authorization"] !==
-      `bearer ${process.env.GQL_SECRET}`
+      context.req.headers.authorization !== `bearer ${process.env.GQL_SECRET}`
     ) {
       throw new Error("Unauthorized");
     }
