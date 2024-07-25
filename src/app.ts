@@ -23,7 +23,6 @@ const authorization = (req: any, res: any, next: any) => {
   if (process.env.ENV === "dev") {
     return next();
   }
-
   if (!req.body.data || !req.body.data.secret) {
     console.log(`failed to authorize, expected body`);
     return res
@@ -108,9 +107,11 @@ export function createApp(): Express {
   app.use(
     "/graphqlPrivate",
     authorization,
-    graphqlHTTP({
-      schema: privateSchema, // private due to authorization
-      graphiql: true,
+    graphqlHTTP(async (req: Request, res) => {
+      return {
+        schema: privateSchema,
+        graphiql: true,
+      };
     })
   );
 
