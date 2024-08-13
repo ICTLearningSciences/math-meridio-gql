@@ -36,6 +36,157 @@ describe("update discussion stage", () => {
     await mongoUnit.drop();
   });
 
+  it("fails if no authorization passed", async () => {
+    const stagesPre = await DiscussionStageModel.find();
+    expect(stagesPre.length).to.equal(1);
+    const flowsListData: FlowItem[] = [
+      {
+        clientId: "67890",
+        name: "flow 1",
+        steps: [
+          {
+            stepId: "123",
+            jumpToStepId: "456",
+            stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
+            message: "message 1",
+            lastStep: false,
+          },
+          {
+            stepId: "456",
+            jumpToStepId: "789",
+            stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
+            message: "message 2",
+            saveResponseVariableName: "save response variable name 1",
+            disableFreeInput: true,
+            predefinedResponses: [
+              {
+                clientId: "123",
+                message: "message 1",
+                isArray: false,
+                jumpToStepId: "jump to step id 1",
+                responseWeight: "1",
+              },
+            ],
+            lastStep: false,
+          },
+          {
+            stepId: "789",
+            stepType: DiscussionStageStepType.PROMPT,
+            promptText: "prompt 1",
+            jumpToStepId: "123",
+            jsonResponseData: "stringified_json_response_data",
+            responseFormat: "response format 1",
+            includeChatLogContext: true,
+            outputDataType: "JSON",
+            customSystemRole: "custom system role 1",
+            lastStep: true,
+          },
+        ],
+      },
+    ];
+    const discussionStage: DiscussionStage = {
+      _id: "5ffdf1231ee2c62320b49e5f",
+      clientId: "123",
+      stageType: "discussion",
+      title: "title 1",
+      description: "description 1",
+      flowsList: flowsListData,
+    };
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
+          addOrUpdateDiscussionStage(stage: $stage) {
+              ${fullDiscussionStageQueryData}
+              }
+         }`,
+        variables: {
+          stage: discussionStage,
+        },
+      });
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "Unauthorized"
+    );
+  });
+
+  it("fails if incorrect passed", async () => {
+    const stagesPre = await DiscussionStageModel.find();
+    expect(stagesPre.length).to.equal(1);
+    const flowsListData: FlowItem[] = [
+      {
+        clientId: "67890",
+        name: "flow 1",
+        steps: [
+          {
+            stepId: "123",
+            jumpToStepId: "456",
+            stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
+            message: "message 1",
+            lastStep: false,
+          },
+          {
+            stepId: "456",
+            jumpToStepId: "789",
+            stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
+            message: "message 2",
+            saveResponseVariableName: "save response variable name 1",
+            disableFreeInput: true,
+            predefinedResponses: [
+              {
+                clientId: "123",
+                message: "message 1",
+                isArray: false,
+                jumpToStepId: "jump to step id 1",
+                responseWeight: "1",
+              },
+            ],
+            lastStep: false,
+          },
+          {
+            stepId: "789",
+            stepType: DiscussionStageStepType.PROMPT,
+            promptText: "prompt 1",
+            jumpToStepId: "123",
+            jsonResponseData: "stringified_json_response_data",
+            responseFormat: "response format 1",
+            includeChatLogContext: true,
+            outputDataType: "JSON",
+            customSystemRole: "custom system role 1",
+            lastStep: true,
+          },
+        ],
+      },
+    ];
+    const discussionStage: DiscussionStage = {
+      _id: "5ffdf1231ee2c62320b49e5f",
+      clientId: "123",
+      stageType: "discussion",
+      title: "title 1",
+      description: "description 1",
+      flowsList: flowsListData,
+    };
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `bearer wronggqlsecret`)
+      .send({
+        query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
+          addOrUpdateDiscussionStage(stage: $stage) {
+              ${fullDiscussionStageQueryData}
+              }
+         }`,
+        variables: {
+          stage: discussionStage,
+        },
+      });
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "Unauthorized"
+    );
+  });
+
   it("can create new discussion stage", async () => {
     const stagesPre = await DiscussionStageModel.find();
     expect(stagesPre.length).to.equal(1);
@@ -94,6 +245,7 @@ describe("update discussion stage", () => {
     };
     const response = await request(app)
       .post("/graphql")
+      .set("Authorization", `bearer fakegqlsecret`)
       .send({
         query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
           addOrUpdateDiscussionStage(stage: $stage) {
@@ -164,6 +316,7 @@ describe("update discussion stage", () => {
     ];
     const response = await request(app)
       .post("/graphql")
+      .set("Authorization", `bearer fakegqlsecret`)
       .send({
         query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
           addOrUpdateDiscussionStage(stage: $stage) {
@@ -223,6 +376,7 @@ describe("update discussion stage", () => {
     };
     const response = await request(app)
       .post("/graphql")
+      .set("Authorization", `bearer fakegqlsecret`)
       .send({
         query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
         addOrUpdateDiscussionStage(stage: $stage) {
