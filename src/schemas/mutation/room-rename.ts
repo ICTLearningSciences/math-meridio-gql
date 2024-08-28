@@ -15,11 +15,12 @@ export const renameRoom = {
     _root: any,
     args: { name: string; roomId: string }
   ): Promise<Room> => {
-    const room = await RoomModel.findOne({ _id: args.roomId });
+    const room = await RoomModel.findOne({ _id: args.roomId, deletedRoom: false });
     if (!room) throw new Error("Invalid room");
     return await RoomModel.findOneAndUpdate(
       {
         _id: args.roomId,
+        deletedRoom: false
       },
       {
         $set: {

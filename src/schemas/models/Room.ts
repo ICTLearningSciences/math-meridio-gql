@@ -60,6 +60,7 @@ export interface GameData extends Document {
 export interface Room extends Document {
   name: string;
   gameData: GameData;
+  deletedRoom: boolean;
 }
 
 export interface RoomModel extends Model<Room> {
@@ -124,6 +125,7 @@ export const RoomSchema = new Schema<Room, RoomModel>(
   {
     name: { type: String },
     gameData: { type: GameSchema },
+    deletedRoom: {type : Boolean}
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -197,5 +199,6 @@ export const RoomType = new GraphQLObjectType({
     _id: { type: GraphQLID },
     name: { type: GraphQLString },
     gameData: { type: GameDataType },
+    deletedRoom: {type: GraphQLBoolean}
   }),
 });

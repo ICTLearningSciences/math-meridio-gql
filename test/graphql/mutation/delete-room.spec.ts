@@ -14,6 +14,7 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 
+
 describe("delete room", () => {
   let app: Express;
 
@@ -28,35 +29,27 @@ describe("delete room", () => {
     await mongoUnit.drop();
   });
 
-  it(`can delete an existing room`, async () => {
+  it(`can mark an existing room as deleted`, async () => {
     const response1 = await request(app)
       .post("/graphql")
       .send({
         query: `
         mutation DeleteRoom($roomId: ID!) {
-          deleteRoom(roomId: $roomId)
+          deleteRoom(roomId: $roomId) {
+            _id
+            deletedRoom
+          }
         }`,
         variables: {
           roomId: "5f748650f4b3f1b9f1f1f1f1",
         },
       });
     expect(response1.status).to.equal(200);
-    expect(response1.body.data.deleteRoom).to.eql(true);
-    const response = await request(app)
-      .post("/graphql")
-      .send({
-        query: `
-      query FetchRoom($roomId: ID!) {
-        fetchRoom(roomId: $roomId) {
-          _id
-        }
-      }`,
-        variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
-        },
-      });
-    expect(response.status).to.equal(200);
-    expect(response.body.data.fetchRoom).to.eql(null);
+    expect(response1.body.data.deleteRoom).to.eql({
+      _id: "5f748650f4b3f1b9f1f1f1f1",
+      deletedRoom:true
+    });    
+
   });
 
   it(`fails if non-existent room id`, async () => {
@@ -66,15 +59,19 @@ describe("delete room", () => {
         query: `
         mutation DeleteRoom($roomId: ID!) {
           deleteRoom(roomId: $roomId)
+          {
+            _id
+            deletedRoom
+          }
         }`,
         variables: {
           roomId: "5f748650f4b3f1b9f1f1f1f2",
         },
       });
+
     expect(response.status).to.equal(200);
-    expect(response.body).to.have.deep.nested.property(
-      "errors[0].message",
-      "Invalid room"
+    expect(response.body.data.deleteRoom).to.eql(
+      null
     );
   });
 });

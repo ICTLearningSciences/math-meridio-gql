@@ -2,7 +2,7 @@
 
 */
 
-import { GraphQLString } from "graphql";
+import { GraphQLString, GraphQLBoolean } from "graphql";
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel from "../models/Player";
 
@@ -19,9 +19,10 @@ export const createAndJoinRoom = {
       playerId: string;
       gameId: string;
       gameName: string;
+      deletedRoom: boolean
     }
   ): Promise<Room> => {
-    const rooms = await RoomModel.find({ "gameData.gameId": args.gameId });
+    const rooms = await RoomModel.find({ "gameData.gameId": args.gameId , deletedRoom:false});
     const player = await PlayerModel.findOne({ clientId: args.playerId });
     if (!player) throw new Error("Invalid player");
     return await RoomModel.create({
@@ -43,6 +44,7 @@ export const createAndJoinRoom = {
           },
         ],
       },
+      deletedRoom: false
     });
   },
 };

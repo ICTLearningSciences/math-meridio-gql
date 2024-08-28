@@ -156,6 +156,7 @@ describe("create and join new room", () => {
                 }
               }
             }
+            deletedRoom
           }
         }`,
         variables: {

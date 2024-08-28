@@ -74,6 +74,7 @@ describe("fetch rooms", () => {
                 }
               }
             }
+            deletedRoom
           }
         }`,
         variables: {
@@ -119,6 +120,7 @@ describe("fetch rooms", () => {
             },
           ],
         },
+        deletedRoom:false
       },
     ]);
   });
@@ -169,10 +171,12 @@ describe("fetch rooms", () => {
                 }
               }
             }
+            deletedRoom
           }
         }`,
         variables: {},
       });
+
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRooms).to.eql([
       {
@@ -212,6 +216,7 @@ describe("fetch rooms", () => {
             },
           ],
         },
+        deletedRoom:false
       },
     ]);
   });
@@ -262,10 +267,12 @@ describe("fetch rooms", () => {
                 }
               }
             }
+            deletedRoom
           }
         }`,
         variables: {
           game: "asdf",
+          deletedRoom:false
         },
       });
     expect(response.status).to.equal(200);

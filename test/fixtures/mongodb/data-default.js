@@ -48,6 +48,40 @@ module.exports = {
           },
         ],
       },
+      deletedRoom:false
+    },
+
+    {
+      _id: new ObjectId("5f748650f4b3f1b9f2f3f4f5"),
+      name: "Basketball Room 1 Marked as Deleted",
+      gameData: {
+        gameId: "basketball",
+        players: ["Player 1"],
+        chat: [],
+        globalStateData: {
+          curStageId: "Stage 1",
+          curStepId: "Step 1",
+          gameStateData: [
+            {
+              key: "Global variable 1",
+              value: "Global variable 1 value",
+            },
+          ],
+        },
+        playerStateData: [
+          {
+            player: "Player 1",
+            animation: "",
+            gameStateData: [
+              {
+                key: "Player variable 1",
+                value: "Player variable 1 value",
+              },
+            ],
+          },
+        ],
+      },
+      deletedRoom:true
     },
   ],
 

@@ -11,7 +11,7 @@ export const fetchRoom = {
     roomId: { type: GraphQLID },
   },
   resolve: async (_root: any, args: { roomId: string }): Promise<Room> => {
-    return await RoomModel.findOne({ _id: args.roomId });
+    return await RoomModel.findOne({ _id: args.roomId, deletedRoom: false });
   },
 };
 

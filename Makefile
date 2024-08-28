@@ -33,5 +33,11 @@ test: node_modules/mocha
 	&& export NODE_PATH=$(shell pwd)/src \
 	&& npm test
 
+test-win: node_modules/mocha
+	set APP_DISABLE_AUTO_START=true \
+	&& set ENV=test \
+	&& set NODE_PATH=$(shell pwd)/src \
+	&& npm run test-win
+
 node_modules/prettier:
 	npm ci
