@@ -119,7 +119,7 @@ describe("fetch room", () => {
           },
         ],
       },
-      deletedRoom:false
+      deletedRoom: false,
     });
   });
 
@@ -175,7 +175,7 @@ describe("fetch room", () => {
         }`,
         variables: {
           roomId: "5f748650f4b3f1b9f1f1f1f2",
-          deletedRoom: false
+          deletedRoom: false,
         },
       });
     expect(response.status).to.equal(200);

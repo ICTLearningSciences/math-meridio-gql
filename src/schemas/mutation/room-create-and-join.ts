@@ -19,10 +19,13 @@ export const createAndJoinRoom = {
       playerId: string;
       gameId: string;
       gameName: string;
-      deletedRoom: boolean
+      deletedRoom: boolean;
     }
   ): Promise<Room> => {
-    const rooms = await RoomModel.find({ "gameData.gameId": args.gameId , deletedRoom:false});
+    const rooms = await RoomModel.find({
+      "gameData.gameId": args.gameId,
+      deletedRoom: false,
+    });
     const player = await PlayerModel.findOne({ clientId: args.playerId });
     if (!player) throw new Error("Invalid player");
     return await RoomModel.create({
@@ -44,7 +47,7 @@ export const createAndJoinRoom = {
           },
         ],
       },
-      deletedRoom: false
+      deletedRoom: false,
     });
   },
 };

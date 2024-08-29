@@ -58,7 +58,10 @@ export const updateRoom = {
       gameData: GameData;
     }
   ): Promise<Room> => {
-    const room = await RoomModel.findOne({ _id: args.roomId , deletedRoom: false});
+    const room = await RoomModel.findOne({
+      _id: args.roomId,
+      deletedRoom: false,
+    });
     if (!room) throw new Error("Invalid room");
 
     if (args.gameData.globalStateData?.curStageId) {

@@ -82,8 +82,8 @@ describe("rename room", () => {
           roomId: "5f748650f4b3f1b9f1f1f1f1",
         },
       });
-      expect(response.status).to.equal(200);
-    
+    expect(response.status).to.equal(200);
+
     expect(response.body.data.renameRoom).to.eql({
       _id: "5f748650f4b3f1b9f1f1f1f1",
       name: "New name",
@@ -121,7 +121,7 @@ describe("rename room", () => {
           },
         ],
       },
-      deletedRoom:false
+      deletedRoom: false,
     });
   });
 

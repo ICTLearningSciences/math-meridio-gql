@@ -4,7 +4,7 @@
 
 import { GraphQLID } from "graphql";
 import RoomModel from "../models/Room";
-import {Room, RoomType} from "../models/Room";
+import { Room, RoomType } from "../models/Room";
 
 export const deleteRoom = {
   type: RoomType,
@@ -12,9 +12,9 @@ export const deleteRoom = {
     roomId: { type: GraphQLID },
   },
   resolve: async (_root: any, args: { roomId: string }): Promise<Room> => {
-    console.log(`Looking for ${args.roomId}`)
+    console.log(`Looking for ${args.roomId}`);
 
-    const room = await RoomModel.findOne({ _id: args.roomId});
+    const room = await RoomModel.findOne({ _id: args.roomId });
     if (!room) throw new Error("Invalid room");
     // await RoomModel.deleteOne({
     //   _id: args.roomId,
@@ -27,12 +27,11 @@ export const deleteRoom = {
       },
       {
         $set: {
-          deletedRoom:true
+          deletedRoom: true,
         },
       },
       { new: true }
     );
-
   },
 };
 

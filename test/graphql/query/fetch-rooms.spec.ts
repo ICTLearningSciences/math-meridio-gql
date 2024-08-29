@@ -120,7 +120,7 @@ describe("fetch rooms", () => {
             },
           ],
         },
-        deletedRoom:false
+        deletedRoom: false,
       },
     ]);
   });
@@ -216,7 +216,7 @@ describe("fetch rooms", () => {
             },
           ],
         },
-        deletedRoom:false
+        deletedRoom: false,
       },
     ]);
   });
@@ -272,7 +272,7 @@ describe("fetch rooms", () => {
         }`,
         variables: {
           game: "asdf",
-          deletedRoom:false
+          deletedRoom: false,
         },
       });
     expect(response.status).to.equal(200);

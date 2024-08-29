@@ -14,7 +14,6 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 
-
 describe("delete room", () => {
   let app: Express;
 
@@ -47,9 +46,8 @@ describe("delete room", () => {
     expect(response1.status).to.equal(200);
     expect(response1.body.data.deleteRoom).to.eql({
       _id: "5f748650f4b3f1b9f1f1f1f1",
-      deletedRoom:true
-    });    
-
+      deletedRoom: true,
+    });
   });
 
   it(`fails if non-existent room id`, async () => {
@@ -70,8 +68,6 @@ describe("delete room", () => {
       });
 
     expect(response.status).to.equal(200);
-    expect(response.body.data.deleteRoom).to.eql(
-      null
-    );
+    expect(response.body.data.deleteRoom).to.eql(null);
   });
 });

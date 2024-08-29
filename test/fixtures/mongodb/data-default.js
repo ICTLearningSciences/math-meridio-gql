@@ -48,7 +48,7 @@ module.exports = {
           },
         ],
       },
-      deletedRoom:false
+      deletedRoom: false,
     },
 
     {
@@ -81,7 +81,7 @@ module.exports = {
           },
         ],
       },
-      deletedRoom:true
+      deletedRoom: true,
     },
   ],
 
