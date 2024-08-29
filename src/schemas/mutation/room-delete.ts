@@ -12,14 +12,11 @@ export const deleteRoom = {
     roomId: { type: GraphQLID },
   },
   resolve: async (_root: any, args: { roomId: string }): Promise<Room> => {
-    console.log(`Looking for ${args.roomId}`);
-
-    const room = await RoomModel.findOne({ _id: args.roomId });
+    const room = await RoomModel.findOne({
+      _id: args.roomId,
+      deletedRoom: false,
+    });
     if (!room) throw new Error("Invalid room");
-    // await RoomModel.deleteOne({
-    //   _id: args.roomId,
-    // });
-    //return true;
 
     return await RoomModel.findOneAndUpdate(
       {

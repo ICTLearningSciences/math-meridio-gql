@@ -70,4 +70,25 @@ describe("delete room", () => {
     expect(response.status).to.equal(200);
     expect(response.body.data.deleteRoom).to.eql(null);
   });
+
+  it(`fails if marked for deletion room id`, async () => {
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: `
+        mutation DeleteRoom($roomId: ID!) {
+          deleteRoom(roomId: $roomId)
+          {
+            _id
+            deletedRoom
+          }
+        }`,
+        variables: {
+          roomId: "5f748650f4b3f1b9f2f3f4f5",
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body.data.deleteRoom).to.eql(null);
+  });
 });
