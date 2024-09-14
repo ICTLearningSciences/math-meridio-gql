@@ -15,6 +15,7 @@ dotenv.config();
 
 export const fetchDiscussionStages = {
   type: GraphQLList(DiscussionStageType),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async resolve(_root: GraphQLObjectType, _args: null) {
     try {
       return await DiscussionStageModel.find({});

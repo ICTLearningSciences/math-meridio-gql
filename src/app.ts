@@ -49,6 +49,7 @@ const authorization = (req: any, res: any, next: any) => {
   return next();
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const corsOptions = {
   credentials: true,
   origin: function (
@@ -110,6 +111,7 @@ export function createApp(): Express {
   app.use(
     "/graphqlPrivate",
     authorization,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     graphqlHTTP(async (req: Request, res) => {
       return {
         schema: privateSchema,
