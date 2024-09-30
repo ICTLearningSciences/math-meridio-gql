@@ -1,5 +1,19 @@
 {
+  "ignore": [
+    ".eslintignore",
+    ".eslintrc.js",
+    ".gitignore",
+    "Makefile",
+    "README",
+    "README.md",
+    "serverless.yml",
+    "cicd/buildspec.yml",
+    "cicd/deployspec-dev.yml",
+    "cicd/deployspec-prod.yml",
+    "cicd/deployspec-qa.yml",
+    ".github/workflows/test-and-publish.yml"
+  ],
   "ignoreFile": "license-ignore.txt",
-  "license": "./LICENSE_HEADER",
+  "license": "LICENSE_HEADER",
   "trailingWhitespace": "TRIM"
 }

@@ -1,5 +1,8 @@
 /*
+This software is Copyright ©️ 2020 The University of Southern California. All Rights Reserved.
+Permission to use, copy, modify, and distribute this software and its documentation for educational, research and non-profit purposes, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and subject to the full license file found in the root of this software deliverable. Permission to make commercial use of this software may be obtained by contacting: USC Stevens Center for Innovation University of Southern California 1150 S. Olive Street, Suite 2300, Los Angeles, CA 90115, USA Email: accounting@stevens.usc.edu
 
+The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
 import express, { Express, Request } from "express";
@@ -9,10 +12,6 @@ import cors from "cors";
 import publicSchema from "./schemas/publicSchema";
 import * as dotenv from "dotenv";
 dotenv.config();
-
-const CORS_ORIGIN = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(",")
-  : ["https://dev.meridiomath.org"];
 
 //START MIDDLEWARE
 import mongoose from "mongoose";
@@ -44,31 +43,6 @@ const authorization = (req: any, res: any, next: any) => {
       .send({ error: `failed to authorize, secret does not match` });
   }
   return next();
-};
-
-const corsOptions = {
-  credentials: true,
-  origin: function (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: string) => void
-  ) {
-    if (!origin) {
-      callback(null, "");
-    } else {
-      let allowOrigin = false;
-      for (const co of CORS_ORIGIN) {
-        if (origin === co || origin.endsWith(co)) {
-          allowOrigin = true;
-          break;
-        }
-      }
-      if (allowOrigin) {
-        callback(null, origin);
-      } else {
-        callback(new Error(`${origin} not allowed by CORS`));
-      }
-    }
-  },
 };
 
 export async function appStart(): Promise<void> {
@@ -103,11 +77,10 @@ export function createApp(): Express {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(express.json());
   app.use(cors());
-  // app.use(cors(corsOptions));
   app.use(
     "/graphqlPrivate",
     authorization,
-    graphqlHTTP(async (req: Request, res) => {
+    graphqlHTTP(async () => {
       return {
         schema: privateSchema,
         graphiql: true,

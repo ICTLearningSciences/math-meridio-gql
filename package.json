@@ -10,17 +10,22 @@
     "deploy:qa": "NODE_OPTIONS=--max_old_space_size=4000 sls deploy -s qa --region us-east-1",
     "deploy:prod": "NODE_OPTIONS=--max_old_space_size=4000 sls deploy -s prod --region us-east-1",
     "format": "prettier --write '**/*.{js,jsx,json,ts,tsx,yml,yaml}'",
+    "format-win": "prettier --write \"**/*.{js,jsx,json,ts,tsx,yml,yaml}\"",
     "lint:fix": "eslint . --ext ts --ext js --fix",
     "start": "tsc && node dist/server.js",
     "test": "export ENV=test && export NODE_ENV=test && npx mocha -r tsconfig-paths/register -r ts-node/register -r source-map-support/register './test/**/*.{spec,test}.{js,ts}' --timeout 10000 --full-trace --recursive --reporter spec --delay --exit",
+    "test-win": "set ENV=test && set NODE_ENV=test && npx mocha -r tsconfig-paths/register -r ts-node/register -r source-map-support/register './test/**/*.{spec,test}.{js,ts}' --timeout 10000 --full-trace --recursive --reporter spec --delay --exit",
     "test:all": "npm run test:format && npm run test:lint && npm run test:audit && npm run test:types && npm test",
+    "test:all-win": "npm run test:format-win && npm run test:lint && npm run test:audit && npm run test:types && npm test-win",
     "test:audit": "npm audit --audit-level=moderate --production",
     "test:format": "prettier --check '**/*.{js,jsx,json,ts,tsx}'",
+    "test:format-win": "prettier --check \"**/*.{js,jsx,json,ts,tsx}\"",
     "test:lint": "eslint . --ext ts --ext js --max-warnings=23",
     "test:types": "tsc --noEmit",
     "license:deploy": "license-check-and-add remove -f license-config.json && license-check-and-add add -f $LICENSE_CONFIG",
     "license:fix": "license-check-and-add remove -f license-config.json && license-check-and-add add -f license-config.json",
-    "test:license": "license-check-and-add check -f license-config.json"
+    "test:license": "license-check-and-add check -f license-config.json",
+    "test:remove-license": "license-check-and-add remove -f license-config.json"
   },
   "dependencies": {
     "@jupyterlab/nbformat": "^3.6.3",
