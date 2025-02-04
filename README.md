@@ -20,3 +20,10 @@ $ make develop
 ```
 
 2. Visit graphql playground: http://localhost:3000/offline/graphql
+
+## Pushing code changes
+
+- Before pushing your changes to github, run `make format` and `make test-all` to confirm all tests pass.
+- ALWAYS push your changes to a separate branch and open a PR when your changes are ready to be reviewed.
+- Request a review from a team member.
+- Once the PR is approved, merge into main.
