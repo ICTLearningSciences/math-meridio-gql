@@ -36,7 +36,7 @@ custom:
     offline:
       MONGO_URI: ${ssm:/mathmeridio/dev/mongo_uri, ''}
       GQL_SECRET: ${ssm:/mathmeridio/dev/gql_secret, ''}
-      CORS_ORIGIN: "https://dev.meridiomath.org,https://dev.meridiomath.org/,.dev.meridiomath.org,.dev.meridiomath.org/,https://api-dev.meridiomath.org,https://api-dev.meridiomath.org/,http://local.meridiomath.org,http://local.meridiomath.org/"
+      CORS_ORIGIN: "https://dev.meridiomath.org,https://dev.meridiomath.org/,.dev.meridiomath.org,.dev.meridiomath.org/,https://api-dev.meridiomath.org,https://api-dev.meridiomath.org/,http://local.meridiomath.org,http://local.meridiomath.org/,http://localhost:3000,http://localhost:3000/"
 
     dev:
       MONGO_URI: ${ssm:/mathmeridio/dev/mongo_uri, ''}
