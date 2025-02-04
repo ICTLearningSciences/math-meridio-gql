@@ -18,8 +18,12 @@ Required: Create a `.env` file at the root of the project and fill with the requ
 $ npm ci
 $ make develop
 ```
-
 2. Visit graphql playground: http://localhost:3000/offline/graphql
+
+## Local Unit Tests
+- We use various testing frameworks to run unit tests, including mocha, chai, mongo-unit, and supertest.
+- You may look at the *.spec.ts files under test/graphql/ for unit test examples.
+- Run `make test` to run all unit tests.
 
 ## Pushing code changes
 
