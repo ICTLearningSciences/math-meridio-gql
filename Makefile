@@ -53,3 +53,8 @@ test-win: node_modules/mocha
 
 node_modules/prettier:
 	npm ci
+
+.PHONY: develop
+develop:
+	echo ENSURE you have a .env file at the root of the project with the correct values
+	npx serverless offline -s offline -r us-east-1
