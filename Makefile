@@ -57,4 +57,5 @@ node_modules/prettier:
 .PHONY: develop
 develop:
 	echo ENSURE you have a .env file at the root of the project with the correct values
+	npm ci
 	npx serverless offline -s offline -r us-east-1

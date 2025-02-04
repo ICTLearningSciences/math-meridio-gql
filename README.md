@@ -15,7 +15,6 @@ Required: Create a `.env` file at the root of the project and fill with the requ
 
 1. Start the local server:
 ```
-$ npm ci
 $ make develop
 ```
 2. Visit graphql playground: http://localhost:3000/offline/graphql
