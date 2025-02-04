@@ -1,9 +1,0 @@
-# Math Meridio
-
-## Local Development
-
-```
-make develop
-```
-
-Visit: http://localhost:3000/offline/graphql
