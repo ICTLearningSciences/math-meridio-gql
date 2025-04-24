@@ -50,6 +50,7 @@ describe("send message", () => {
                 sender
                 senderId
                 senderName
+                sessionId
                 displayType
                 disableUserInput
                 mcqChoices
@@ -81,6 +82,7 @@ describe("send message", () => {
             sender: "PLAYER",
             senderId: "Player 1",
             senderName: "Jonny Appleseed",
+            sessionId: "session1",
           },
         },
       });
@@ -108,6 +110,7 @@ describe("send message", () => {
             displayType: null,
             disableUserInput: null,
             mcqChoices: [],
+            sessionId: "session1",
           },
         ],
         globalStateData: {
