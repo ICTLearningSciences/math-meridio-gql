@@ -33,6 +33,7 @@ export interface ChatMessage extends Document {
   displayType: string;
   disableUserInput: boolean;
   mcqChoices: string[];
+  sessionId: string;
 }
 
 export interface GameStateData extends Document {
@@ -80,6 +81,7 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
     sender: { type: String },
     senderId: { type: String },
     senderName: { type: String },
+    sessionId: { type: String },
     displayType: { type: String },
     disableUserInput: { type: Boolean },
     mcqChoices: [{ type: String }],
@@ -151,6 +153,7 @@ export const ChatMessageType = new GraphQLObjectType({
     displayType: { type: GraphQLString },
     disableUserInput: { type: GraphQLBoolean },
     mcqChoices: { type: new GraphQLList(GraphQLString) },
+    sessionId: { type: GraphQLString },
   }),
 });
 
