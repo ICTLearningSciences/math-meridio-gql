@@ -12,9 +12,11 @@ import { describe } from "mocha";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import {
+  Checking,
   DiscussionStage,
   DiscussionStageStepType,
   FlowItem,
+  NumericOperations,
 } from "../../../src/schemas/models/DiscussionStage/types";
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 import { fullDiscussionStageQueryData } from "../query/fetch-discussion-stages.spec";
@@ -229,6 +231,21 @@ describe("update discussion stage", () => {
             customSystemRole: "custom system role 1",
             lastStep: true,
           },
+          {
+            stepId: "5",
+            stepType: DiscussionStageStepType.CONDITIONAL,
+            jumpToStepId: "6",
+            lastStep: false,
+            conditionals: [
+              {
+                stateDataKey: "nickname",
+                checking: Checking.VALUE,
+                operation: NumericOperations.EQUALS,
+                expectedValue: "John",
+                targetStepId: "6",
+              },
+            ],
+          },
         ],
       },
     ];
@@ -364,7 +381,7 @@ describe("update discussion stage", () => {
         _id: "5ffdf1231ee2c62320b49e2f",
       });
     expect(preUpdate).to.not.be.null;
-    expect(preUpdate!.flowsList[0].steps.length).to.equal(5);
+    expect(preUpdate!.flowsList[0].steps.length).to.equal(6);
     expect(preUpdate!.description).to.not.equal("new description");
 
     const updateDiscussionStage: Partial<DiscussionStage> = {
@@ -390,6 +407,6 @@ describe("update discussion stage", () => {
     });
     expect(postUpdate).to.not.be.null;
     expect(postUpdate!.description).to.equal("new description");
-    expect(preUpdate!.flowsList[0].steps.length).to.equal(5);
+    expect(preUpdate!.flowsList[0].steps.length).to.equal(6);
   });
 });

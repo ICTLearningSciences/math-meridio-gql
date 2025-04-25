@@ -129,6 +129,20 @@ module.exports = {
             },
             {
               stepId: "5",
+              stepType: DiscussionStageStepType.CONDITIONAL,
+              jumpToStepId: "6",
+              conditionals: [
+                {
+                  stateDataKey: "nickname",
+                  checking: "is",
+                  operation: "equal",
+                  expectedValue: "John",
+                  targetStepId: "6",
+                },
+              ],
+            },
+            {
+              stepId: "6",
               stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
               message:
                 "Thank you for participating in the test activity, {{nickname}}!",
