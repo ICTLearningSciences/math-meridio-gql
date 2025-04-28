@@ -5,7 +5,12 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLString, GraphQLObjectType, GraphQLList } from "graphql";
+import {
+  GraphQLString,
+  GraphQLObjectType,
+  GraphQLList,
+  GraphQLNonNull,
+} from "graphql";
 import RoomModel, {
   Room,
   RoomType,
@@ -20,8 +25,8 @@ export const createAndJoinRoom = {
     playerId: { type: GraphQLString },
     gameId: { type: GraphQLString },
     gameName: { type: GraphQLString },
-    stageList: { type: new GraphQLList(StageStepInputType) },
-    curStageStep: { type: StageStepInputType },
+    stageList: { type: new GraphQLNonNull(GraphQLList(StageStepInputType)) },
+    curStageStep: { type: new GraphQLNonNull(StageStepInputType) },
   },
   resolve: async (
     _root: GraphQLObjectType,

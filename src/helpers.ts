@@ -9,7 +9,7 @@ import Ajv from "ajv";
 const ajv = new Ajv();
 import * as dotenv from "dotenv";
 import mongoose from "mongoose";
-import { StageStep } from "schemas/models/Room";
+import { StageStep } from "./schemas/models/Room";
 dotenv.config();
 
 const queryPayloadSchema = {
@@ -63,6 +63,12 @@ export function sameStageSteps(
   stageList: StageStep[],
   stageList2: StageStep[]
 ): boolean {
+  if (!stageList || !stageList2) {
+    return false;
+  }
+  if (stageList.length !== stageList2.length) {
+    return false;
+  }
   return stageList?.every(
     (stage, index) =>
       stage.stageId === stageList2[index].stageId &&
