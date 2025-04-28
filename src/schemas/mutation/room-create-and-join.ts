@@ -5,8 +5,13 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLString, GraphQLObjectType } from "graphql";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import { GraphQLString, GraphQLObjectType, GraphQLList } from "graphql";
+import RoomModel, {
+  Room,
+  RoomType,
+  StageStep,
+  StageStepInputType,
+} from "../models/Room";
 import PlayerModel from "../models/Player";
 
 export const createAndJoinRoom = {
@@ -15,6 +20,8 @@ export const createAndJoinRoom = {
     playerId: { type: GraphQLString },
     gameId: { type: GraphQLString },
     gameName: { type: GraphQLString },
+    stageList: { type: new GraphQLList(StageStepInputType) },
+    curStageStep: { type: StageStepInputType },
   },
   resolve: async (
     _root: GraphQLObjectType,
@@ -22,7 +29,8 @@ export const createAndJoinRoom = {
       playerId: string;
       gameId: string;
       gameName: string;
-      deletedRoom: boolean;
+      stageList: StageStep[];
+      curStageStep: StageStep;
     }
   ): Promise<Room> => {
     const rooms = await RoomModel.find({
@@ -38,10 +46,16 @@ export const createAndJoinRoom = {
         players: [args.playerId],
         chat: [],
         globalStateData: {
-          curStageId: "",
-          curStepId: "",
+          curStageId: args.curStageStep.stageId,
+          curStepId: args.curStageStep.stepId,
           gameStateData: [],
         },
+
+        currentRound: 0,
+        stageList: args.stageList,
+        curStageStep: args.curStageStep,
+        roomOwnerId: args.playerId,
+
         playerStateData: [
           {
             player: args.playerId,

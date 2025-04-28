@@ -12,7 +12,12 @@ import {
   GraphQLList,
   GraphQLObjectType,
 } from "graphql";
-import RoomModel, { GameData, Room, RoomType } from "../models/Room";
+import RoomModel, {
+  GameData,
+  Room,
+  RoomType,
+  StageStepInputType,
+} from "../models/Room";
 import GraphQLScalarType from "../types/anything-scalar-type";
 
 const GameStateDataInputType = new GraphQLInputObjectType({
@@ -44,6 +49,7 @@ const PlayerStateDataInputType = new GraphQLInputObjectType({
 const GameDataInputType = new GraphQLInputObjectType({
   name: "GameDataInput",
   fields: () => ({
+    curStageStep: { type: StageStepInputType },
     globalStateData: { type: GlobalStateDataInputType },
     playerStateData: { type: new GraphQLList(PlayerStateDataInputType) },
   }),
@@ -106,6 +112,9 @@ export const updateRoom = {
       } else {
         room.gameData.playerStateData.push(playerUpdate);
       }
+    }
+    if (args.gameData.curStageStep) {
+      room.gameData.curStageStep = args.gameData.curStageStep;
     }
     return room.save();
   },

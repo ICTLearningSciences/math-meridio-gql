@@ -9,6 +9,7 @@ import Ajv from "ajv";
 const ajv = new Ajv();
 import * as dotenv from "dotenv";
 import mongoose from "mongoose";
+import { StageStep } from "schemas/models/Room";
 dotenv.config();
 
 const queryPayloadSchema = {
@@ -56,4 +57,15 @@ export function idOrNew(id: string): string {
 
 export function isId(id: string): boolean {
   return Boolean(id.match(/^[0-9a-fA-F]{24}$/));
+}
+
+export function sameStageSteps(
+  stageList: StageStep[],
+  stageList2: StageStep[]
+): boolean {
+  return stageList?.every(
+    (stage, index) =>
+      stage.stageId === stageList2[index].stageId &&
+      stage.stepId === stageList2[index].stepId
+  );
 }

@@ -12,6 +12,8 @@ import {
   GraphQLObjectType,
   GraphQLList,
   GraphQLID,
+  GraphQLInt,
+  GraphQLInputObjectType,
 } from "graphql";
 import {
   PaginatedResolveResult,
@@ -53,10 +55,19 @@ export interface PlayerStateData extends Document {
   gameStateData: GameStateData[];
 }
 
+export interface StageStep extends Document {
+  stageId: string;
+  stepId: string;
+}
+
 export interface GameData extends Document {
   gameId: string;
   players: string[];
   chat: ChatMessage[];
+  currentRound: number;
+  stageList: StageStep[];
+  curStageStep: StageStep;
+  roomOwnerId: string;
   globalStateData: GlobalStateData;
   playerStateData: PlayerStateData[];
 }
@@ -115,11 +126,20 @@ export const PlayerStateSchema = new Schema<PlayerStateData>(
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
+export const StageStepSchema = new Schema<StageStep>({
+  stageId: { type: String },
+  stepId: { type: String },
+});
+
 export const GameSchema = new Schema<GameData>(
   {
     gameId: { type: String },
     players: [{ type: String }],
     chat: [{ type: ChatMessageSchema }],
+    currentRound: { type: Number },
+    stageList: [{ type: StageStepSchema }],
+    curStageStep: { type: StageStepSchema },
+    roomOwnerId: { type: String },
     globalStateData: { type: GlobalStateSchema },
     playerStateData: [{ type: PlayerStateSchema }],
   },
@@ -183,6 +203,22 @@ export const PlayerStateDataType = new GraphQLObjectType({
   }),
 });
 
+export const StageStepType = new GraphQLObjectType({
+  name: "StageStepType",
+  fields: () => ({
+    stageId: { type: GraphQLString },
+    stepId: { type: GraphQLString },
+  }),
+});
+
+export const StageStepInputType = new GraphQLInputObjectType({
+  name: "StageStepInputType",
+  fields: () => ({
+    stageId: { type: GraphQLString },
+    stepId: { type: GraphQLString },
+  }),
+});
+
 export const GameDataType = new GraphQLObjectType({
   name: "GameDataType",
   fields: () => ({
@@ -194,6 +230,10 @@ export const GameDataType = new GraphQLObjectType({
       },
     },
     chat: { type: new GraphQLList(ChatMessageType) },
+    currentRound: { type: GraphQLInt },
+    stageList: { type: new GraphQLList(StageStepType) },
+    curStageStep: { type: StageStepType },
+    roomOwnerId: { type: GraphQLString },
     globalStateData: { type: GlobalStateDataType },
     playerStateData: { type: new GraphQLList(PlayerStateDataType) },
   }),

@@ -54,6 +54,16 @@ describe("send message", () => {
                 disableUserInput
                 mcqChoices
               }
+              currentRound
+              stageList {
+                stageId
+                stepId
+              }
+              curStageStep {
+                stageId
+                stepId
+              }
+              roomOwnerId
               globalStateData {
                 curStageId
                 curStepId
@@ -75,7 +85,12 @@ describe("send message", () => {
         }`,
         variables: {
           roomId: "5f748650f4b3f1b9f1f1f1f1",
+
           gameData: {
+            curStageStep: {
+              stageId: "Stage 2",
+              stepId: "Step 2",
+            },
             globalStateData: {
               curStageId: "Stage 2",
               curStepId: "Step 2",
@@ -98,6 +113,18 @@ describe("send message", () => {
           },
         ],
         chat: [],
+        currentRound: 0,
+        stageList: [
+          {
+            stageId: "Stage 1",
+            stepId: "Step 1",
+          },
+        ],
+        curStageStep: {
+          stageId: "Stage 2",
+          stepId: "Step 2",
+        },
+        roomOwnerId: "Player 1",
         globalStateData: {
           curStageId: "Stage 2",
           curStepId: "Step 2",

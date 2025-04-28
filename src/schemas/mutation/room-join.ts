@@ -5,21 +5,34 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLID, GraphQLString, GraphQLObjectType } from "graphql";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import {
+  GraphQLID,
+  GraphQLString,
+  GraphQLObjectType,
+  GraphQLList,
+} from "graphql";
+import RoomModel, {
+  Room,
+  RoomType,
+  StageStep,
+  StageStepInputType,
+} from "../models/Room";
 import PlayerModel from "../models/Player";
+import { sameStageSteps } from "../../helpers";
 
 export const joinRoom = {
   type: RoomType,
   args: {
     playerId: { type: GraphQLString },
     roomId: { type: GraphQLID },
+    stageList: { type: new GraphQLList(StageStepInputType) },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
       playerId: string;
       roomId: string;
+      stageList: StageStep[];
     }
   ): Promise<Room> => {
     const room = await RoomModel.findOne({
@@ -29,8 +42,19 @@ export const joinRoom = {
     if (!room) throw new Error("Invalid room");
     const player = await PlayerModel.findOne({ clientId: args.playerId });
     if (!player) throw new Error("Invalid player");
-    if (room.gameData.players.includes(args.playerId))
+
+    if (
+      room.gameData.stageList &&
+      !sameStageSteps(args.stageList, room.gameData.stageList)
+    ) {
+      throw new Error(
+        "Your game version does not match the room version. Please join a different room or create your own."
+      );
+    }
+
+    if (room.gameData.players.includes(args.playerId)) {
       throw new Error("Already in room");
+    }
     return await RoomModel.findOneAndUpdate(
       {
         _id: args.roomId,

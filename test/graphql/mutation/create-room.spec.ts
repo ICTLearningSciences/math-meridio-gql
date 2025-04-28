@@ -11,6 +11,58 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 
+export const createAndJoinRoomMutation = `mutation CreateAndJoinRoom($playerId: String!, $gameId: String!, $gameName: String!, $stageList: [StageStepInputType!]!, $curStageStep: StageStepInputType!) {
+          createAndJoinRoom(playerId: $playerId, gameId: $gameId, gameName: $gameName, stageList: $stageList, curStageStep: $curStageStep) {
+            name
+            gameData {
+              gameId
+              players {
+                clientId
+                name
+                description
+                avatar {
+                  id
+                }
+              }
+              chat {
+                id
+                message
+                sender
+                senderId
+                senderName
+                displayType
+                disableUserInput
+                mcqChoices
+              }
+              currentRound
+              stageList {
+                stageId
+                stepId
+              }
+              curStageStep {
+                stageId
+                stepId
+              }
+              roomOwnerId
+              globalStateData {
+                curStageId
+                curStepId
+                gameStateData {
+                  key
+                  value
+                }
+              }
+              playerStateData {
+                player
+                animation
+                gameStateData {
+                  key
+                  value
+                }
+              }
+            }
+          }
+        }`;
 describe("create and join new room", () => {
   let app: Express;
 
@@ -29,53 +81,25 @@ describe("create and join new room", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation CreateAndJoinRoom($playerId: String!, $gameId: String!, $gameName: String!) {
-          createAndJoinRoom(playerId: $playerId, gameId: $gameId, gameName: $gameName) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: createAndJoinRoomMutation,
         variables: {
           playerId: "Player 1",
           gameId: "basketball",
           gameName: "Basketball",
+          stageList: [
+            {
+              stageId: "stage1",
+              stepId: "step1",
+            },
+            {
+              stageId: "stage2",
+              stepId: "step2",
+            },
+          ],
+          curStageStep: {
+            stageId: "stage1",
+            stepId: "step1",
+          },
         },
       });
     expect(response.status).to.equal(200);
@@ -93,10 +117,26 @@ describe("create and join new room", () => {
         ],
         chat: [],
         globalStateData: {
-          curStageId: "",
-          curStepId: "",
+          curStageId: "stage1",
+          curStepId: "step1",
           gameStateData: [],
         },
+        currentRound: 0,
+        stageList: [
+          {
+            stageId: "stage1",
+            stepId: "step1",
+          },
+          {
+            stageId: "stage2",
+            stepId: "step2",
+          },
+        ],
+        curStageStep: {
+          stageId: "stage1",
+          stepId: "step1",
+        },
+        roomOwnerId: "Player 1",
         playerStateData: [
           {
             player: "Player 1",
@@ -112,54 +152,16 @@ describe("create and join new room", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation CreateAndJoinRoom($playerId: String!, $gameId: String!, $gameName: String!) {
-          createAndJoinRoom(playerId: $playerId, gameId: $gameId, gameName: $gameName) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-            deletedRoom
-          }
-        }`,
+        query: createAndJoinRoomMutation,
         variables: {
           playerId: "Player none",
           gameId: "basketball",
           gameName: "Basketball",
+          stageList: [],
+          curStageStep: {
+            stageId: "",
+            stepId: "",
+          },
         },
       });
     expect(response.status).to.equal(200);

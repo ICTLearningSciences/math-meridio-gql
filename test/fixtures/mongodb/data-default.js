@@ -28,6 +28,20 @@ module.exports = {
         gameId: "basketball",
         players: ["Player 1"],
         chat: [],
+
+        currentRound: 0,
+        stageList: [
+          {
+            stageId: "Stage 1",
+            stepId: "Step 1",
+          },
+        ],
+        curStageStep: {
+          stageId: "Stage 1",
+          stepId: "Step 1",
+        },
+        roomOwnerId: "Player 1",
+
         globalStateData: {
           curStageId: "Stage 1",
           curStepId: "Step 1",
@@ -61,6 +75,18 @@ module.exports = {
         gameId: "basketball",
         players: ["Player 1"],
         chat: [],
+        currentRound: 0,
+        stageList: [
+          {
+            stageId: "Stage 1",
+            stepId: "Step 1",
+          },
+        ],
+        curStageStep: {
+          stageId: "Stage 1",
+          stepId: "Step 1",
+        },
+        roomOwnerId: "Player 1",
         globalStateData: {
           curStageId: "Stage 1",
           curStepId: "Step 1",

@@ -44,6 +44,16 @@ describe("fetch room", () => {
                   id
                 }
               }
+              currentRound
+              stageList {
+                stageId
+                stepId
+              }
+              curStageStep {
+                stageId
+                stepId
+              }
+              roomOwnerId
               chat {
                 id
                 message
@@ -92,6 +102,18 @@ describe("fetch room", () => {
             avatar: [{ id: "man_apple_head" }],
           },
         ],
+        currentRound: 0,
+        stageList: [
+          {
+            stageId: "Stage 1",
+            stepId: "Step 1",
+          },
+        ],
+        curStageStep: {
+          stageId: "Stage 1",
+          stepId: "Step 1",
+        },
+        roomOwnerId: "Player 1",
         chat: [],
         globalStateData: {
           curStageId: "Stage 1",

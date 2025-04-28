@@ -11,45 +11,9 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 
-describe("join room", () => {
-  let app: Express;
-
-  beforeEach(async () => {
-    await mongoUnit.load(require("test/fixtures/mongodb/data-default.js"));
-    app = await createApp();
-    await appStart();
-  });
-
-  afterEach(async () => {
-    await appStop();
-    await mongoUnit.drop();
-  });
-
-  it(`can join an existing room`, async () => {
-    await request(app)
-      .post("/graphql")
-      .send({
-        query: `
-        mutation AddOrUpdatePlayer($player: PlayerInput!) {
-          addOrUpdatePlayer(player: $player) {
-            clientId
-          }
-        }`,
-        variables: {
-          player: {
-            clientId: "Player 2",
-            name: "Jenny Appleseed",
-            description: "I want an avatar with an apple for a head",
-            avatar: [{ id: "woman_apple_head" }],
-          },
-        },
-      });
-    const response = await request(app)
-      .post("/graphql")
-      .send({
-        query: `
-        mutation JoinRoom($playerId: String!, $roomId: ID!) {
-          joinRoom(playerId: $playerId, roomId: $roomId) {
+export const joinRoomMutation = `
+mutation JoinRoom($playerId: String!, $roomId: ID!, $stageList: [StageStepInputType!]!) {
+          joinRoom(playerId: $playerId, roomId: $roomId, stageList: $stageList) {
             _id
             name
             gameData {
@@ -90,10 +54,55 @@ describe("join room", () => {
               }
             }
           }
+        }
+`;
+
+describe("join room", () => {
+  let app: Express;
+
+  beforeEach(async () => {
+    await mongoUnit.load(require("test/fixtures/mongodb/data-default.js"));
+    app = await createApp();
+    await appStart();
+  });
+
+  afterEach(async () => {
+    await appStop();
+    await mongoUnit.drop();
+  });
+
+  it(`can join an existing room`, async () => {
+    await request(app)
+      .post("/graphql")
+      .send({
+        query: `
+        mutation AddOrUpdatePlayer($player: PlayerInput!) {
+          addOrUpdatePlayer(player: $player) {
+            clientId
+          }
         }`,
+        variables: {
+          player: {
+            clientId: "Player 2",
+            name: "Jenny Appleseed",
+            description: "I want an avatar with an apple for a head",
+            avatar: [{ id: "woman_apple_head" }],
+          },
+        },
+      });
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: joinRoomMutation,
         variables: {
           playerId: "Player 2",
           roomId: "5f748650f4b3f1b9f1f1f1f1",
+          stageList: [
+            {
+              stageId: "Stage 1",
+              stepId: "Step 1",
+            },
+          ],
         },
       });
     expect(response.status).to.equal(200);
@@ -152,52 +161,16 @@ describe("join room", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation JoinRoom($playerId: String!, $roomId: ID!) {
-          joinRoom(playerId: $playerId, roomId: $roomId) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: joinRoomMutation,
         variables: {
           playerId: "Player 1",
           roomId: "5f748650f4b3f1b9f1f1f1f1",
+          stageList: [
+            {
+              stageId: "Stage 1",
+              stepId: "Step 1",
+            },
+          ],
         },
       });
     expect(response.status).to.equal(200);
@@ -211,52 +184,16 @@ describe("join room", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation JoinRoom($playerId: String!, $roomId: ID!) {
-          joinRoom(playerId: $playerId, roomId: $roomId) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: joinRoomMutation,
         variables: {
           playerId: "Player none",
           roomId: "5f748650f4b3f1b9f1f1f1f1",
+          stageList: [
+            {
+              stageId: "Stage 1",
+              stepId: "Step 1",
+            },
+          ],
         },
       });
     expect(response.status).to.equal(200);
@@ -270,58 +207,45 @@ describe("join room", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation JoinRoom($playerId: String!, $roomId: ID!) {
-          joinRoom(playerId: $playerId, roomId: $roomId) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: joinRoomMutation,
         variables: {
           playerId: "Player 1",
           roomId: "5f748650f4b3f1b9f1f1f1f2",
+          stageList: [
+            {
+              stageId: "Stage 1",
+              stepId: "Step 1",
+            },
+          ],
         },
       });
     expect(response.status).to.equal(200);
     expect(response.body).to.have.deep.nested.property(
       "errors[0].message",
       "Invalid room"
+    );
+  });
+
+  it("fails if stage list does not match", async () => {
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: joinRoomMutation,
+        variables: {
+          playerId: "Player 1",
+          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          stageList: [
+            {
+              stageId: "Stage 1",
+              stepId: "Step 2",
+            },
+          ],
+        },
+      });
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "Your game version does not match the room version. Please join a different room or create your own."
     );
   });
 });
