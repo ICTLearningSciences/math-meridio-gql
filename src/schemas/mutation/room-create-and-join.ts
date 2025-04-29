@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLString, GraphQLObjectType } from "graphql";
+import { GraphQLString, GraphQLObjectType, GraphQLList } from "graphql";
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel from "../models/Player";
 
@@ -15,6 +15,7 @@ export const createAndJoinRoom = {
     playerId: { type: GraphQLString },
     gameId: { type: GraphQLString },
     gameName: { type: GraphQLString },
+    persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
   },
   resolve: async (
     _root: GraphQLObjectType,
@@ -22,7 +23,7 @@ export const createAndJoinRoom = {
       playerId: string;
       gameId: string;
       gameName: string;
-      deletedRoom: boolean;
+      persistTruthGlobalStateData: string[];
     }
   ): Promise<Room> => {
     const rooms = await RoomModel.find({
@@ -40,6 +41,7 @@ export const createAndJoinRoom = {
         globalStateData: {
           curStageId: "",
           curStepId: "",
+          roomOwnerId: args.playerId,
           gameStateData: [],
         },
         playerStateData: [
@@ -49,6 +51,7 @@ export const createAndJoinRoom = {
             gameStateData: [],
           },
         ],
+        persistTruthGlobalStateData: args.persistTruthGlobalStateData,
       },
       deletedRoom: false,
     });

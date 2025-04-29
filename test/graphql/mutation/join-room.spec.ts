@@ -141,7 +141,12 @@ describe("join room", () => {
           {
             player: "Player 2",
             animation: "",
-            gameStateData: [],
+            gameStateData: [
+              {
+                key: "Global variable 1",
+                value: "Global variable 1 value",
+              },
+            ],
           },
         ],
       },

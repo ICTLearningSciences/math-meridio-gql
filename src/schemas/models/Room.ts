@@ -44,6 +44,7 @@ export interface GameStateData extends Document {
 export interface GlobalStateData extends Document {
   curStageId: string;
   curStepId: string;
+  roomOwnerId: string;
   gameStateData: GameStateData[];
 }
 
@@ -58,6 +59,7 @@ export interface GameData extends Document {
   players: string[];
   chat: ChatMessage[];
   globalStateData: GlobalStateData;
+  persistTruthGlobalStateData: string[];
   playerStateData: PlayerStateData[];
 }
 
@@ -101,6 +103,7 @@ export const GlobalStateSchema = new Schema<GlobalStateData>(
   {
     curStageId: { type: String },
     curStepId: { type: String },
+    roomOwnerId: { type: String },
     gameStateData: [{ type: GameStateSchema }],
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
@@ -121,6 +124,7 @@ export const GameSchema = new Schema<GameData>(
     players: [{ type: String }],
     chat: [{ type: ChatMessageSchema }],
     globalStateData: { type: GlobalStateSchema },
+    persistTruthGlobalStateData: [{ type: String }],
     playerStateData: [{ type: PlayerStateSchema }],
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
@@ -170,6 +174,7 @@ export const GlobalStateDataType = new GraphQLObjectType({
   fields: () => ({
     curStageId: { type: GraphQLString },
     curStepId: { type: GraphQLString },
+    roomOwnerId: { type: GraphQLString },
     gameStateData: { type: new GraphQLList(GameStateDataType) },
   }),
 });
@@ -194,6 +199,7 @@ export const GameDataType = new GraphQLObjectType({
       },
     },
     chat: { type: new GraphQLList(ChatMessageType) },
+    persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
     globalStateData: { type: GlobalStateDataType },
     playerStateData: { type: new GraphQLList(PlayerStateDataType) },
   }),
