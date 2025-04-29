@@ -162,6 +162,10 @@ describe("send message", () => {
                 key: "Player variable 1",
                 value: "Player variable 1 value",
               },
+              {
+                key: "Global variable 1",
+                value: "Global variable 1 value",
+              },
             ],
           },
         ],
@@ -241,6 +245,22 @@ describe("send message", () => {
               {
                 key: "Player variable 1",
                 value: "Player variable 1 value",
+              },
+              {
+                key: "Global variable 1",
+                value: "Global variable 1 value",
+              },
+              {
+                key: "glob var 2",
+                value: 10,
+              },
+              {
+                key: "glob var 3",
+                value: true,
+              },
+              {
+                key: "glob var 4",
+                value: { text: "hi", num: 0.5 },
               },
             ],
           },
@@ -344,6 +364,10 @@ describe("send message", () => {
               {
                 key: "Player variable 1",
                 value: "Player variable 1 value",
+              },
+              {
+                key: "Global variable 1",
+                value: "test",
               },
             ],
           },
@@ -458,6 +482,10 @@ describe("send message", () => {
               {
                 key: "var 2",
                 value: true,
+              },
+              {
+                key: "Global variable 1",
+                value: "Global variable 1 value",
               },
             ],
           },
@@ -869,6 +897,77 @@ describe("send message", () => {
         );
       expect(userTruthBoolean1?.value).to.equal("true");
       expect(userTruthBoolean2?.value).to.equal("true");
+    });
+
+    it("users data gets updated with global data that they don't already have", async () => {
+      await RoomModel.create({
+        _id: "5f748650f4b3f1b9f1f1f1f2",
+        name: "Boolean test room",
+        gameData: {
+          gameId: "boolean-game",
+          players: ["Player 1"],
+          chat: [],
+          persistTruthGlobalStateData: ["truth-boolean-1", "truth-boolean-2"],
+          globalStateData: {
+            curStageId: "Stage 1",
+            curStepId: "Step 1",
+            roomOwnerId: "Player 1",
+            gameStateData: [],
+          },
+          playerStateData: [
+            {
+              player: "Player 1",
+              animation: "",
+              gameStateData: [],
+            },
+          ],
+        },
+        deletedRoom: false,
+      });
+      const response = await request(app)
+        .post("/graphql")
+        .send({
+          query: `mutation UpdateRoom($roomId: ID!, $gameData: GameDataInput!) {
+        updateRoom(roomId: $roomId, gameData: $gameData) {
+          gameData {
+            globalStateData {
+              gameStateData {
+                key
+                value
+              }
+            }
+            playerStateData {
+              gameStateData {
+                key
+                value
+              }
+            }
+          }
+        }
+      }`,
+          variables: {
+            roomId: "5f748650f4b3f1b9f1f1f1f2",
+            gameData: {
+              globalStateData: {
+                gameStateData: [
+                  {
+                    key: "new-global-key",
+                    value: "new-global-value",
+                  },
+                ],
+              },
+            },
+          },
+        });
+      expect(response.status).to.equal(200);
+      const roomAfter = await RoomModel.findOne({
+        _id: "5f748650f4b3f1b9f1f1f1f2",
+      }).lean();
+      const userGlobalKey =
+        roomAfter?.gameData.playerStateData[0].gameStateData.find(
+          (d) => d.key === "new-global-key"
+        );
+      expect(userGlobalKey?.value).to.equal("new-global-value");
     });
   });
 });

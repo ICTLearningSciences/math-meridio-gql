@@ -163,6 +163,23 @@ export const updateRoom = {
         }
       }
     }
+
+    // Ensure that any global keys not present in any user's gameStateData
+    // are added to each user's gameStateData to maintain consistency.
+    for (const globalData of room.gameData.globalStateData.gameStateData) {
+      for (const player of room.gameData.playerStateData) {
+        const playerItem = player.gameStateData.find(
+          (d) => d.key === globalData.key
+        );
+        if (!playerItem) {
+          player.gameStateData.push({
+            key: globalData.key,
+            value: globalData.value,
+          } as GameStateData);
+        }
+      }
+    }
+
     return room.save();
   },
 };
