@@ -542,11 +542,11 @@ describe("send message", () => {
             gameStateData: [
               {
                 key: "truth-boolean-1",
-                value: false,
+                value: "false",
               },
               {
                 key: "truth-boolean-2",
-                value: false,
+                value: "false",
               },
             ],
           },
@@ -557,11 +557,11 @@ describe("send message", () => {
               gameStateData: [
                 {
                   key: "truth-boolean-1",
-                  value: false,
+                  value: "false",
                 },
                 {
                   key: "truth-boolean-2",
-                  value: false,
+                  value: "false",
                 },
               ],
             },
@@ -601,11 +601,11 @@ describe("send message", () => {
                 gameStateData: [
                   {
                     key: "truth-boolean-1",
-                    value: true,
+                    value: "true",
                   },
                   {
                     key: "truth-boolean-2",
-                    value: false,
+                    value: "false",
                   },
                 ],
               },
@@ -623,8 +623,8 @@ describe("send message", () => {
         roomAfter?.gameData.globalStateData.gameStateData.find(
           (d) => d.key === "truth-boolean-2"
         );
-      expect(globalTruthBoolean1?.value).to.equal(true);
-      expect(globalTruthBoolean2?.value).to.equal(false);
+      expect(globalTruthBoolean1?.value).to.equal("true");
+      expect(globalTruthBoolean2?.value).to.equal("false");
       const userTruthBoolean1 =
         roomAfter?.gameData.playerStateData[0].gameStateData.find(
           (d) => d.key === "truth-boolean-1"
@@ -633,8 +633,8 @@ describe("send message", () => {
         roomAfter?.gameData.playerStateData[0].gameStateData.find(
           (d) => d.key === "truth-boolean-2"
         );
-      expect(userTruthBoolean1?.value).to.equal(true);
-      expect(userTruthBoolean2?.value).to.equal(false);
+      expect(userTruthBoolean1?.value).to.equal("true");
+      expect(userTruthBoolean2?.value).to.equal("false");
     });
 
     it("a true global value cannot be set to false", async () => {
@@ -653,11 +653,11 @@ describe("send message", () => {
             gameStateData: [
               {
                 key: "truth-boolean-1",
-                value: true,
+                value: "true",
               },
               {
                 key: "truth-boolean-2",
-                value: true,
+                value: "true",
               },
             ],
           },
@@ -668,11 +668,11 @@ describe("send message", () => {
               gameStateData: [
                 {
                   key: "truth-boolean-1",
-                  value: true,
+                  value: "true",
                 },
                 {
                   key: "truth-boolean-2",
-                  value: true,
+                  value: "true",
                 },
               ],
             },
@@ -712,11 +712,11 @@ describe("send message", () => {
                 gameStateData: [
                   {
                     key: "truth-boolean-1",
-                    value: false,
+                    value: "false",
                   },
                   {
                     key: "truth-boolean-2",
-                    value: false,
+                    value: "false",
                   },
                 ],
               },
@@ -727,11 +727,11 @@ describe("send message", () => {
                   gameStateData: [
                     {
                       key: "truth-boolean-1",
-                      value: false,
+                      value: "false",
                     },
                     {
                       key: "truth-boolean-2",
-                      value: false,
+                      value: "false",
                     },
                   ],
                 },
@@ -751,8 +751,8 @@ describe("send message", () => {
         roomAfter?.gameData.globalStateData.gameStateData.find(
           (d) => d.key === "truth-boolean-2"
         );
-      expect(globalTruthBoolean1?.value).to.equal(true);
-      expect(globalTruthBoolean2?.value).to.equal(true);
+      expect(globalTruthBoolean1?.value).to.equal("true");
+      expect(globalTruthBoolean2?.value).to.equal("true");
       const userTruthBoolean1 =
         roomAfter?.gameData.playerStateData[0].gameStateData.find(
           (d) => d.key === "truth-boolean-1"
@@ -761,8 +761,8 @@ describe("send message", () => {
         roomAfter?.gameData.playerStateData[0].gameStateData.find(
           (d) => d.key === "truth-boolean-2"
         );
-      expect(userTruthBoolean1?.value).to.equal(true);
-      expect(userTruthBoolean2?.value).to.equal(true);
+      expect(userTruthBoolean1?.value).to.equal("true");
+      expect(userTruthBoolean2?.value).to.equal("true");
     });
 
     it("cannot clear out a users/global truth values", async () => {
@@ -781,11 +781,11 @@ describe("send message", () => {
             gameStateData: [
               {
                 key: "truth-boolean-1",
-                value: true,
+                value: "true",
               },
               {
                 key: "truth-boolean-2",
-                value: true,
+                value: "true",
               },
             ],
           },
@@ -796,11 +796,11 @@ describe("send message", () => {
               gameStateData: [
                 {
                   key: "truth-boolean-1",
-                  value: true,
+                  value: "true",
                 },
                 {
                   key: "truth-boolean-2",
-                  value: true,
+                  value: "true",
                 },
               ],
             },
@@ -857,8 +857,8 @@ describe("send message", () => {
         roomAfter?.gameData.globalStateData.gameStateData.find(
           (d) => d.key === "truth-boolean-2"
         );
-      expect(globalTruthBoolean1?.value).to.equal(true);
-      expect(globalTruthBoolean2?.value).to.equal(true);
+      expect(globalTruthBoolean1?.value).to.equal("true");
+      expect(globalTruthBoolean2?.value).to.equal("true");
       const userTruthBoolean1 =
         roomAfter?.gameData.playerStateData[0].gameStateData.find(
           (d) => d.key === "truth-boolean-1"
@@ -867,8 +867,8 @@ describe("send message", () => {
         roomAfter?.gameData.playerStateData[0].gameStateData.find(
           (d) => d.key === "truth-boolean-2"
         );
-      expect(userTruthBoolean1?.value).to.equal(true);
-      expect(userTruthBoolean2?.value).to.equal(true);
+      expect(userTruthBoolean1?.value).to.equal("true");
+      expect(userTruthBoolean2?.value).to.equal("true");
     });
   });
 });

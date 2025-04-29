@@ -97,10 +97,9 @@ export const updateRoom = {
       if (existingItem) {
         if (
           room.gameData.persistTruthGlobalStateData.includes(dataUpdate.key) &&
-          typeof existingItem.value === "boolean" &&
-          existingItem.value === true
+          existingItem.value === "true"
         ) {
-          // Keep the current value if it's true and a boolean
+          // Keep the current value if it's "true"
           continue;
         } else {
           // Otherwise, update the value
@@ -126,10 +125,9 @@ export const updateRoom = {
               room.gameData.persistTruthGlobalStateData.includes(
                 dataUpdate.key
               ) &&
-              typeof existingItem.value === "boolean" &&
-              existingItem.value === true
+              existingItem.value === "true"
             ) {
-              // Keep the current value if it's true and a boolean
+              // Keep the current value if it's "true"
               continue;
             } else {
               // Otherwise, update the value
@@ -147,7 +145,7 @@ export const updateRoom = {
     // Update all players with the new truth values
     for (const truthKey of room.gameData.persistTruthGlobalStateData) {
       const truthItem = room.gameData.globalStateData.gameStateData.find(
-        (d) => d.key === truthKey && d.value === true
+        (d) => d.key === truthKey && d.value === "true"
       );
       if (truthItem) {
         for (const player of room.gameData.playerStateData) {
