@@ -23,6 +23,7 @@ export const ChatMessageInputType = new GraphQLInputObjectType({
     sender: { type: GraphQLString },
     senderId: { type: GraphQLString },
     senderName: { type: GraphQLString },
+    isPromptResponse: { type: GraphQLBoolean },
     sessionId: { type: GraphQLString },
     displayType: { type: GraphQLString },
     disableUserInput: { type: GraphQLBoolean },

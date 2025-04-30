@@ -42,7 +42,7 @@ export const joinRoom = {
           "gameData.playerStateData": {
             player: args.playerId,
             animation: "",
-            gameStateData: [],
+            gameStateData: room.gameData.globalStateData.gameStateData,
           },
         },
       },
