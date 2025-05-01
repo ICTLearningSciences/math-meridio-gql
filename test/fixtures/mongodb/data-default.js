@@ -31,6 +31,7 @@ module.exports = {
         globalStateData: {
           curStageId: "Stage 1",
           curStepId: "Step 1",
+          roomOwnerId: "Player 1",
           gameStateData: [
             {
               key: "Global variable 1",
@@ -64,6 +65,7 @@ module.exports = {
         globalStateData: {
           curStageId: "Stage 1",
           curStepId: "Step 1",
+          roomOwnerId: "Player 1",
           gameStateData: [
             {
               key: "Global variable 1",
