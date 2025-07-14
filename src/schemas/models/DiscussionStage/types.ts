@@ -16,6 +16,7 @@ export interface FlowItem {
     | SystemMessageStageStep
     | RequestUserInputStageStep
     | PromptStageStep
+    | ConditionalActivityStep
   )[];
 }
 
@@ -32,6 +33,7 @@ export enum DiscussionStageStepType {
   SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
   REQUEST_USER_INPUT = "REQUEST_USER_INPUT",
   PROMPT = "PROMPT",
+  CONDITIONAL = "CONDITIONAL",
 }
 
 export interface StageBuilderStep {
@@ -78,4 +80,35 @@ export interface PromptStageStep extends StageBuilderStep {
   outputDataType: string;
   jsonResponseData?: string;
   customSystemRole: string;
+}
+// LogicOperation
+export enum NumericOperations {
+  GREATER_THAN = ">",
+  LESS_THAN = "<",
+  EQUALS = "==",
+  NOT_EQUALS = "!=",
+  GREATER_THAN_EQUALS = ">=",
+  LESS_THAN_EQUALS = "<=",
+}
+
+export enum Checking {
+  // array or string
+  LENGTH = "LENGTH",
+  // string, boolean, number
+  VALUE = "VALUE",
+  // array or string
+  CONTAINS = "CONTAINS",
+}
+
+export interface LogicStepConditional {
+  stateDataKey: string;
+  checking: Checking;
+  operation: NumericOperations;
+  expectedValue: string;
+  targetStepId: string;
+}
+
+export interface ConditionalActivityStep extends StageBuilderStep {
+  stepType: DiscussionStageStepType.CONDITIONAL;
+  conditionals: LogicStepConditional[];
 }

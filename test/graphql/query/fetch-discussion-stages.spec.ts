@@ -60,6 +60,20 @@ export const fullDiscussionStageQueryData = `
                               jsonResponseData
                               customSystemRole
                           }
+
+                          ... on ConditionalActivityStepType {
+                              stepId
+                              stepType
+                              lastStep
+                              jumpToStepId
+                              conditionals{
+                                  stateDataKey
+                                  checking
+                                  operation
+                                  expectedValue
+                                  targetStepId
+                              }
+                          }
                       }
                       }
 `;
@@ -104,9 +118,27 @@ describe("fetch discussion stages", () => {
     ).to.equal(1);
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps.length
-    ).to.equal(5);
+    ).to.equal(6);
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps[0].stepType
     ).to.equal(DiscussionStageStepType.SYSTEM_MESSAGE);
+
+    expect(
+      response.body.data.fetchDiscussionStages[0].flowsList[0].steps[4]
+    ).to.deep.equal({
+      stepId: "5",
+      stepType: DiscussionStageStepType.CONDITIONAL,
+      jumpToStepId: "6",
+      lastStep: false,
+      conditionals: [
+        {
+          stateDataKey: "nickname",
+          checking: "is",
+          operation: "equal",
+          expectedValue: "John",
+          targetStepId: "6",
+        },
+      ],
+    });
   });
 });

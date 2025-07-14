@@ -124,6 +124,55 @@ export const RequestUserInputStageStepTypeInput = new GraphQLInputObjectType({
   }),
 });
 
+export const LogicStepConditionalType = new GraphQLObjectType({
+  name: "LogicStepConditionalType",
+  fields: () => ({
+    stateDataKey: { type: GraphQLString },
+    checking: { type: GraphQLString },
+    operation: { type: GraphQLString },
+    expectedValue: { type: GraphQLString },
+    targetStepId: { type: GraphQLString },
+  }),
+});
+
+export const LogicStepConditionalTypeInput = new GraphQLInputObjectType({
+  name: "LogicStepConditionalTypeInput",
+  fields: () => ({
+    stateDataKey: { type: GraphQLString },
+    checking: { type: GraphQLString },
+    operation: { type: GraphQLString },
+    expectedValue: { type: GraphQLString },
+    targetStepId: { type: GraphQLString },
+  }),
+});
+
+export const ConditionalActivityStepType = new GraphQLObjectType({
+  name: "ConditionalActivityStepType",
+  fields: () => ({
+    stepId: { type: GraphQLString },
+    jumpToStepId: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
+    stepType: {
+      type: GraphQLString,
+      value: DiscussionStageStepType.CONDITIONAL,
+    },
+    conditionals: { type: GraphQLList(LogicStepConditionalType) },
+  }),
+});
+
+export const ConditionalActivityStepTypeInput = new GraphQLInputObjectType({
+  name: "ConditionalActivityStepTypeInput",
+  fields: () => ({
+    stepId: { type: GraphQLString },
+    jumpToStepId: { type: GraphQLString },
+    stepType: {
+      type: GraphQLString,
+      value: DiscussionStageStepType.CONDITIONAL,
+    },
+    conditionals: { type: GraphQLList(LogicStepConditionalTypeInput) },
+  }),
+});
+
 export const PromptStageStepType = new GraphQLObjectType({
   name: "PromptStageStepType",
   fields: () => ({
@@ -187,6 +236,20 @@ export const RequestUserInputStageStepSchema = new Schema({
   predefinedResponses: [PredefinedResponseSchema],
 });
 
+export const LogicStepConditionalSchema = new Schema({
+  stateDataKey: { type: String },
+  checking: { type: String },
+  operation: { type: String },
+  expectedValue: { type: String },
+  targetStepId: { type: String },
+});
+
+export const LogicOperationActivityStepSchema = new Schema({
+  ...StageBuilderStepSchema.obj,
+  stepType: { type: String, default: DiscussionStageStepType.CONDITIONAL },
+  conditionals: [LogicStepConditionalSchema],
+});
+
 export const PromptStageStepSchema = new Schema({
   ...StageBuilderStepSchema.obj,
   stepType: { type: String, default: DiscussionStageStepType.PROMPT },
@@ -203,4 +266,5 @@ export const StageBuilderStepUnionSchema = new Schema({
   ...SystemMessageStageStepSchema.obj,
   ...RequestUserInputStageStepSchema.obj,
   ...PromptStageStepSchema.obj,
+  ...LogicOperationActivityStepSchema.obj,
 });
