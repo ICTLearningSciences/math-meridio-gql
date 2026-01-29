@@ -16,3 +16,8 @@ export enum PromptOutputDataType {
   JSON = "JSON",
   TEXT = "TEXT",
 }
+
+export enum UserRole {
+  USER = "USER",
+  ADMIN = "ADMIN",
+}

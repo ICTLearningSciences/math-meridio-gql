@@ -17,6 +17,35 @@ dotenv.config();
 import mongoose from "mongoose";
 import privateSchema from "./schemas/privateSchema";
 
+const CORS_ORIGIN = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",")
+  : ["https://dev.meridiomath.org", "http://localhost:3000"];
+
+const corsOptions = {
+  credentials: true,
+  origin: function (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: string) => void
+  ) {
+    if (!origin) {
+      callback(null, "");
+    } else {
+      let allowOrigin = false;
+      for (const co of CORS_ORIGIN) {
+        if (origin === co || origin.endsWith(co)) {
+          allowOrigin = true;
+          break;
+        }
+      }
+      if (allowOrigin) {
+        callback(null, origin);
+      } else {
+        callback(new Error(`${origin} not allowed by CORS`));
+      }
+    }
+  },
+};
+
 // eslint-disable-next-line   @typescript-eslint/no-explicit-any
 const authorization = (req: any, res: any, next: any) => {
   if (process.env.ENV === "dev") {
@@ -76,7 +105,7 @@ export function createApp(): Express {
   const app = express();
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(express.json());
-  app.use(cors());
+  app.use(cors(corsOptions));
   app.use(
     "/graphqlPrivate",
     authorization,

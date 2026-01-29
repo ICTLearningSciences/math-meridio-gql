@@ -23,6 +23,8 @@ import addOrUpdatePlayer from "./mutation/add-or-update-player";
 import fetchDiscussionStages from "./query/fetch-discussion-stages";
 import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
 
+import loginGoogle from "./mutation/login-google";
+
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -46,6 +48,7 @@ const PublicMutation = new GraphQLObjectType({
     sendMessage,
     addOrUpdatePlayer,
     addOrUpdateDiscussionStage,
+    loginGoogle,
   },
 });
 

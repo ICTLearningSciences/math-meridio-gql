@@ -37,21 +37,33 @@ custom:
       MONGO_URI: ${ssm:/mathmeridio/dev/mongo_uri, ''}
       GQL_SECRET: ${ssm:/mathmeridio/dev/gql_secret, ''}
       CORS_ORIGIN: "https://dev.meridiomath.org,https://dev.meridiomath.org/,.dev.meridiomath.org,.dev.meridiomath.org/,https://api-dev.meridiomath.org,https://api-dev.meridiomath.org/,http://local.meridiomath.org,http://local.meridiomath.org/,http://localhost:3000,http://localhost:3000/"
+      DOMAIN: "meridiomath.org"
+      JWT_SECRET: ${ssm:/mathmeridio/dev/jwt_secret, ''}
+      REFRESH_TOKEN_NAME: "refreshTokenDev"
 
     dev:
       MONGO_URI: ${ssm:/mathmeridio/dev/mongo_uri, ''}
       GQL_SECRET: ${ssm:/mathmeridio/dev/gql_secret, ''}
       CORS_ORIGIN: "https://dev.meridiomath.org,https://dev.meridiomath.org/,.dev.meridiomath.org,.dev.meridiomath.org/,https://api-dev.meridiomath.org,https://api-dev.meridiomath.org/,http://local.meridiomath.org,http://local.meridiomath.org/,http://localhost:3000,http://localhost:3000/,http://localhost:3001,http://localhost:3001/"
+      DOMAIN: "meridiomath.org"
+      JWT_SECRET: ${ssm:/mathmeridio/dev/jwt_secret, ''}
+      REFRESH_TOKEN_NAME: "refreshTokenDev"
 
     qa:
       MONGO_URI: ${ssm:/mathmeridio/qa/mongo_uri, ''}
       GQL_SECRET: ${ssm:/mathmeridio/qa/gql_secret, ''}
       CORS_ORIGIN: "https://qa.meridiomath.org,https://qa.meridiomath.org/,.qa.meridiomath.org,.qa.meridiomath.org/,https://api-qa.meridiomath.org,https://api-qa.meridiomath.org/"
+      DOMAIN: "meridiomath.org"
+      JWT_SECRET: ${ssm:/mathmeridio/qa/jwt_secret, ''}
+      REFRESH_TOKEN_NAME: "refreshTokenQa"
 
     prod:
       MONGO_URI: ${ssm:/mathmeridio/prod/mongo_uri, ''}
       GQL_SECRET: ${ssm:/mathmeridio/prod/gql_secret, ''}
       CORS_ORIGIN: "https://meridiomath.org,https://meridiomath.org/,.meridiomath.org,.meridiomath.org/,https://api.meridiomath.org,https://api.meridiomath.org/"
+      DOMAIN: "meridiomath.org"
+      JWT_SECRET: ${ssm:/mathmeridio/prod/jwt_secret, ''}
+      REFRESH_TOKEN_NAME: "refreshTokenProd"
 
 provider:
   name: aws
@@ -81,6 +93,8 @@ provider:
     CORS_ORIGIN: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
     DOMAIN: "meridiomath.org"
     WEBACL_ARN: ${ssm:/shared-mathm/api_firewall_arn, ''}
+    JWT_SECRET: ${self:custom.stages.${self:provider.stage}.JWT_SECRET}
+    REFRESH_TOKEN_NAME: ${self:custom.stages.${self:provider.stage}.REFRESH_TOKEN_NAME}
 
 functions:
   graphql:
