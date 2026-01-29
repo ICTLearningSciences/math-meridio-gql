@@ -24,6 +24,7 @@ import fetchDiscussionStages from "./query/fetch-discussion-stages";
 import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
 
 import loginGoogle from "./mutation/login-google";
+import refreshAccessToken from "./mutation/refresh-access-token";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -49,6 +50,7 @@ const PublicMutation = new GraphQLObjectType({
     addOrUpdatePlayer,
     addOrUpdateDiscussionStage,
     loginGoogle,
+    refreshAccessToken,
   },
 });
 

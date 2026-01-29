@@ -67,7 +67,7 @@ export const AvatarSchema = new Schema<Avatar>(
 
 export const PlayerSchema = new Schema<Player, PlayerModel>(
   {
-    clientId: { type: String, unique: true },
+    clientId: { type: String },
     name: { type: String },
     description: { type: String },
     avatar: { type: [AvatarSchema] },
