@@ -14,13 +14,13 @@ import { GraphQLString, GraphQLObjectType } from "graphql";
 import { CookieOptions, Response } from "express";
 import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
-import { User, UserType } from "../models/User";
+import { Player, PlayerType } from "../models/Player";
 import DateType from "./date";
 import RefreshTokenSchema from "../models/RefreshToken";
 import requireEnv from "../../utils/require-env";
 
 export interface UserAccessToken {
-  user: User;
+  user: Player;
   accessToken: string;
   expirationDate: Date;
 }
@@ -95,7 +95,7 @@ function randomTokenString() {
 }
 
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-export function generateRefreshToken(user: User): any {
+export function generateRefreshToken(user: Player): any {
   // create a refresh token that expires in 90 days
   const validDays = process.env["ACCESS_TOKEN_VALIDITY_DAYS"]
     ? parseInt(process.env["ACCESS_TOKEN_VALIDITY_DAYS"])
@@ -107,7 +107,7 @@ export function generateRefreshToken(user: User): any {
   }).save();
 }
 
-export function generateJwtToken(user: User): UserAccessToken {
+export function generateJwtToken(user: Player): UserAccessToken {
   const expiresIn = 1440 * 60; // 24 hour expiry
   const expirationDate = new Date(Date.now() + expiresIn * 1000);
   const accessToken = jwt.sign(
@@ -126,7 +126,7 @@ export function generateJwtToken(user: User): UserAccessToken {
   };
 }
 
-export function generateAccessToken(user: User): UserAccessToken {
+export function generateAccessToken(user: Player): UserAccessToken {
   const expiresIn = accessTokenDuration();
   const expirationDate = new Date(Date.now() + expiresIn * 1000);
   const accessToken = jwt.sign(
@@ -157,7 +157,7 @@ export function decodeAccessToken(token: string): any {
 export const UserAccessTokenType = new GraphQLObjectType({
   name: "UserAccessToken",
   fields: {
-    user: { type: UserType },
+    user: { type: PlayerType },
     accessToken: { type: GraphQLString },
     expirationDate: { type: DateType },
   },

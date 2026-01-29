@@ -10,6 +10,12 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import {
+  nonExistentId,
+  player1Id,
+  room1Id,
+  room3Id,
+} from "../../fixtures/mongodb/data";
 
 describe("fetch rooms", () => {
   let app: Express;
@@ -37,7 +43,7 @@ describe("fetch rooms", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -81,13 +87,13 @@ describe("fetch rooms", () => {
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRooms).to.eql([
       {
-        _id: "5f748650f4b3f1b9f1f1f1f1",
+        _id: room1Id,
         name: "Basketball Room 1",
         gameData: {
           gameId: "basketball",
           players: [
             {
-              clientId: "Player 1",
+              _id: player1Id,
               name: "Jonny Appleseed",
               description: "I want an avatar with an apple for a head",
               avatar: [{ id: "man_apple_head" }],
@@ -106,7 +112,7 @@ describe("fetch rooms", () => {
           },
           playerStateData: [
             {
-              player: "Player 1",
+              player: player1Id,
               animation: "",
               gameStateData: [
                 {
@@ -118,6 +124,22 @@ describe("fetch rooms", () => {
           ],
         },
         deletedRoom: false,
+      },
+      {
+        _id: room3Id,
+        deletedRoom: false,
+        gameData: {
+          chat: [],
+          gameId: "basketball",
+          globalStateData: {
+            curStageId: "Stage 1",
+            curStepId: "Step 1",
+            gameStateData: [],
+          },
+          playerStateData: [],
+          players: [],
+        },
+        name: "Basketball Room 3",
       },
     ]);
   });
@@ -134,7 +156,7 @@ describe("fetch rooms", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -177,13 +199,13 @@ describe("fetch rooms", () => {
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRooms).to.eql([
       {
-        _id: "5f748650f4b3f1b9f1f1f1f1",
+        _id: room1Id,
         name: "Basketball Room 1",
         gameData: {
           gameId: "basketball",
           players: [
             {
-              clientId: "Player 1",
+              _id: player1Id,
               name: "Jonny Appleseed",
               description: "I want an avatar with an apple for a head",
               avatar: [{ id: "man_apple_head" }],
@@ -202,7 +224,7 @@ describe("fetch rooms", () => {
           },
           playerStateData: [
             {
-              player: "Player 1",
+              player: player1Id,
               animation: "",
               gameStateData: [
                 {
@@ -214,6 +236,22 @@ describe("fetch rooms", () => {
           ],
         },
         deletedRoom: false,
+      },
+      {
+        _id: room3Id,
+        deletedRoom: false,
+        gameData: {
+          chat: [],
+          gameId: "basketball",
+          globalStateData: {
+            curStageId: "Stage 1",
+            curStepId: "Step 1",
+            gameStateData: [],
+          },
+          playerStateData: [],
+          players: [],
+        },
+        name: "Basketball Room 3",
       },
     ]);
   });
@@ -230,7 +268,7 @@ describe("fetch rooms", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -268,7 +306,7 @@ describe("fetch rooms", () => {
           }
         }`,
         variables: {
-          game: "asdf",
+          game: nonExistentId,
           deletedRoom: false,
         },
       });

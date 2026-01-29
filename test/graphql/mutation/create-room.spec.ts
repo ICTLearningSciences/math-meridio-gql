@@ -10,6 +10,7 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import { nonExistentId, player1Id } from "../../fixtures/mongodb/data";
 
 describe("create and join new room", () => {
   let app: Express;
@@ -36,7 +37,7 @@ describe("create and join new room", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -74,19 +75,20 @@ describe("create and join new room", () => {
           }
         }`,
         variables: {
-          playerId: "Player 1",
-          gameId: "basketball",
-          gameName: "Basketball",
+          playerId: player1Id,
+          gameId: "basketball-2",
+          gameName: "Basketball-2",
         },
       });
+    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.createAndJoinRoom).to.eql({
-      name: "Basketball Solution Space 2",
+      name: "Basketball-2 Solution Space 1",
       gameData: {
-        gameId: "basketball",
+        gameId: "basketball-2",
         players: [
           {
-            clientId: "Player 1",
+            _id: player1Id,
             name: "Jonny Appleseed",
             description: "I want an avatar with an apple for a head",
             avatar: [{ id: "man_apple_head" }],
@@ -96,12 +98,12 @@ describe("create and join new room", () => {
         globalStateData: {
           curStageId: "",
           curStepId: "",
-          roomOwnerId: "Player 1",
+          roomOwnerId: player1Id,
           gameStateData: [],
         },
         playerStateData: [
           {
-            player: "Player 1",
+            player: player1Id,
             animation: "",
             gameStateData: [],
           },
@@ -121,7 +123,7 @@ describe("create and join new room", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -159,7 +161,7 @@ describe("create and join new room", () => {
           }
         }`,
         variables: {
-          playerId: "Player none",
+          playerId: nonExistentId,
           gameId: "basketball",
           gameName: "Basketball",
         },

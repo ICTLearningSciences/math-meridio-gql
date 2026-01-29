@@ -9,11 +9,14 @@ import mongoose from "mongoose";
 import { DiscussionStageStepType } from "../../../src/schemas/models/DiscussionStage/types";
 const { ObjectId } = mongoose.Types;
 
+const player1Id = "5f748650f4b3f1b9f1f1f1f1";
+const room1Id = "5f748650f4b3f2b2f1f1f1f2";
+const room3Id = "5f748650f4b3f2b2f1f1f1f4";
 module.exports = {
   players: [
     {
-      _id: new ObjectId("5f748650f4b3f1b9f1f1f1f1"),
-      clientId: "Player 1",
+      _id: new ObjectId(player1Id),
+      googleId: "googleId1",
       name: "Jonny Appleseed",
       description: "I want an avatar with an apple for a head",
       avatar: [{ id: "man_apple_head" }],
@@ -22,16 +25,16 @@ module.exports = {
 
   rooms: [
     {
-      _id: new ObjectId("5f748650f4b3f1b9f1f1f1f1"),
+      _id: new ObjectId(room1Id),
       name: "Basketball Room 1",
       gameData: {
         gameId: "basketball",
-        players: ["Player 1"],
+        players: [player1Id],
         chat: [],
         globalStateData: {
           curStageId: "Stage 1",
           curStepId: "Step 1",
-          roomOwnerId: "Player 1",
+          roomOwnerId: player1Id,
           gameStateData: [
             {
               key: "Global variable 1",
@@ -41,7 +44,7 @@ module.exports = {
         },
         playerStateData: [
           {
-            player: "Player 1",
+            player: player1Id,
             animation: "",
             gameStateData: [
               {
@@ -60,12 +63,12 @@ module.exports = {
       name: "Basketball Room 1 Marked as Deleted",
       gameData: {
         gameId: "basketball",
-        players: ["Player 1"],
+        players: [player1Id],
         chat: [],
         globalStateData: {
           curStageId: "Stage 1",
           curStepId: "Step 1",
-          roomOwnerId: "Player 1",
+          roomOwnerId: player1Id,
           gameStateData: [
             {
               key: "Global variable 1",
@@ -75,7 +78,7 @@ module.exports = {
         },
         playerStateData: [
           {
-            player: "Player 1",
+            player: player1Id,
             animation: "",
             gameStateData: [
               {
@@ -87,6 +90,24 @@ module.exports = {
         ],
       },
       deletedRoom: true,
+    },
+
+    {
+      _id: new ObjectId(room3Id),
+      name: "Basketball Room 3",
+      gameData: {
+        gameId: "basketball",
+        players: [],
+        chat: [],
+        globalStateData: {
+          curStageId: "Stage 1",
+          curStepId: "Step 1",
+          roomOwnerId: player1Id,
+          gameStateData: [],
+        },
+        playerStateData: [],
+      },
+      deletedRoom: false,
     },
   ],
 

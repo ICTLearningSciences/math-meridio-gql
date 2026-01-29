@@ -4,21 +4,9 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-
-import { GraphQLString, GraphQLNonNull, GraphQLObjectType } from "graphql";
-import PlayerModel, { Player, PlayerType } from "../models/Player";
-
-export const fetchPlayer = {
-  type: PlayerType,
-  args: {
-    id: { type: new GraphQLNonNull(GraphQLString) },
-  },
-  resolve: async (
-    _root: GraphQLObjectType,
-    args: { id: string }
-  ): Promise<Player> => {
-    return await PlayerModel.findOne({ _id: args.id });
-  },
-};
-
-export default fetchPlayer;
+export const nonExistentId = "5f748650f4b3f1b998765432";
+export const player1Id = "5f748650f4b3f1b9f1f1f1f1";
+export const player2Id = "5f748650f4b3f1b9f1f1f1f2";
+export const room1Id = "5f748650f4b3f2b2f1f1f1f2";
+export const room2Id = "5f748650f4b3f2b2f1f1f1f3";
+export const room3Id = "5f748650f4b3f2b2f1f1f1f4";

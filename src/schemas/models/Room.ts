@@ -195,7 +195,7 @@ export const GameDataType = new GraphQLObjectType({
     players: {
       type: new GraphQLList(PlayerType),
       resolve: function (game: GameData) {
-        return PlayerModel.find({ clientId: { $in: game.players } });
+        return PlayerModel.find({ _id: { $in: game.players } });
       },
     },
     chat: { type: new GraphQLList(ChatMessageType) },

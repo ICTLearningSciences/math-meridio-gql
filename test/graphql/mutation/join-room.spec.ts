@@ -10,6 +10,14 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import {
+  nonExistentId,
+  player1Id,
+  player2Id,
+  room1Id,
+  room2Id,
+  room3Id,
+} from "../../fixtures/mongodb/data";
 
 describe("join room", () => {
   let app: Express;
@@ -26,24 +34,6 @@ describe("join room", () => {
   });
 
   it(`can join an existing room`, async () => {
-    await request(app)
-      .post("/graphql")
-      .send({
-        query: `
-        mutation AddOrUpdatePlayer($player: PlayerInput!) {
-          addOrUpdatePlayer(player: $player) {
-            clientId
-          }
-        }`,
-        variables: {
-          player: {
-            clientId: "Player 2",
-            name: "Jenny Appleseed",
-            description: "I want an avatar with an apple for a head",
-            avatar: [{ id: "woman_apple_head" }],
-          },
-        },
-      });
     const response = await request(app)
       .post("/graphql")
       .send({
@@ -53,100 +43,25 @@ describe("join room", () => {
             _id
             name
             gameData {
-              gameId
               players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
+                _id
               }
             }
           }
         }`,
         variables: {
-          playerId: "Player 2",
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          playerId: player1Id,
+          roomId: room3Id,
         },
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.joinRoom).to.eql({
-      _id: "5f748650f4b3f1b9f1f1f1f1",
-      name: "Basketball Room 1",
+      _id: room3Id,
+      name: "Basketball Room 3",
       gameData: {
-        gameId: "basketball",
         players: [
           {
-            clientId: "Player 1",
-            name: "Jonny Appleseed",
-            description: "I want an avatar with an apple for a head",
-            avatar: [{ id: "man_apple_head" }],
-          },
-          {
-            clientId: "Player 2",
-            name: "Jenny Appleseed",
-            description: "I want an avatar with an apple for a head",
-            avatar: [{ id: "woman_apple_head" }],
-          },
-        ],
-        chat: [],
-        globalStateData: {
-          curStageId: "Stage 1",
-          curStepId: "Step 1",
-          gameStateData: [
-            {
-              key: "Global variable 1",
-              value: "Global variable 1 value",
-            },
-          ],
-        },
-        playerStateData: [
-          {
-            player: "Player 1",
-            animation: "",
-            gameStateData: [
-              {
-                key: "Player variable 1",
-                value: "Player variable 1 value",
-              },
-            ],
-          },
-          {
-            player: "Player 2",
-            animation: "",
-            gameStateData: [
-              {
-                key: "Global variable 1",
-                value: "Global variable 1 value",
-              },
-            ],
+            _id: player1Id,
           },
         ],
       },
@@ -201,8 +116,8 @@ describe("join room", () => {
           }
         }`,
         variables: {
-          playerId: "Player 1",
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          playerId: player1Id,
+          roomId: room1Id,
         },
       });
     expect(response.status).to.equal(200);
@@ -260,8 +175,8 @@ describe("join room", () => {
           }
         }`,
         variables: {
-          playerId: "Player none",
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          playerId: nonExistentId,
+          roomId: room1Id,
         },
       });
     expect(response.status).to.equal(200);
@@ -282,7 +197,7 @@ describe("join room", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -319,8 +234,8 @@ describe("join room", () => {
           }
         }`,
         variables: {
-          playerId: "Player 1",
-          roomId: "5f748650f4b3f1b9f1f1f1f2",
+          playerId: player1Id,
+          roomId: room2Id,
         },
       });
     expect(response.status).to.equal(200);

@@ -10,26 +10,16 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import {
+  nonExistentId,
+  player1Id,
+  player2Id,
+  room1Id,
+  room2Id,
+  room3Id,
+} from "../../fixtures/mongodb/data";
 
-describe("leave room", () => {
-  let app: Express;
-
-  beforeEach(async () => {
-    await mongoUnit.load(require("test/fixtures/mongodb/data-default.js"));
-    app = await createApp();
-    await appStart();
-  });
-
-  afterEach(async () => {
-    await appStop();
-    await mongoUnit.drop();
-  });
-
-  it(`can leave an existing room`, async () => {
-    const response = await request(app)
-      .post("/graphql")
-      .send({
-        query: `
+export const leaveRoomMutation = `
         mutation LeaveRoom($playerId: String!, $roomId: ID!) {
           leaveRoom(playerId: $playerId, roomId: $roomId) {
             _id
@@ -72,15 +62,36 @@ describe("leave room", () => {
               }
             }
           }
-        }`,
+        }
+`;
+
+describe("leave room", () => {
+  let app: Express;
+
+  beforeEach(async () => {
+    await mongoUnit.load(require("test/fixtures/mongodb/data-default.js"));
+    app = await createApp();
+    await appStart();
+  });
+
+  afterEach(async () => {
+    await appStop();
+    await mongoUnit.drop();
+  });
+
+  it(`can leave an existing room`, async () => {
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: leaveRoomMutation,
         variables: {
-          playerId: "Player 1",
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          playerId: player1Id,
+          roomId: room1Id,
         },
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.leaveRoom).to.eql({
-      _id: "5f748650f4b3f1b9f1f1f1f1",
+      _id: room1Id,
       name: "Basketball Room 1",
       gameData: {
         gameId: "basketball",
@@ -102,73 +113,13 @@ describe("leave room", () => {
   });
 
   it(`fails if not in room`, async () => {
-    await request(app)
-      .post("/graphql")
-      .send({
-        query: `
-        mutation AddOrUpdatePlayer($player: PlayerInput!) {
-          addOrUpdatePlayer(player: $player) {
-            clientId
-          }
-        }`,
-        variables: {
-          player: {
-            clientId: "Player 2",
-            name: "Jenny Appleseed",
-            description: "I want an avatar with an apple for a head",
-            avatar: [{ id: "woman_apple_head" }],
-          },
-        },
-      });
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation LeaveRoom($playerId: String!, $roomId: ID!) {
-          leaveRoom(playerId: $playerId, roomId: $roomId) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: leaveRoomMutation,
         variables: {
-          playerId: "Player 2",
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          playerId: player1Id,
+          roomId: room3Id,
         },
       });
     expect(response.status).to.equal(200);
@@ -182,52 +133,10 @@ describe("leave room", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation LeaveRoom($playerId: String!, $roomId: ID!) {
-          leaveRoom(playerId: $playerId, roomId: $roomId) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: leaveRoomMutation,
         variables: {
-          playerId: "Player none",
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          playerId: nonExistentId,
+          roomId: room1Id,
         },
       });
     expect(response.status).to.equal(200);
@@ -241,52 +150,10 @@ describe("leave room", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation LeaveRoom($playerId: String!, $roomId: ID!) {
-          leaveRoom(playerId: $playerId, roomId: $roomId) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: leaveRoomMutation,
         variables: {
-          playerId: "Player 1",
-          roomId: "5f748650f4b3f1b9f1f1f1f2",
+          playerId: player1Id,
+          roomId: nonExistentId,
         },
       });
     expect(response.status).to.equal(200);

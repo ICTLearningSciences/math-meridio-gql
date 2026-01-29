@@ -10,6 +10,8 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import { nonExistentId, player1Id } from "../../fixtures/mongodb/data";
+import { room1Id } from "../../fixtures/mongodb/data";
 
 describe("fetch room", () => {
   let app: Express;
@@ -37,7 +39,7 @@ describe("fetch room", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -75,18 +77,18 @@ describe("fetch room", () => {
           }
         }`,
         variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          roomId: room1Id,
         },
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRoom).to.eql({
-      _id: "5f748650f4b3f1b9f1f1f1f1",
+      _id: room1Id,
       name: "Basketball Room 1",
       gameData: {
         gameId: "basketball",
         players: [
           {
-            clientId: "Player 1",
+            _id: player1Id,
             name: "Jonny Appleseed",
             description: "I want an avatar with an apple for a head",
             avatar: [{ id: "man_apple_head" }],
@@ -105,7 +107,7 @@ describe("fetch room", () => {
         },
         playerStateData: [
           {
-            player: "Player 1",
+            player: player1Id,
             animation: "",
             gameStateData: [
               {
@@ -171,7 +173,7 @@ describe("fetch room", () => {
           }
         }`,
         variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f2",
+          roomId: nonExistentId,
           deletedRoom: false,
         },
       });

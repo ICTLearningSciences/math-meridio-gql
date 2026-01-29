@@ -10,26 +10,9 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import { nonExistentId, player1Id, room1Id } from "../../fixtures/mongodb/data";
 
-describe("rename room", () => {
-  let app: Express;
-
-  beforeEach(async () => {
-    await mongoUnit.load(require("test/fixtures/mongodb/data-default.js"));
-    app = await createApp();
-    await appStart();
-  });
-
-  afterEach(async () => {
-    await appStop();
-    await mongoUnit.drop();
-  });
-
-  it(`can rename an existing room`, async () => {
-    const response = await request(app)
-      .post("/graphql")
-      .send({
-        query: `
+export const renameRoomMutation = `
         mutation RenameRoom($name: String!, $roomId: ID!) {
           renameRoom(name: $name, roomId: $roomId) {
             _id
@@ -37,7 +20,7 @@ describe("rename room", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -73,22 +56,43 @@ describe("rename room", () => {
             }
             deletedRoom
           }
-        }`,
+        }
+`;
+
+describe("rename room", () => {
+  let app: Express;
+
+  beforeEach(async () => {
+    await mongoUnit.load(require("test/fixtures/mongodb/data-default.js"));
+    app = await createApp();
+    await appStart();
+  });
+
+  afterEach(async () => {
+    await appStop();
+    await mongoUnit.drop();
+  });
+
+  it(`can rename an existing room`, async () => {
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: renameRoomMutation,
         variables: {
           name: "New name",
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          roomId: room1Id,
         },
       });
     expect(response.status).to.equal(200);
 
     expect(response.body.data.renameRoom).to.eql({
-      _id: "5f748650f4b3f1b9f1f1f1f1",
+      _id: room1Id,
       name: "New name",
       gameData: {
         gameId: "basketball",
         players: [
           {
-            clientId: "Player 1",
+            _id: player1Id,
             name: "Jonny Appleseed",
             description: "I want an avatar with an apple for a head",
             avatar: [{ id: "man_apple_head" }],
@@ -107,7 +111,7 @@ describe("rename room", () => {
         },
         playerStateData: [
           {
-            player: "Player 1",
+            player: player1Id,
             animation: "",
             gameStateData: [
               {
@@ -126,52 +130,10 @@ describe("rename room", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation RenameRoom($name: String!, $roomId: ID!) {
-          renameRoom(name: $name, roomId: $roomId) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: renameRoomMutation,
         variables: {
           name: "New name",
-          roomId: "5f748650f4b3f1b9f1f1f1f2",
+          roomId: nonExistentId,
         },
       });
     expect(response.status).to.equal(200);

@@ -27,7 +27,7 @@ export const joinRoom = {
       deletedRoom: false,
     });
     if (!room) throw new Error("Invalid room");
-    const player = await PlayerModel.findOne({ clientId: args.playerId });
+    const player = await PlayerModel.findOne({ _id: args.playerId });
     if (!player) throw new Error("Invalid player");
     if (room.gameData.players.includes(args.playerId))
       throw new Error("Already in room");

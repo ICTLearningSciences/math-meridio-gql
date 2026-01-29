@@ -11,10 +11,10 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 import mongoose, { Document, Model, Schema } from "mongoose";
-import { User } from "./User";
+import { Player } from "./Player";
 
 export interface RefreshToken extends Document {
-  user: User["_id"];
+  user: Player["_id"];
   token: string;
   expires: Date;
   created: Date;
@@ -27,7 +27,7 @@ export interface RefreshToken extends Document {
 }
 
 export const RefreshTokenSchema = new Schema<RefreshToken, RefreshTokenModel>({
-  user: { type: Schema.Types.ObjectId, ref: "User" },
+  user: { type: Schema.Types.ObjectId, ref: "Player" },
   token: { type: String },
   expires: { type: Date },
   created: { type: Date, default: Date.now },

@@ -10,6 +10,7 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import { player1Id } from "../../fixtures/mongodb/data";
 
 describe("fetch players", () => {
   let app: Express;
@@ -34,7 +35,6 @@ describe("fetch players", () => {
             edges {
               node {
                 _id
-                clientId
                 name
                 description
                 avatar {
@@ -49,8 +49,7 @@ describe("fetch players", () => {
     expect(response.body.data.fetchPlayers.edges).to.deep.include.members([
       {
         node: {
-          _id: "5f748650f4b3f1b9f1f1f1f1",
-          clientId: "Player 1",
+          _id: player1Id,
           name: "Jonny Appleseed",
           description: "I want an avatar with an apple for a head",
           avatar: [{ id: "man_apple_head" }],

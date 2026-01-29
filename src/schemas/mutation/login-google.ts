@@ -12,7 +12,7 @@ The full terms of this copyright and license should always be found in the root 
 */
 import axios from "axios";
 import { GraphQLString, GraphQLObjectType, GraphQLNonNull } from "graphql";
-import UserSchema, { LoginService } from "../models/User";
+import PlayerModel, { LoginService } from "../models/Player";
 import {
   UserAccessTokenType,
   UserAccessToken,
@@ -71,7 +71,7 @@ export const loginGoogle = {
   ): Promise<UserAccessToken> => {
     try {
       const googleResponse = await authGoogle(args.accessToken);
-      const user = await UserSchema.findOneAndUpdate(
+      const user = await PlayerModel.findOneAndUpdate(
         {
           googleId: googleResponse.id,
         },

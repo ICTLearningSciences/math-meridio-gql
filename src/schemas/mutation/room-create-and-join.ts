@@ -30,7 +30,7 @@ export const createAndJoinRoom = {
       "gameData.gameId": args.gameId,
       deletedRoom: false,
     });
-    const player = await PlayerModel.findOne({ clientId: args.playerId });
+    const player = await PlayerModel.findOne({ _id: args.playerId });
     if (!player) throw new Error("Invalid player");
     return await RoomModel.create({
       name: `${args.gameName} Solution Space ${rooms.length + 1}`,

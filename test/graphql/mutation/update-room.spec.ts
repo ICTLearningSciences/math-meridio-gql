@@ -11,6 +11,12 @@ import e, { Express, response } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import RoomModel from "../../../src/schemas/models/Room";
+import {
+  nonExistentId,
+  player1Id,
+  room1Id,
+  room2Id,
+} from "../../fixtures/mongodb/data";
 export const fullUpdateRoomMutation = `
         mutation UpdateRoom($roomId: ID!, $gameData: GameDataInput!) {
           updateRoom(roomId: $roomId, gameData: $gameData) {
@@ -19,7 +25,7 @@ export const fullUpdateRoomMutation = `
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -56,7 +62,7 @@ export const fullUpdateRoomMutation = `
           }
         }`;
 
-describe("send message", () => {
+describe("update room", () => {
   let app: Express;
 
   beforeEach(async () => {
@@ -74,52 +80,9 @@ describe("send message", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation UpdateRoom($roomId: ID!, $gameData: GameDataInput!) {
-          updateRoom(roomId: $roomId, gameData: $gameData) {
-            _id
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: fullUpdateRoomMutation,
         variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          roomId: room1Id,
           gameData: {
             globalStateData: {
               curStageId: "Stage 2",
@@ -130,13 +93,13 @@ describe("send message", () => {
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.updateRoom).to.eql({
-      _id: "5f748650f4b3f1b9f1f1f1f1",
+      _id: room1Id,
       name: "Basketball Room 1",
       gameData: {
         gameId: "basketball",
         players: [
           {
-            clientId: "Player 1",
+            _id: player1Id,
             name: "Jonny Appleseed",
             description: "I want an avatar with an apple for a head",
             avatar: [{ id: "man_apple_head" }],
@@ -155,7 +118,7 @@ describe("send message", () => {
         },
         playerStateData: [
           {
-            player: "Player 1",
+            player: player1Id,
             animation: "",
             gameStateData: [
               {
@@ -179,7 +142,7 @@ describe("send message", () => {
       .send({
         query: fullUpdateRoomMutation,
         variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          roomId: room1Id,
           gameData: {
             globalStateData: {
               gameStateData: [
@@ -202,13 +165,13 @@ describe("send message", () => {
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.updateRoom).to.eql({
-      _id: "5f748650f4b3f1b9f1f1f1f1",
+      _id: room1Id,
       name: "Basketball Room 1",
       gameData: {
         gameId: "basketball",
         players: [
           {
-            clientId: "Player 1",
+            _id: player1Id,
             name: "Jonny Appleseed",
             description: "I want an avatar with an apple for a head",
             avatar: [{ id: "man_apple_head" }],
@@ -239,7 +202,7 @@ describe("send message", () => {
         },
         playerStateData: [
           {
-            player: "Player 1",
+            player: player1Id,
             animation: "",
             gameStateData: [
               {
@@ -273,52 +236,9 @@ describe("send message", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation UpdateRoom($roomId: ID!, $gameData: GameDataInput!) {
-          updateRoom(roomId: $roomId, gameData: $gameData) {
-            _id
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: fullUpdateRoomMutation,
         variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          roomId: room1Id,
           gameData: {
             globalStateData: {
               gameStateData: [
@@ -333,13 +253,13 @@ describe("send message", () => {
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.updateRoom).to.eql({
-      _id: "5f748650f4b3f1b9f1f1f1f1",
+      _id: room1Id,
       name: "Basketball Room 1",
       gameData: {
         gameId: "basketball",
         players: [
           {
-            clientId: "Player 1",
+            _id: player1Id,
             name: "Jonny Appleseed",
             description: "I want an avatar with an apple for a head",
             avatar: [{ id: "man_apple_head" }],
@@ -358,7 +278,7 @@ describe("send message", () => {
         },
         playerStateData: [
           {
-            player: "Player 1",
+            player: player1Id,
             animation: "",
             gameStateData: [
               {
@@ -380,56 +300,13 @@ describe("send message", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation UpdateRoom($roomId: ID!, $gameData: GameDataInput!) {
-          updateRoom(roomId: $roomId, gameData: $gameData) {
-            _id
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: fullUpdateRoomMutation,
         variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          roomId: room1Id,
           gameData: {
             playerStateData: [
               {
-                player: "Player 1",
+                player: player1Id,
                 gameStateData: [
                   {
                     key: "Player variable 1",
@@ -447,13 +324,13 @@ describe("send message", () => {
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.updateRoom).to.eql({
-      _id: "5f748650f4b3f1b9f1f1f1f1",
+      _id: room1Id,
       name: "Basketball Room 1",
       gameData: {
         gameId: "basketball",
         players: [
           {
-            clientId: "Player 1",
+            _id: player1Id,
             name: "Jonny Appleseed",
             description: "I want an avatar with an apple for a head",
             avatar: [{ id: "man_apple_head" }],
@@ -472,7 +349,7 @@ describe("send message", () => {
         },
         playerStateData: [
           {
-            player: "Player 1",
+            player: player1Id,
             animation: "",
             gameStateData: [
               {
@@ -498,51 +375,9 @@ describe("send message", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation UpdateRoom($roomId: ID!, $gameData: GameDataInput!) {
-          updateRoom(roomId: $roomId, gameData: $gameData) {
-            name
-            gameData {
-              gameId
-              players {
-                clientId
-                name
-                description
-                avatar {
-                  id
-                }
-              }
-              chat {
-                id
-                message
-                sender
-                senderId
-                senderName
-                displayType
-                disableUserInput
-                mcqChoices
-              }
-              globalStateData {
-                curStageId
-                curStepId
-                gameStateData {
-                  key
-                  value
-                }
-              }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
-            }
-          }
-        }`,
+        query: fullUpdateRoomMutation,
         variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f2",
+          roomId: nonExistentId,
           gameData: {},
         },
       });
@@ -556,17 +391,17 @@ describe("send message", () => {
   describe("truth global values", () => {
     it("when a global value is set to true, it updates all users to true", async () => {
       await RoomModel.create({
-        _id: "5f748650f4b3f1b9f1f1f1f2",
+        _id: room2Id,
         name: "Boolean test room",
         gameData: {
           gameId: "boolean-game",
-          players: ["Player 1"],
+          players: [player1Id],
           chat: [],
           persistTruthGlobalStateData: ["truth-boolean-1", "truth-boolean-2"],
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            roomOwnerId: "Player 1",
+            roomOwnerId: player1Id,
             gameStateData: [
               {
                 key: "truth-boolean-1",
@@ -580,7 +415,7 @@ describe("send message", () => {
           },
           playerStateData: [
             {
-              player: "Player 1",
+              player: player1Id,
               animation: "",
               gameStateData: [
                 {
@@ -619,7 +454,7 @@ describe("send message", () => {
           }
         }`,
           variables: {
-            roomId: "5f748650f4b3f1b9f1f1f1f2",
+            roomId: room2Id,
             gameData: {
               persistTruthGlobalStateData: [
                 "truth-boolean-1",
@@ -641,7 +476,7 @@ describe("send message", () => {
           },
         });
       const roomAfter = await RoomModel.findOne({
-        _id: "5f748650f4b3f1b9f1f1f1f2",
+        _id: room2Id,
       }).lean();
       const globalTruthBoolean1 =
         roomAfter?.gameData.globalStateData.gameStateData.find(
@@ -667,17 +502,17 @@ describe("send message", () => {
 
     it("a true global value cannot be set to false", async () => {
       await RoomModel.create({
-        _id: "5f748650f4b3f1b9f1f1f1f2",
+        _id: room2Id,
         name: "Boolean test room",
         gameData: {
           gameId: "boolean-game",
-          players: ["Player 1"],
+          players: [player1Id],
           chat: [],
           persistTruthGlobalStateData: ["truth-boolean-1", "truth-boolean-2"],
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            roomOwnerId: "Player 1",
+            roomOwnerId: player1Id,
             gameStateData: [
               {
                 key: "truth-boolean-1",
@@ -691,7 +526,7 @@ describe("send message", () => {
           },
           playerStateData: [
             {
-              player: "Player 1",
+              player: player1Id,
               animation: "",
               gameStateData: [
                 {
@@ -730,7 +565,7 @@ describe("send message", () => {
           }
         }`,
           variables: {
-            roomId: "5f748650f4b3f1b9f1f1f1f2",
+            roomId: room2Id,
             gameData: {
               persistTruthGlobalStateData: [
                 "truth-boolean-1",
@@ -750,7 +585,7 @@ describe("send message", () => {
               },
               playerStateData: [
                 {
-                  player: "Player 1",
+                  player: player1Id,
                   animation: "",
                   gameStateData: [
                     {
@@ -769,7 +604,7 @@ describe("send message", () => {
         });
       expect(response.status).to.equal(200);
       const roomAfter = await RoomModel.findOne({
-        _id: "5f748650f4b3f1b9f1f1f1f2",
+        _id: room2Id,
       }).lean();
       const globalTruthBoolean1 =
         roomAfter?.gameData.globalStateData.gameStateData.find(
@@ -795,17 +630,17 @@ describe("send message", () => {
 
     it("cannot clear out a users/global truth values", async () => {
       await RoomModel.create({
-        _id: "5f748650f4b3f1b9f1f1f1f2",
+        _id: room2Id,
         name: "Boolean test room",
         gameData: {
           gameId: "boolean-game",
-          players: ["Player 1"],
+          players: [player1Id],
           chat: [],
           persistTruthGlobalStateData: ["truth-boolean-1", "truth-boolean-2"],
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            roomOwnerId: "Player 1",
+            roomOwnerId: player1Id,
             gameStateData: [
               {
                 key: "truth-boolean-1",
@@ -819,7 +654,7 @@ describe("send message", () => {
           },
           playerStateData: [
             {
-              player: "Player 1",
+              player: player1Id,
               animation: "",
               gameStateData: [
                 {
@@ -858,14 +693,14 @@ describe("send message", () => {
           }
         }`,
           variables: {
-            roomId: "5f748650f4b3f1b9f1f1f1f2",
+            roomId: room2Id,
             gameData: {
               globalStateData: {
                 gameStateData: [],
               },
               playerStateData: [
                 {
-                  player: "Player 1",
+                  player: player1Id,
                   animation: "",
                   gameStateData: [],
                 },
@@ -875,7 +710,7 @@ describe("send message", () => {
         });
       expect(response.status).to.equal(200);
       const roomAfter = await RoomModel.findOne({
-        _id: "5f748650f4b3f1b9f1f1f1f2",
+        _id: room2Id,
       }).lean();
       const globalTruthBoolean1 =
         roomAfter?.gameData.globalStateData.gameStateData.find(
@@ -901,22 +736,22 @@ describe("send message", () => {
 
     it("users data gets updated with global data that they don't already have", async () => {
       await RoomModel.create({
-        _id: "5f748650f4b3f1b9f1f1f1f2",
+        _id: room2Id,
         name: "Boolean test room",
         gameData: {
           gameId: "boolean-game",
-          players: ["Player 1"],
+          players: [player1Id],
           chat: [],
           persistTruthGlobalStateData: ["truth-boolean-1", "truth-boolean-2"],
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            roomOwnerId: "Player 1",
+            roomOwnerId: player1Id,
             gameStateData: [],
           },
           playerStateData: [
             {
-              player: "Player 1",
+              player: player1Id,
               animation: "",
               gameStateData: [],
             },
@@ -946,7 +781,7 @@ describe("send message", () => {
         }
       }`,
           variables: {
-            roomId: "5f748650f4b3f1b9f1f1f1f2",
+            roomId: room2Id,
             gameData: {
               globalStateData: {
                 gameStateData: [
@@ -961,7 +796,7 @@ describe("send message", () => {
         });
       expect(response.status).to.equal(200);
       const roomAfter = await RoomModel.findOne({
-        _id: "5f748650f4b3f1b9f1f1f1f2",
+        _id: room2Id,
       }).lean();
       const userGlobalKey =
         roomAfter?.gameData.playerStateData[0].gameStateData.find(

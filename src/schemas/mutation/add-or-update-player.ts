@@ -39,18 +39,31 @@ const PlayerInputType = new GraphQLInputObjectType({
 export const addOrUpdatePlayer = {
   type: PlayerType,
   args: {
-    player: { type: new GraphQLNonNull(PlayerInputType) },
+    playerId: { type: GraphQLString },
+    playerFieldsToUpdate: { type: new GraphQLNonNull(PlayerInputType) },
   },
   resolve: async (
     _root: GraphQLObjectType,
-    args: { player: Player }
+    args: { playerId: string; playerFieldsToUpdate: Player }
   ): Promise<Player> => {
+    if (!args.playerId) {
+      throw new Error("Player ID is required");
+    }
+    if (args.playerFieldsToUpdate.googleId) {
+      throw new Error("Google ID cannot be updated");
+    }
+    if (args.playerFieldsToUpdate.email) {
+      throw new Error("Email cannot be updated");
+    }
+    delete args.playerFieldsToUpdate.googleId;
+    delete args.playerFieldsToUpdate.email;
+    delete args.playerFieldsToUpdate._id;
     return await PlayerModel.findOneAndUpdate(
       {
-        clientId: args.player.clientId,
+        _id: args.playerId,
       },
       {
-        $set: args.player,
+        $set: args.playerFieldsToUpdate,
       },
       {
         new: true,
