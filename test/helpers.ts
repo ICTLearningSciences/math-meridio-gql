@@ -11,6 +11,10 @@ import { UserRole } from "../src/schemas/types/types";
 import jwt from "jsonwebtoken";
 import PlayerModel, { EducationalRole } from "../src/schemas/models/Player";
 import ClassModel, { InviteCode } from "../src/schemas/models/classes/Class";
+import ClassMembershipModel, {
+  ClassMembershipStatus,
+} from "../src/schemas/models/classes/ClassMembership";
+import RoomModel from "../src/schemas/models/Room";
 
 export function fixturePath(p: string): string {
   return path.join(__dirname, "fixtures", p);
@@ -83,5 +87,57 @@ export function addInviteCodeToClassroom(
 ) {
   return ClassModel.findByIdAndUpdate(classroomId, {
     $push: { inviteCodes: inviteCode },
+  });
+}
+
+export function createClassMembership(
+  classId: string,
+  userId: string,
+  status: ClassMembershipStatus
+) {
+  return ClassMembershipModel.create({
+    classId,
+    userId,
+    status,
+  });
+}
+
+export function updateClassMembershipStatus(
+  classId: string,
+  userId: string,
+  status: ClassMembershipStatus
+) {
+  return ClassMembershipModel.findOneAndUpdate(
+    { classId, userId },
+    {
+      $set: { status },
+    }
+  );
+}
+
+export function createRoom(
+  roomId: string,
+  classId: string,
+  players: string[],
+  name: string = "Test Room"
+) {
+  return RoomModel.create({
+    _id: roomId,
+    classId,
+    name,
+    gameData: {
+      gameId: roomId,
+      players,
+      chat: [],
+      globalStateData: {
+        curStageId: "",
+        curStepId: "",
+        roomOwnerId: players[0] || "",
+        gameStateData: [],
+      },
+      persistTruthGlobalStateData: [],
+      playerStateData: [],
+    },
+    deletedRoom: false,
   });
 }
