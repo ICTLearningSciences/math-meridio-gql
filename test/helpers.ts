@@ -117,13 +117,13 @@ export function updateClassMembershipStatus(
 
 export function createRoom(
   roomId: string,
-  classId: string,
+  classId: string | undefined,
   players: string[],
   name: string = "Test Room"
 ) {
   return RoomModel.create({
     _id: roomId,
-    classId,
+    ...(classId ? { classId } : {}),
     name,
     gameData: {
       gameId: roomId,

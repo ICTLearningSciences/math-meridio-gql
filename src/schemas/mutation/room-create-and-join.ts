@@ -6,6 +6,7 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import { GraphQLString, GraphQLObjectType, GraphQLList } from "graphql";
+import ClassModel from "../models/classes/Class";
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel from "../models/Player";
 
@@ -16,6 +17,7 @@ export const createAndJoinRoom = {
     gameId: { type: GraphQLString },
     gameName: { type: GraphQLString },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
+    classId: { type: GraphQLString },
   },
   resolve: async (
     _root: GraphQLObjectType,
@@ -24,6 +26,7 @@ export const createAndJoinRoom = {
       gameId: string;
       gameName: string;
       persistTruthGlobalStateData: string[];
+      classId?: string;
     }
   ): Promise<Room> => {
     const rooms = await RoomModel.find({
@@ -32,8 +35,13 @@ export const createAndJoinRoom = {
     });
     const player = await PlayerModel.findOne({ _id: args.playerId });
     if (!player) throw new Error("Invalid player");
+    if (args.classId) {
+      const classRoom = await ClassModel.findOne({ _id: args.classId });
+      if (!classRoom) throw new Error("Invalid class");
+    }
     return await RoomModel.create({
       name: `${args.gameName} Solution Space ${rooms.length + 1}`,
+      ...(args.classId ? { classId: args.classId } : {}),
       gameData: {
         gameId: args.gameId,
         players: [args.playerId],
