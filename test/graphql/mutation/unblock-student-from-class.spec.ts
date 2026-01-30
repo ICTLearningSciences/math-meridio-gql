@@ -108,7 +108,6 @@ describe("unblock student from class", () => {
         },
       });
 
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.unblockStudentFromClass).to.have.property(
       "classId"
@@ -226,7 +225,7 @@ describe("unblock student from class", () => {
           classId: classId,
         },
       });
-    console.log(JSON.stringify(response.body, null, 2));
+
     expect(response.status).to.equal(200);
     expect(response.body).to.have.deep.nested.property(
       "errors[0].message",

@@ -116,7 +116,6 @@ describe("revoke a class invite code", () => {
         },
       });
 
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.revokeClassInviteCode).to.have.property("_id");
     expect(

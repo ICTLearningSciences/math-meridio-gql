@@ -86,7 +86,7 @@ describe("create and join new room", () => {
           gameName: "Basketball-2",
         },
       });
-    console.log(JSON.stringify(response.body, null, 2));
+
     expect(response.status).to.equal(200);
     expect(response.body.data.createAndJoinRoom).to.eql({
       name: "Basketball-2 Solution Space 1",
@@ -215,7 +215,6 @@ describe("create and join new room", () => {
         },
       });
 
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.createAndJoinRoom).to.have.property("_id");
     expect(response.body.data.createAndJoinRoom.classId).to.equal(classId);

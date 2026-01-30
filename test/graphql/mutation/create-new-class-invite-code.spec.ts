@@ -103,7 +103,6 @@ describe("create a new class invite code", () => {
         },
       });
 
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.createNewClassInviteCode).to.have.property("_id");
     expect(

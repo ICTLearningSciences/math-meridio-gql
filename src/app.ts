@@ -17,7 +17,7 @@ dotenv.config();
 import mongoose from "mongoose";
 import privateSchema from "./schemas/privateSchema";
 import { UserRole } from "./schemas/types/types";
-import { getDataFromRequest, JwtData } from "./helpers";
+import { getDataFromRequest } from "./helpers";
 import { EducationalRole } from "./schemas/models/Player";
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN

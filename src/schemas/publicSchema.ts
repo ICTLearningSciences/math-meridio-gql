@@ -24,6 +24,7 @@ import fetchDiscussionStages from "./query/fetch-discussion-stages";
 import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
 
 import fetchInstructorDataHydration from "./query/fetch-instructor-data-hydration";
+import fetchStudentDataHydration from "./query/fetch-student-data-hydration";
 
 import loginGoogle from "./mutation/login-google";
 import refreshAccessToken from "./mutation/refresh-access-token";
@@ -46,6 +47,7 @@ const PublicRootQuery = new GraphQLObjectType({
     fetchPlayers,
     fetchDiscussionStages,
     fetchInstructorDataHydration,
+    fetchStudentDataHydration,
   },
 });
 

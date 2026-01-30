@@ -6,13 +6,7 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import mongoose, { Schema, Document, Model } from "mongoose";
-import {
-  GraphQLString,
-  GraphQLList,
-  GraphQLObjectType,
-  GraphQLID,
-  GraphQLInt,
-} from "graphql";
+import { GraphQLString, GraphQLObjectType, GraphQLID } from "graphql";
 import {
   PaginatedResolveResult,
   PaginateOptions,

@@ -13,7 +13,6 @@ import request from "supertest";
 import {
   nonExistentId,
   player1Id,
-  player2Id,
   room1Id,
   room2Id,
   room3Id,
@@ -288,7 +287,6 @@ describe("join room", () => {
         },
       });
 
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.joinRoom).to.have.property("_id");
     expect(response.body.data.joinRoom.gameData.players).to.have.lengthOf(1);
