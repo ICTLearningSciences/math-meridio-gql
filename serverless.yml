@@ -40,6 +40,7 @@ custom:
       DOMAIN: "meridiomath.org"
       JWT_SECRET: ${ssm:/mathmeridio/dev/jwt_secret, ''}
       REFRESH_TOKEN_NAME: "refreshTokenDev"
+      INSTRUCTOR_EMAILS: ${ssm:/mathmeridio/dev/instructor_emails, ''}
 
     dev:
       MONGO_URI: ${ssm:/mathmeridio/dev/mongo_uri, ''}
@@ -48,6 +49,7 @@ custom:
       DOMAIN: "meridiomath.org"
       JWT_SECRET: ${ssm:/mathmeridio/dev/jwt_secret, ''}
       REFRESH_TOKEN_NAME: "refreshTokenDev"
+      INSTRUCTOR_EMAILS: ${ssm:/mathmeridio/dev/instructor_emails, ''}
 
     qa:
       MONGO_URI: ${ssm:/mathmeridio/qa/mongo_uri, ''}
@@ -56,7 +58,7 @@ custom:
       DOMAIN: "meridiomath.org"
       JWT_SECRET: ${ssm:/mathmeridio/qa/jwt_secret, ''}
       REFRESH_TOKEN_NAME: "refreshTokenQa"
-
+      INSTRUCTOR_EMAILS: ${ssm:/mathmeridio/qa/instructor_emails, ''}
     prod:
       MONGO_URI: ${ssm:/mathmeridio/prod/mongo_uri, ''}
       GQL_SECRET: ${ssm:/mathmeridio/prod/gql_secret, ''}
@@ -64,7 +66,7 @@ custom:
       DOMAIN: "meridiomath.org"
       JWT_SECRET: ${ssm:/mathmeridio/prod/jwt_secret, ''}
       REFRESH_TOKEN_NAME: "refreshTokenProd"
-
+      INSTRUCTOR_EMAILS: ${ssm:/mathmeridio/prod/instructor_emails, ''}
 provider:
   name: aws
   region: ${opt:region, 'us-east-1'}
@@ -95,7 +97,7 @@ provider:
     WEBACL_ARN: ${ssm:/shared-mathm/api_firewall_arn, ''}
     JWT_SECRET: ${self:custom.stages.${self:provider.stage}.JWT_SECRET}
     REFRESH_TOKEN_NAME: ${self:custom.stages.${self:provider.stage}.REFRESH_TOKEN_NAME}
-
+    INSTRUCTOR_EMAILS: ${self:custom.stages.${self:provider.stage}.INSTRUCTOR_EMAILS}
 functions:
   graphql:
     timeout: 20

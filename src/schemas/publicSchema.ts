@@ -26,6 +26,8 @@ import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
 import loginGoogle from "./mutation/login-google";
 import refreshAccessToken from "./mutation/refresh-access-token";
 
+import createClassroom from "./mutation/create-classroom";
+
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -51,6 +53,7 @@ const PublicMutation = new GraphQLObjectType({
     addOrUpdateDiscussionStage,
     loginGoogle,
     refreshAccessToken,
+    createClassroom,
   },
 });
 

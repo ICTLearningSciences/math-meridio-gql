@@ -6,6 +6,10 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import path from "path";
+import requireEnv from "../src/utils/require-env";
+import { UserRole } from "../src/schemas/types/types";
+import jwt from "jsonwebtoken";
+import { EducationalRole } from "../src/schemas/models/Player";
 
 export function fixturePath(p: string): string {
   return path.join(__dirname, "fixtures", p);
@@ -14,4 +18,34 @@ export function fixturePath(p: string): string {
 export interface GqlBody {
   query: string;
   variables?: Record<string, any>;
+}
+
+// duration of access token in seconds before it expires
+export function accessTokenDuration(): number {
+  return process.env.ACCESS_TOKEN_LENGTH
+    ? parseInt(process.env.ACCESS_TOKEN_LENGTH)
+    : 60 * 60 * 24 * 90;
+}
+
+export async function getToken(
+  userId: string,
+  userRole: UserRole,
+  educationalRole: EducationalRole,
+  expiresIn?: number
+): Promise<string> {
+  if (!expiresIn) {
+    expiresIn = accessTokenDuration();
+  }
+  const expirationDate = new Date(Date.now() + expiresIn * 1000);
+  const accessToken = jwt.sign(
+    {
+      id: userId,
+      expirationDate,
+      userRole: userRole,
+      educationalRole: educationalRole,
+    },
+    requireEnv("JWT_SECRET"),
+    { expiresIn: expirationDate.getTime() - new Date().getTime() }
+  );
+  return accessToken;
 }

@@ -21,6 +21,7 @@ import {
 } from "./Paginatation";
 import PlayerModel, { PlayerType } from "./Player";
 import GraphQLScalarType from "../types/anything-scalar-type";
+import { Class } from "./classes/Class";
 
 /** mongoose */
 
@@ -64,6 +65,7 @@ export interface GameData extends Document {
 }
 
 export interface Room extends Document {
+  classId?: Class["_id"];
   name: string;
   gameData: GameData;
   deletedRoom: boolean;
@@ -132,6 +134,7 @@ export const GameSchema = new Schema<GameData>(
 
 export const RoomSchema = new Schema<Room, RoomModel>(
   {
+    classId: { type: Schema.Types.ObjectId, ref: "Class" },
     name: { type: String },
     gameData: { type: GameSchema },
     deletedRoom: { type: Boolean },
@@ -209,6 +212,7 @@ export const RoomType = new GraphQLObjectType({
   name: "RoomType",
   fields: () => ({
     _id: { type: GraphQLID },
+    classId: { type: GraphQLID },
     name: { type: GraphQLString },
     gameData: { type: GameDataType },
     deletedRoom: { type: GraphQLBoolean },
