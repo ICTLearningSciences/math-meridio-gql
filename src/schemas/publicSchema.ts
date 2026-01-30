@@ -23,6 +23,8 @@ import addOrUpdatePlayer from "./mutation/add-or-update-player";
 import fetchDiscussionStages from "./query/fetch-discussion-stages";
 import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
 
+import fetchInstructorDataHydration from "./query/fetch-instructor-data-hydration";
+
 import loginGoogle from "./mutation/login-google";
 import refreshAccessToken from "./mutation/refresh-access-token";
 
@@ -33,6 +35,7 @@ import joinClassroom from "./mutation/join-classroom";
 import removeStudentFromClass from "./mutation/remove-student-from-class";
 import blockStudentFromClass from "./mutation/block-student-from-class";
 import unblockStudentFromClass from "./mutation/unblock-student-from-class";
+import adjustClassroomArchiveStatus from "./mutation/adjust-classroom-archive-status";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -42,6 +45,7 @@ const PublicRootQuery = new GraphQLObjectType({
     fetchPlayer,
     fetchPlayers,
     fetchDiscussionStages,
+    fetchInstructorDataHydration,
   },
 });
 
@@ -66,6 +70,7 @@ const PublicMutation = new GraphQLObjectType({
     removeStudentFromClass,
     blockStudentFromClass,
     unblockStudentFromClass,
+    adjustClassroomArchiveStatus,
   },
 });
 

@@ -131,9 +131,10 @@ describe("join a classroom", () => {
       });
 
     expect(response.status).to.equal(200);
-    const inviteCodeData = response.body.data.joinClassroom.classroom.inviteCodes.find(
-      (code: any) => code.code === testInviteCode
-    );
+    const inviteCodeData =
+      response.body.data.joinClassroom.classroom.inviteCodes.find(
+        (code: any) => code.code === testInviteCode
+      );
     expect(inviteCodeData.uses).to.equal(1);
 
     // Verify in database
