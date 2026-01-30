@@ -27,6 +27,8 @@ import loginGoogle from "./mutation/login-google";
 import refreshAccessToken from "./mutation/refresh-access-token";
 
 import createClassroom from "./mutation/create-classroom";
+import createNewClassInviteCode from "./mutation/create-new-class-invite-code";
+import revokeClassInviteCode from "./mutation/revoke-class-invite-code";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -54,6 +56,8 @@ const PublicMutation = new GraphQLObjectType({
     loginGoogle,
     refreshAccessToken,
     createClassroom,
+    createNewClassInviteCode,
+    revokeClassInviteCode,
   },
 });
 

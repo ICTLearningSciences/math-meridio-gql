@@ -9,7 +9,8 @@ import path from "path";
 import requireEnv from "../src/utils/require-env";
 import { UserRole } from "../src/schemas/types/types";
 import jwt from "jsonwebtoken";
-import { EducationalRole } from "../src/schemas/models/Player";
+import PlayerModel, { EducationalRole } from "../src/schemas/models/Player";
+import ClassModel, { InviteCode } from "../src/schemas/models/classes/Class";
 
 export function fixturePath(p: string): string {
   return path.join(__dirname, "fixtures", p);
@@ -48,4 +49,39 @@ export async function getToken(
     { expiresIn: expirationDate.getTime() - new Date().getTime() }
   );
   return accessToken;
+}
+
+export function createUser(
+  userId: string,
+  userRole: UserRole,
+  educationalRole: EducationalRole
+) {
+  return PlayerModel.create({
+    _id: userId,
+    googleId: userId,
+    name: "User",
+    email: "user@example.com",
+    userRole: userRole,
+    educationalRole: educationalRole,
+  });
+}
+
+export function createClassroom(classroomId: string, teacherId: string) {
+  return ClassModel.create({
+    _id: classroomId,
+    name: "New Class",
+    teacherId: teacherId,
+    inviteCodes: [],
+    createdAt: Date.now(),
+    archivedAt: null,
+  });
+}
+
+export function addInviteCodeToClassroom(
+  classroomId: string,
+  inviteCode: InviteCode
+) {
+  return ClassModel.findByIdAndUpdate(classroomId, {
+    $push: { inviteCodes: inviteCode },
+  });
 }

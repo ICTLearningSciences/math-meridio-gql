@@ -19,10 +19,11 @@ import {
   PaginateQuery,
   pluginPagination,
 } from "../Paginatation";
+import DateType from "../../types/date";
 
-export interface InviteCode extends Document {
+export interface InviteCode {
   code: string;
-  validUntil?: number; // epoch of date
+  validUntil?: Date;
   maxUses?: number;
   uses: number;
 }
@@ -30,14 +31,14 @@ export interface Class extends Document {
   name: string;
   teacherId: string; // ref User
   inviteCodes: InviteCode[];
-  createdAt: number; // epoch of date
-  archivedAt?: number; // epoch of date
+  createdAt: Date;
+  archivedAt?: Date;
 }
 
 export const InviteCodeSchema = new Schema<InviteCode>(
   {
     code: { type: String },
-    validUntil: { type: Number },
+    validUntil: { type: Date },
     maxUses: { type: Number },
     uses: { type: Number },
   },
@@ -49,8 +50,8 @@ export const ClassSchema = new Schema<Class, ClassModel>(
     name: { type: String },
     teacherId: { type: String, ref: "Player" },
     inviteCodes: { type: [InviteCodeSchema], default: [] },
-    createdAt: { type: Number },
-    archivedAt: { type: Number },
+    createdAt: { type: Date },
+    archivedAt: { type: Date },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -72,7 +73,7 @@ export const InviteCodeType = new GraphQLObjectType({
   name: "InviteCodeType",
   fields: () => ({
     code: { type: GraphQLString },
-    validUntil: { type: GraphQLInt },
+    validUntil: { type: DateType },
     maxUses: { type: GraphQLInt },
     uses: { type: GraphQLInt },
   }),
@@ -85,7 +86,7 @@ export const ClassType = new GraphQLObjectType({
     name: { type: GraphQLString },
     teacherId: { type: GraphQLString },
     inviteCodes: { type: new GraphQLList(InviteCodeType) },
-    createdAt: { type: GraphQLInt },
-    archivedAt: { type: GraphQLInt },
+    createdAt: { type: DateType },
+    archivedAt: { type: DateType },
   }),
 });

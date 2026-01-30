@@ -12,12 +12,9 @@ import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { nonExistentId, player1Id } from "../../fixtures/mongodb/data";
 import mongoose from "mongoose";
-import { getToken } from "../../helpers";
+import { getToken, createUser, createClassroom } from "../../helpers";
 import { UserRole } from "../../../src/schemas/types/types";
-import PlayerModel, {
-  EducationalRole,
-} from "../../../src/schemas/models/Player";
-import ClassModel from "../../../src/schemas/models/classes/Class";
+import { EducationalRole } from "../../../src/schemas/models/Player";
 const { ObjectId } = mongoose.Types;
 
 const createClassroomQuery = `
@@ -35,32 +32,6 @@ const createClassroomQuery = `
     }
   }
 `;
-
-export function createUser(
-  userId: string,
-  userRole: UserRole,
-  educationalRole: EducationalRole
-) {
-  return PlayerModel.create({
-    _id: userId,
-    googleId: userId,
-    name: "User",
-    email: "user@example.com",
-    userRole: userRole,
-    educationalRole: educationalRole,
-  });
-}
-
-export function createClassroom(classroomId: string, teacherId: string) {
-  return ClassModel.create({
-    _id: classroomId,
-    name: "New Class",
-    teacherId: teacherId,
-    inviteCodes: [],
-    createdAt: Date.now(),
-    archivedAt: null,
-  });
-}
 
 describe("create a new classroom", () => {
   let app: Express;
