@@ -54,6 +54,28 @@ export const joinClassroom = {
         throw new Error("Classroom not found");
       }
 
+      // Find the specific invite code
+      const inviteCodeData = classroom.inviteCodes.find(
+        (code) => code.code === inviteCode
+      );
+
+      if (!inviteCodeData) {
+        throw new Error("Invite code not found");
+      }
+
+      // Validate invite code validUntil has not passed
+      if (inviteCodeData.validUntil && inviteCodeData.validUntil < new Date()) {
+        throw new Error("Invite code has expired");
+      }
+
+      // Validate uses has not exceeded maxUses
+      if (
+        inviteCodeData.maxUses !== undefined &&
+        inviteCodeData.uses >= inviteCodeData.maxUses
+      ) {
+        throw new Error("Invite code has reached maximum uses");
+      }
+
       // Ensure classroom is not archived
       if (classroom.archivedAt) {
         throw new Error("Classroom is no longer active");
@@ -82,6 +104,10 @@ export const joinClassroom = {
         classMembership.status = ClassMembershipStatus.MEMBER;
         await classMembership.save();
       }
+
+      // Increment the uses field for the invite code
+      inviteCodeData.uses += 1;
+      await classroom.save();
 
       // Return created/updated ClassMembership document and class document
       return {

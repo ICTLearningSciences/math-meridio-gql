@@ -119,6 +119,31 @@ describe("join a classroom", () => {
     expect(response.body.data.joinClassroom.classroom._id).to.equal(classId);
   });
 
+  it(`increments uses count when student joins successfully`, async () => {
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .send({
+        query: joinClassroomQuery,
+        variables: {
+          inviteCode: testInviteCode,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    const inviteCodeData = response.body.data.joinClassroom.classroom.inviteCodes.find(
+      (code: any) => code.code === testInviteCode
+    );
+    expect(inviteCodeData.uses).to.equal(1);
+
+    // Verify in database
+    const classroom = await ClassModel.findById(classId);
+    const dbInviteCode = classroom?.inviteCodes.find(
+      (code) => code.code === testInviteCode
+    );
+    expect(dbInviteCode?.uses).to.equal(1);
+  });
+
   it(`fails if invite code does not exist`, async () => {
     const nonExistentCode = "FAKECODE";
 
@@ -212,6 +237,60 @@ describe("join a classroom", () => {
     );
     expect(response.body.data.joinClassroom.classMembership.status).to.equal(
       ClassMembershipStatus.MEMBER
+    );
+  });
+
+  it(`fails if invite code has expired`, async () => {
+    const expiredCode = "EXPIRED";
+    // Add an expired invite code (validUntil in the past)
+    await addInviteCodeToClassroom(classId, {
+      code: expiredCode,
+      validUntil: Date.now() - 86400000, // 24 hours ago
+      maxUses: 10,
+      uses: 0,
+    } as any);
+
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .send({
+        query: joinClassroomQuery,
+        variables: {
+          inviteCode: expiredCode,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "Error: Invite code has expired"
+    );
+  });
+
+  it(`fails if invite code has reached maximum uses`, async () => {
+    const maxedOutCode = "MAXEDOUT";
+    // Add an invite code that has reached max uses
+    await addInviteCodeToClassroom(classId, {
+      code: maxedOutCode,
+      validUntil: Date.now() + 86400000,
+      maxUses: 5,
+      uses: 5, // uses equals maxUses
+    } as any);
+
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .send({
+        query: joinClassroomQuery,
+        variables: {
+          inviteCode: maxedOutCode,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "Error: Invite code has reached maximum uses"
     );
   });
 });
