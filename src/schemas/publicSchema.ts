@@ -33,10 +33,12 @@ import createClassroom from "./mutation/create-classroom";
 import createNewClassInviteCode from "./mutation/create-new-class-invite-code";
 import revokeClassInviteCode from "./mutation/revoke-class-invite-code";
 import joinClassroom from "./mutation/join-classroom";
+import leaveClassroom from "./mutation/leave-classroom";
 import removeStudentFromClass from "./mutation/remove-student-from-class";
 import blockStudentFromClass from "./mutation/block-student-from-class";
 import unblockStudentFromClass from "./mutation/unblock-student-from-class";
 import adjustClassroomArchiveStatus from "./mutation/adjust-classroom-archive-status";
+import updateClassNameDescription from "./mutation/update-class-name-description";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -69,10 +71,12 @@ const PublicMutation = new GraphQLObjectType({
     createNewClassInviteCode,
     revokeClassInviteCode,
     joinClassroom,
+    leaveClassroom,
     removeStudentFromClass,
     blockStudentFromClass,
     unblockStudentFromClass,
     adjustClassroomArchiveStatus,
+    updateClassNameDescription,
   },
 });
 
