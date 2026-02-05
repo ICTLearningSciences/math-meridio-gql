@@ -12,6 +12,9 @@ import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { nonExistentId, player1Id } from "../../fixtures/mongodb/data";
 import { room1Id } from "../../fixtures/mongodb/data";
+import { UserRole } from "../../../src/schemas/types/types";
+import { EducationalRole } from "../../../src/schemas/models/Player";
+import { getToken } from "../../helpers";
 
 describe("fetch room", () => {
   let app: Express;
@@ -28,8 +31,14 @@ describe("fetch room", () => {
   });
 
   it(`can fetch existing room by id`, async () => {
+    const token = await getToken(
+      player1Id,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
     const response = await request(app)
       .post("/graphql")
+      .set("Authorization", `Bearer ${token}`)
       .send({
         query: `
         query FetchRoom($roomId: ID!) {
@@ -179,5 +188,43 @@ describe("fetch room", () => {
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRoom).to.eql(null);
+  });
+
+  it(`updates heart beat for a player in an existing room`, async () => {
+    const token = await getToken(
+      player1Id,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        query: `
+        query FetchRoom($roomId: ID!) {
+          fetchRoom(roomId: $roomId) {
+            gameData {
+              gameId
+              heartBeats {
+                player
+                timestamp
+              }
+            }
+          }
+        }`,
+        variables: {
+          roomId: room1Id,
+        },
+      });
+    expect(response.status).to.equal(200);
+    const heartBeats = response.body.data.fetchRoom.gameData.heartBeats;
+    const myHeartBeat = heartBeats.find(
+      (heartBeat: { player: string; timestamp: string }) =>
+        heartBeat.player === player1Id
+    );
+    expect(myHeartBeat).to.not.be.undefined;
+    expect(myHeartBeat.timestamp).to.not.be.null;
+    const tenSecondsAgo = new Date(Date.now() - 10000);
+    expect(new Date(myHeartBeat.timestamp)).to.be.greaterThan(tenSecondsAgo);
   });
 });

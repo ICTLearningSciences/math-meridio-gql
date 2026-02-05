@@ -63,6 +63,7 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
   saveResponseVariableName: string;
   disableFreeInput: boolean;
   predefinedResponses: PredefinedResponse[];
+  requireAllUserInputs: boolean;
 }
 
 //Prompt

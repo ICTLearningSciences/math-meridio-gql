@@ -134,6 +134,7 @@ module.exports = {
               saveResponseVariableName: "name",
               disableFreeInput: false,
               predefinedResponses: [],
+              requireAllUserInputs: false,
             },
             {
               stepId: "3",

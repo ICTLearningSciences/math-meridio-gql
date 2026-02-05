@@ -59,6 +59,7 @@ export interface GameData extends Document {
   gameId: string;
   players: string[];
   chat: ChatMessage[];
+  heartBeats: Map<string, string>;
   globalStateData: GlobalStateData;
   persistTruthGlobalStateData: string[];
   playerStateData: PlayerStateData[];
@@ -124,6 +125,7 @@ export const GameSchema = new Schema<GameData>(
   {
     gameId: { type: String },
     players: [{ type: String }],
+    heartBeats: { type: Map, of: String },
     chat: [{ type: ChatMessageSchema }],
     globalStateData: { type: GlobalStateSchema },
     persistTruthGlobalStateData: [{ type: String }],
@@ -191,6 +193,14 @@ export const PlayerStateDataType = new GraphQLObjectType({
   }),
 });
 
+export const HeartBeatType = new GraphQLObjectType({
+  name: "HeartBeatType",
+  fields: () => ({
+    player: { type: GraphQLString },
+    timestamp: { type: GraphQLString },
+  }),
+});
+
 export const GameDataType = new GraphQLObjectType({
   name: "GameDataType",
   fields: () => ({
@@ -203,6 +213,18 @@ export const GameDataType = new GraphQLObjectType({
     },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
+    heartBeats: {
+      type: new GraphQLList(HeartBeatType),
+      resolve: function (game: GameData) {
+        if (!game.heartBeats) return [];
+        return Array.from(game.heartBeats.entries()).map(
+          ([player, timestamp]) => ({
+            player,
+            timestamp,
+          })
+        );
+      },
+    },
     globalStateData: { type: GlobalStateDataType },
     playerStateData: { type: new GraphQLList(PlayerStateDataType) },
   }),

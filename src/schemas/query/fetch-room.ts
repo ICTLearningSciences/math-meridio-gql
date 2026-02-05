@@ -15,9 +15,24 @@ export const fetchRoom = {
   },
   resolve: async (
     _root: GraphQLObjectType,
-    args: { roomId: string }
+    args: { roomId: string },
+    context: { userId: string }
   ): Promise<Room> => {
-    return await RoomModel.findOne({ _id: args.roomId, deletedRoom: false });
+    return await RoomModel.findOneAndUpdate(
+      { _id: args.roomId, deletedRoom: false },
+      ...(context.userId
+        ? [
+            {
+              $set: {
+                [`gameData.heartBeats.${context.userId}`]: new Date(
+                  Date.now()
+                ).toISOString(),
+              },
+            },
+          ]
+        : []),
+      { new: true }
+    );
   },
 };
 
