@@ -8,6 +8,7 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLObjectType, GraphQLSchema } from "graphql";
 import fetchRoom from "./query/fetch-room";
 import fetchRooms from "./query/fetch-rooms";
+import fetchRoomActions from "./query/fetch-room-actions";
 import createAndJoinRoom from "./mutation/room-create-and-join";
 import joinRoom from "./mutation/room-join";
 import leaveRoom from "./mutation/room-leave";
@@ -39,12 +40,15 @@ import blockStudentFromClass from "./mutation/block-student-from-class";
 import unblockStudentFromClass from "./mutation/unblock-student-from-class";
 import adjustClassroomArchiveStatus from "./mutation/adjust-classroom-archive-status";
 import updateClassNameDescription from "./mutation/update-class-name-description";
+import submitProcessedActions from "./mutation/submit-processed-actions";
+import submitRoomAction from "./mutation/submit-room-action";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
     fetchRoom,
     fetchRooms,
+    fetchRoomActions,
     fetchPlayer,
     fetchPlayers,
     fetchDiscussionStages,
@@ -77,6 +81,8 @@ const PublicMutation = new GraphQLObjectType({
     unblockStudentFromClass,
     adjustClassroomArchiveStatus,
     updateClassNameDescription,
+    submitProcessedActions,
+    submitRoomAction,
   },
 });
 
