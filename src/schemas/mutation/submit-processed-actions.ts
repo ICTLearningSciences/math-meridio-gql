@@ -5,12 +5,16 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLString, GraphQLObjectType, GraphQLList } from "graphql";
-import { RoomType } from "../models/Room";
+import {
+  GraphQLString,
+  GraphQLObjectType,
+  GraphQLList,
+  GraphQLBoolean,
+} from "graphql";
 import RoomActionQueueModel from "../models/RoomActionQueue";
 
 export const submitProcessedActions = {
-  type: RoomType,
+  type: GraphQLBoolean,
   args: {
     processedActionIds: { type: new GraphQLList(GraphQLString) },
   },
@@ -18,8 +22,11 @@ export const submitProcessedActions = {
     _root: GraphQLObjectType,
     args: {
       processedActionIds: string[];
-    }
+    },
+    context: { userId: string }
   ): Promise<boolean> => {
+    if (!context.userId) throw new Error("Only authenticated users");
+
     await RoomActionQueueModel.updateMany(
       {
         _id: { $in: args.processedActionIds },
