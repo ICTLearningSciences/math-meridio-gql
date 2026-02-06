@@ -13,9 +13,7 @@ import mongoose from "mongoose";
 import { createUser, createRoom, getToken } from "../../helpers";
 import { UserRole } from "../../../src/schemas/types/types";
 import { EducationalRole } from "../../../src/schemas/models/Player";
-import RoomActionQueueModel, {
-  RoomActionType,
-} from "../../../src/schemas/models/RoomActionQueue";
+import RoomActionQueueModel from "../../../src/schemas/models/RoomActionQueue";
 const { ObjectId } = mongoose.Types;
 
 const submitProcessedActionsMutation = `
@@ -58,7 +56,7 @@ describe("submit processed actions", () => {
     const action = await RoomActionQueueModel.create({
       roomId: roomId,
       playerId: userId,
-      actionType: RoomActionType.SEND_MESSAGE,
+      actionType: "SEND_MESSAGE",
       payload: JSON.stringify({ message: "Test message" }),
       actionSentAt: new Date(),
       processedAt: null,
@@ -95,7 +93,7 @@ describe("submit processed actions", () => {
     const action1 = await RoomActionQueueModel.create({
       roomId: roomId,
       playerId: userId,
-      actionType: RoomActionType.SEND_MESSAGE,
+      actionType: "SEND_MESSAGE",
       payload: JSON.stringify({ message: "First message" }),
       actionSentAt: new Date(),
       processedAt: null,
@@ -104,7 +102,7 @@ describe("submit processed actions", () => {
     const action2 = await RoomActionQueueModel.create({
       roomId: roomId,
       playerId: userId,
-      actionType: RoomActionType.SEND_MESSAGE,
+      actionType: "SEND_MESSAGE",
       payload: JSON.stringify({ message: "Second message" }),
       actionSentAt: new Date(),
       processedAt: null,
@@ -113,7 +111,7 @@ describe("submit processed actions", () => {
     const action3 = await RoomActionQueueModel.create({
       roomId: roomId,
       playerId: userId,
-      actionType: RoomActionType.JOIN_ROOM,
+      actionType: "JOIN_ROOM",
       payload: JSON.stringify({ action: "join" }),
       actionSentAt: new Date(),
       processedAt: null,
@@ -149,7 +147,7 @@ describe("submit processed actions", () => {
     const action1 = await RoomActionQueueModel.create({
       roomId: roomId,
       playerId: userId,
-      actionType: RoomActionType.SEND_MESSAGE,
+      actionType: "SEND_MESSAGE",
       payload: JSON.stringify({ message: "Process this" }),
       actionSentAt: new Date(),
       processedAt: null,
@@ -158,7 +156,7 @@ describe("submit processed actions", () => {
     const action2 = await RoomActionQueueModel.create({
       roomId: roomId,
       playerId: userId,
-      actionType: RoomActionType.SEND_MESSAGE,
+      actionType: "SEND_MESSAGE",
       payload: JSON.stringify({ message: "Don't process this" }),
       actionSentAt: new Date(),
       processedAt: null,
@@ -191,7 +189,7 @@ describe("submit processed actions", () => {
     const action = await RoomActionQueueModel.create({
       roomId: roomId,
       playerId: userId,
-      actionType: RoomActionType.UPDATE_ROOM,
+      actionType: "UPDATE_ROOM",
       payload: payload,
       actionSentAt: actionSentAt,
       processedAt: null,
@@ -210,7 +208,7 @@ describe("submit processed actions", () => {
     const updatedAction = await RoomActionQueueModel.findById(action._id);
     expect(updatedAction?.roomId).to.equal(roomId);
     expect(updatedAction?.playerId).to.equal(userId);
-    expect(updatedAction?.actionType).to.equal(RoomActionType.UPDATE_ROOM);
+    expect(updatedAction?.actionType).to.equal("UPDATE_ROOM");
     expect(updatedAction?.payload).to.equal(payload);
     expect(updatedAction?.actionSentAt.toISOString()).to.equal(
       actionSentAt.toISOString()

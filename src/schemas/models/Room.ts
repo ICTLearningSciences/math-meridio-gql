@@ -12,6 +12,7 @@ import {
   GraphQLObjectType,
   GraphQLList,
   GraphQLID,
+  GraphQLInputObjectType,
 } from "graphql";
 import {
   PaginatedResolveResult,
@@ -59,7 +60,6 @@ export interface GameData extends Document {
   gameId: string;
   players: string[];
   chat: ChatMessage[];
-  heartBeats: Map<string, string>;
   globalStateData: GlobalStateData;
   persistTruthGlobalStateData: string[];
   playerStateData: PlayerStateData[];
@@ -125,7 +125,6 @@ export const GameSchema = new Schema<GameData>(
   {
     gameId: { type: String },
     players: [{ type: String }],
-    heartBeats: { type: Map, of: String },
     chat: [{ type: ChatMessageSchema }],
     globalStateData: { type: GlobalStateSchema },
     persistTruthGlobalStateData: [{ type: String }],
@@ -193,14 +192,6 @@ export const PlayerStateDataType = new GraphQLObjectType({
   }),
 });
 
-export const HeartBeatType = new GraphQLObjectType({
-  name: "HeartBeatType",
-  fields: () => ({
-    player: { type: GraphQLString },
-    timestamp: { type: GraphQLString },
-  }),
-});
-
 export const GameDataType = new GraphQLObjectType({
   name: "GameDataType",
   fields: () => ({
@@ -213,18 +204,6 @@ export const GameDataType = new GraphQLObjectType({
     },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
-    heartBeats: {
-      type: new GraphQLList(HeartBeatType),
-      resolve: function (game: GameData) {
-        if (!game.heartBeats) return [];
-        return Array.from(game.heartBeats.entries()).map(
-          ([player, timestamp]) => ({
-            player,
-            timestamp,
-          })
-        );
-      },
-    },
     globalStateData: { type: GlobalStateDataType },
     playerStateData: { type: new GraphQLList(PlayerStateDataType) },
   }),
@@ -238,5 +217,60 @@ export const RoomType = new GraphQLObjectType({
     name: { type: GraphQLString },
     gameData: { type: GameDataType },
     deletedRoom: { type: GraphQLBoolean },
+  }),
+});
+
+export const GameStateDataInputType = new GraphQLInputObjectType({
+  name: "GameStateDataInputType",
+  fields: () => ({
+    key: { type: GraphQLString },
+    value: { type: GraphQLScalarType },
+  }),
+});
+
+export const GlobalStateDataInputType = new GraphQLInputObjectType({
+  name: "GlobalStateDataInputType",
+  fields: () => ({
+    curStageId: { type: GraphQLString },
+    curStepId: { type: GraphQLString },
+    roomOwnerId: { type: GraphQLString },
+    gameStateData: { type: new GraphQLList(GameStateDataInputType) },
+  }),
+});
+
+export const PlayerStateDataInputType = new GraphQLInputObjectType({
+  name: "PlayerStateDataInputType",
+  fields: () => ({
+    player: { type: GraphQLString },
+    animation: { type: GraphQLString },
+    gameStateData: { type: new GraphQLList(GameStateDataInputType) },
+  }),
+});
+
+export const ChatMessageInputType = new GraphQLInputObjectType({
+  name: "ChatMessageInput",
+  fields: () => ({
+    id: { type: GraphQLString },
+    message: { type: GraphQLString },
+    sender: { type: GraphQLString },
+    senderId: { type: GraphQLString },
+    senderName: { type: GraphQLString },
+    isPromptResponse: { type: GraphQLBoolean },
+    sessionId: { type: GraphQLString },
+    displayType: { type: GraphQLString },
+    disableUserInput: { type: GraphQLBoolean },
+    mcqChoices: { type: new GraphQLList(GraphQLString) },
+  }),
+});
+
+export const GameDataInputType = new GraphQLInputObjectType({
+  name: "GameDataInputType",
+  fields: () => ({
+    gameId: { type: GraphQLString },
+    players: { type: new GraphQLList(GraphQLString) },
+    chat: { type: new GraphQLList(ChatMessageInputType) },
+    persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
+    globalStateData: { type: GlobalStateDataInputType },
+    playerStateData: { type: new GraphQLList(PlayerStateDataInputType) },
   }),
 });

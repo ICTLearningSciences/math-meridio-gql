@@ -5,31 +5,13 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import {
-  GraphQLID,
-  GraphQLString,
-  GraphQLInputObjectType,
-  GraphQLList,
-  GraphQLBoolean,
-  GraphQLObjectType,
-} from "graphql";
-import RoomModel, { ChatMessage, Room, RoomType } from "../models/Room";
-
-export const ChatMessageInputType = new GraphQLInputObjectType({
-  name: "ChatMessageInput",
-  fields: () => ({
-    id: { type: GraphQLString },
-    message: { type: GraphQLString },
-    sender: { type: GraphQLString },
-    senderId: { type: GraphQLString },
-    senderName: { type: GraphQLString },
-    isPromptResponse: { type: GraphQLBoolean },
-    sessionId: { type: GraphQLString },
-    displayType: { type: GraphQLString },
-    disableUserInput: { type: GraphQLBoolean },
-    mcqChoices: { type: new GraphQLList(GraphQLString) },
-  }),
-});
+import { GraphQLID, GraphQLObjectType } from "graphql";
+import RoomModel, {
+  ChatMessage,
+  ChatMessageInputType,
+  Room,
+  RoomType,
+} from "../models/Room";
 
 export const sendMessage = {
   type: RoomType,

@@ -13,9 +13,7 @@ import mongoose from "mongoose";
 import { createUser, createRoom, getToken } from "../../helpers";
 import { UserRole } from "../../../src/schemas/types/types";
 import { EducationalRole } from "../../../src/schemas/models/Player";
-import RoomActionQueueModel, {
-  RoomActionType,
-} from "../../../src/schemas/models/RoomActionQueue";
+import RoomActionQueueModel from "../../../src/schemas/models/RoomActionQueue";
 const { ObjectId } = mongoose.Types;
 
 describe("fetch room actions", () => {
@@ -60,7 +58,7 @@ describe("fetch room actions", () => {
       {
         roomId: roomId1,
         playerId: userId1,
-        actionType: RoomActionType.SEND_MESSAGE,
+        actionType: "SEND_MESSAGE",
         payload: JSON.stringify({ message: "Room1 unprocessed" }),
         actionSentAt: now,
         processedAt: null,
@@ -68,7 +66,7 @@ describe("fetch room actions", () => {
       {
         roomId: roomId1,
         playerId: userId1,
-        actionType: RoomActionType.SEND_MESSAGE,
+        actionType: "SEND_MESSAGE",
         payload: JSON.stringify({ message: "Room1 processed" }),
         actionSentAt: now,
         processedAt: new Date(),
@@ -76,7 +74,7 @@ describe("fetch room actions", () => {
       {
         roomId: roomId2,
         playerId: userId2,
-        actionType: RoomActionType.SEND_MESSAGE,
+        actionType: "SEND_MESSAGE",
         payload: JSON.stringify({ message: "Room2 unprocessed" }),
         actionSentAt: now,
         processedAt: null,
@@ -89,8 +87,8 @@ describe("fetch room actions", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `query {
-          fetchRoomActions(filter: "${filter}") {
+        query: `query FetchRoomActions($filter: String!, $limit: Int) {
+          fetchRoomActions(filter: $filter, limit: $limit) {
             edges {
               node {
                 roomId
@@ -102,6 +100,10 @@ describe("fetch room actions", () => {
             }
           }
         }`,
+        variables: {
+          filter: filter,
+          limit: 100,
+        },
       });
 
     expect(response.status).to.equal(200);
@@ -122,7 +124,7 @@ describe("fetch room actions", () => {
       {
         roomId: roomId1,
         playerId: userId1,
-        actionType: RoomActionType.JOIN_ROOM,
+        actionType: "JOIN_ROOM",
         payload: JSON.stringify({ action: "join" }),
         actionSentAt: new Date(now.getTime() - 2000),
         processedAt: null,
@@ -130,7 +132,7 @@ describe("fetch room actions", () => {
       {
         roomId: roomId1,
         playerId: userId1,
-        actionType: RoomActionType.SEND_MESSAGE,
+        actionType: "SEND_MESSAGE",
         payload: JSON.stringify({ message: "First message" }),
         actionSentAt: new Date(now.getTime() - 1000),
         processedAt: null,
@@ -138,7 +140,7 @@ describe("fetch room actions", () => {
       {
         roomId: roomId1,
         playerId: userId1,
-        actionType: RoomActionType.SEND_MESSAGE,
+        actionType: "SEND_MESSAGE",
         payload: JSON.stringify({ message: "Second message" }),
         actionSentAt: now,
         processedAt: null,
@@ -170,7 +172,7 @@ describe("fetch room actions", () => {
     await RoomActionQueueModel.create({
       roomId: roomId1,
       playerId: userId1,
-      actionType: RoomActionType.SEND_MESSAGE,
+      actionType: "SEND_MESSAGE",
       payload: JSON.stringify({ message: "Test" }),
       actionSentAt: new Date(),
       processedAt: null,

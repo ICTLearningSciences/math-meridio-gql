@@ -60,7 +60,6 @@ export const createAndJoinRoom = {
           },
         ],
         persistTruthGlobalStateData: args.persistTruthGlobalStateData,
-        heartBeats: new Map(),
       },
       deletedRoom: false,
     });

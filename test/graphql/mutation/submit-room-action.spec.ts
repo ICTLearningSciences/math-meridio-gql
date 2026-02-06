@@ -14,9 +14,7 @@ import mongoose from "mongoose";
 import { getToken, createUser, createRoom } from "../../helpers";
 import { UserRole } from "../../../src/schemas/types/types";
 import { EducationalRole } from "../../../src/schemas/models/Player";
-import RoomActionQueueModel, {
-  RoomActionType,
-} from "../../../src/schemas/models/RoomActionQueue";
+import RoomActionQueueModel from "../../../src/schemas/models/RoomActionQueue";
 const { ObjectId } = mongoose.Types;
 
 const submitRoomActionMutation = `
@@ -64,7 +62,7 @@ describe("submit room action", () => {
         query: submitRoomActionMutation,
         variables: {
           roomId: roomId,
-          actionType: RoomActionType.SEND_MESSAGE,
+          actionType: "SEND_MESSAGE",
           payload: JSON.stringify({ message: "Hello World" }),
           actionSentAt: actionSentAt.toISOString(),
         },
@@ -78,7 +76,7 @@ describe("submit room action", () => {
     expect(actions).to.have.lengthOf(1);
     expect(actions[0].roomId).to.equal(roomId);
     expect(actions[0].playerId).to.equal(userId);
-    expect(actions[0].actionType).to.equal(RoomActionType.SEND_MESSAGE);
+    expect(actions[0].actionType).to.equal("SEND_MESSAGE");
     expect(actions[0].payload).to.equal(
       JSON.stringify({ message: "Hello World" })
     );
@@ -94,7 +92,7 @@ describe("submit room action", () => {
         query: submitRoomActionMutation,
         variables: {
           roomId: roomId,
-          actionType: RoomActionType.JOIN_ROOM,
+          actionType: "JOIN_ROOM",
           payload: JSON.stringify({ playerName: "John" }),
           actionSentAt: actionSentAt.toISOString(),
         },
@@ -105,7 +103,7 @@ describe("submit room action", () => {
 
     const actions = await RoomActionQueueModel.find({ roomId: roomId });
     expect(actions).to.have.lengthOf(1);
-    expect(actions[0].actionType).to.equal(RoomActionType.JOIN_ROOM);
+    expect(actions[0].actionType).to.equal("JOIN_ROOM");
   });
 
   it(`submits LEAVE_ROOM action`, async () => {
@@ -117,7 +115,7 @@ describe("submit room action", () => {
         query: submitRoomActionMutation,
         variables: {
           roomId: roomId,
-          actionType: RoomActionType.LEAVE_ROOM,
+          actionType: "LEAVE_ROOM",
           payload: JSON.stringify({ reason: "player left" }),
           actionSentAt: actionSentAt.toISOString(),
         },
@@ -128,7 +126,7 @@ describe("submit room action", () => {
 
     const actions = await RoomActionQueueModel.find({ roomId: roomId });
     expect(actions).to.have.lengthOf(1);
-    expect(actions[0].actionType).to.equal(RoomActionType.LEAVE_ROOM);
+    expect(actions[0].actionType).to.equal("LEAVE_ROOM");
   });
 
   it(`submits UPDATE_ROOM action`, async () => {
@@ -140,7 +138,7 @@ describe("submit room action", () => {
         query: submitRoomActionMutation,
         variables: {
           roomId: roomId,
-          actionType: RoomActionType.UPDATE_ROOM,
+          actionType: "UPDATE_ROOM",
           payload: JSON.stringify({ roomName: "New Room Name" }),
           actionSentAt: actionSentAt.toISOString(),
         },
@@ -151,7 +149,7 @@ describe("submit room action", () => {
 
     const actions = await RoomActionQueueModel.find({ roomId: roomId });
     expect(actions).to.have.lengthOf(1);
-    expect(actions[0].actionType).to.equal(RoomActionType.UPDATE_ROOM);
+    expect(actions[0].actionType).to.equal("UPDATE_ROOM");
   });
 
   it(`multiple actions can be submitted for the same room`, async () => {
@@ -165,7 +163,7 @@ describe("submit room action", () => {
         query: submitRoomActionMutation,
         variables: {
           roomId: roomId,
-          actionType: RoomActionType.SEND_MESSAGE,
+          actionType: "SEND_MESSAGE",
           payload: JSON.stringify({ message: "First message" }),
           actionSentAt: actionSentAt1.toISOString(),
         },
@@ -178,7 +176,7 @@ describe("submit room action", () => {
         query: submitRoomActionMutation,
         variables: {
           roomId: roomId,
-          actionType: RoomActionType.SEND_MESSAGE,
+          actionType: "SEND_MESSAGE",
           payload: JSON.stringify({ message: "Second message" }),
           actionSentAt: actionSentAt2.toISOString(),
         },
@@ -196,7 +194,7 @@ describe("submit room action", () => {
         query: submitRoomActionMutation,
         variables: {
           roomId: roomId,
-          actionType: RoomActionType.SEND_MESSAGE,
+          actionType: "SEND_MESSAGE",
           payload: JSON.stringify({ message: "Hello World" }),
           actionSentAt: actionSentAt.toISOString(),
         },
@@ -218,7 +216,7 @@ describe("submit room action", () => {
         query: submitRoomActionMutation,
         variables: {
           roomId: roomId,
-          actionType: RoomActionType.SEND_MESSAGE,
+          actionType: "SEND_MESSAGE",
           payload: JSON.stringify({ message: "Test" }),
           actionSentAt: actionSentAt.toISOString(),
         },

@@ -15,19 +15,10 @@ import {
 } from "./Paginatation";
 import { DateType } from "schemas/types/date";
 
-/** mongoose */
-
-export enum RoomActionType {
-  SEND_MESSAGE = "SEND_MESSAGE",
-  LEAVE_ROOM = "LEAVE_ROOM",
-  JOIN_ROOM = "JOIN_ROOM",
-  UPDATE_ROOM = "UPDATE_ROOM",
-}
-
 export interface RoomActionQueue extends Document {
   roomId: string;
   playerId: string;
-  actionType: RoomActionType;
+  actionType: string;
   payload: string;
   actionSentAt: Date;
   processedAt: Date;
@@ -49,7 +40,6 @@ export const RoomActionQueueSchema = new Schema<
     playerId: { type: String, required: true },
     actionType: {
       type: String,
-      enum: Object.values(RoomActionType),
       required: true,
     },
     payload: { type: String, required: true },
