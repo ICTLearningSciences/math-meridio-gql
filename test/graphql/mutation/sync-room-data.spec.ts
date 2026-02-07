@@ -33,6 +33,7 @@ const syncRoomDataMutation = `
           curStageId
           curStepId
           roomOwnerId
+          discussionDataStringified
         }
         playerStateData {
           player
@@ -104,6 +105,7 @@ describe("sync room data", () => {
         curStageId: "stage1",
         curStepId: "step1",
         roomOwnerId: userId1,
+        discussionDataStringified: '{"name":"John Doe"}',
         gameStateData: [],
       },
       persistTruthGlobalStateData: [],
@@ -138,6 +140,9 @@ describe("sync room data", () => {
     expect(room?.gameData.globalStateData.curStageId).to.equal("stage1");
     expect(room?.gameData.globalStateData.curStepId).to.equal("step1");
     expect(room?.gameData.globalStateData.roomOwnerId).to.equal(userId1);
+    expect(room?.gameData.globalStateData.discussionDataStringified).to.equal(
+      '{"name":"John Doe"}'
+    );
   });
 
   it(`fails when user is not authenticated`, async () => {

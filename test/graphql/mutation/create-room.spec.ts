@@ -64,6 +64,7 @@ describe("create and join new room", () => {
                 curStageId
                 curStepId
                 roomOwnerId
+                discussionDataStringified
                 gameStateData {
                   key
                   value
@@ -105,6 +106,7 @@ describe("create and join new room", () => {
           curStageId: "",
           curStepId: "",
           roomOwnerId: player1Id,
+          discussionDataStringified: "",
           gameStateData: [],
         },
         playerStateData: [

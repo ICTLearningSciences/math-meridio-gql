@@ -47,6 +47,7 @@ export interface GlobalStateData extends Document {
   curStageId: string;
   curStepId: string;
   roomOwnerId: string;
+  discussionDataStringified: string;
   gameStateData: GameStateData[];
 }
 
@@ -107,6 +108,7 @@ export const GlobalStateSchema = new Schema<GlobalStateData>(
     curStageId: { type: String },
     curStepId: { type: String },
     roomOwnerId: { type: String },
+    discussionDataStringified: { type: String, default: "{}" },
     gameStateData: [{ type: GameStateSchema }],
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
@@ -179,6 +181,7 @@ export const GlobalStateDataType = new GraphQLObjectType({
     curStageId: { type: GraphQLString },
     curStepId: { type: GraphQLString },
     roomOwnerId: { type: GraphQLString },
+    discussionDataStringified: { type: GraphQLString },
     gameStateData: { type: new GraphQLList(GameStateDataType) },
   }),
 });
@@ -234,6 +237,7 @@ export const GlobalStateDataInputType = new GraphQLInputObjectType({
     curStageId: { type: GraphQLString },
     curStepId: { type: GraphQLString },
     roomOwnerId: { type: GraphQLString },
+    discussionDataStringified: { type: GraphQLString },
     gameStateData: { type: new GraphQLList(GameStateDataInputType) },
   }),
 });

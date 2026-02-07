@@ -133,6 +133,7 @@ export function createRoom(
         curStageId: "",
         curStepId: "",
         roomOwnerId: players[0] || "",
+        discussionDataStringified: "",
         gameStateData: [],
       },
       persistTruthGlobalStateData: [],

@@ -50,6 +50,7 @@ export const createAndJoinRoom = {
           curStageId: "",
           curStepId: "",
           roomOwnerId: args.playerId,
+          discussionDataStringified: "",
           gameStateData: [],
         },
         playerStateData: [
