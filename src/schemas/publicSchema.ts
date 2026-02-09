@@ -43,7 +43,7 @@ import updateClassNameDescription from "./mutation/update-class-name-description
 import submitProcessedActions from "./mutation/submit-processed-actions";
 import submitRoomAction from "./mutation/submit-room-action";
 import syncRoomData from "./mutation/sync-room-data";
-
+import createNewRoom from "./mutation/create-new-room";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -85,6 +85,7 @@ const PublicMutation = new GraphQLObjectType({
     submitProcessedActions,
     submitRoomAction,
     syncRoomData,
+    createNewRoom,
   },
 });
 

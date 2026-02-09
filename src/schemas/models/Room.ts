@@ -278,3 +278,13 @@ export const GameDataInputType = new GraphQLInputObjectType({
     playerStateData: { type: new GraphQLList(PlayerStateDataInputType) },
   }),
 });
+
+export const RoomDataInputType = new GraphQLInputObjectType({
+  name: "RoomDataInputType",
+  fields: () => ({
+    classId: { type: GraphQLString },
+    name: { type: GraphQLString },
+    gameData: { type: GameDataInputType },
+    deletedRoom: { type: GraphQLBoolean },
+  }),
+});
