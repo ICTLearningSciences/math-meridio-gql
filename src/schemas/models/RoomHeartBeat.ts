@@ -13,58 +13,46 @@ import {
   PaginateQuery,
   pluginPagination,
 } from "./Paginatation";
-import DateType from "../../schemas/types/date";
+import { DateType } from "../../schemas/types/date";
 
-export interface RoomActionQueue extends Document {
+export interface RoomHeartBeat extends Document {
   roomId: string;
-  playerId: string;
-  actionType: string;
-  payload: string;
-  actionSentAt: Date;
-  processedAt: Date;
+  userId: string;
+  lastHeartBeatAt: Date;
 }
 
-export interface RoomActionQueueModel extends Model<RoomActionQueue> {
+export interface RoomHeartBeatModel extends Model<RoomHeartBeat> {
   paginate(
-    query?: PaginateQuery<RoomActionQueue>,
+    query?: PaginateQuery<RoomHeartBeat>,
     options?: PaginateOptions
-  ): Promise<PaginatedResolveResult<RoomActionQueue>>;
+  ): Promise<PaginatedResolveResult<RoomHeartBeat>>;
 }
 
-export const RoomActionQueueSchema = new Schema<
-  RoomActionQueue,
-  RoomActionQueueModel
+export const RoomHeartBeatSchema = new Schema<
+  RoomHeartBeat,
+  RoomHeartBeatModel
 >(
   {
     roomId: { type: String, required: true },
-    playerId: { type: String, required: true },
-    actionType: {
-      type: String,
-      required: true,
-    },
-    payload: { type: String, required: true },
-    actionSentAt: { type: Date, default: Date.now },
-    processedAt: { type: Date, default: null },
+    userId: { type: String, required: true },
+    lastHeartBeatAt: { type: Date, required: true },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-RoomActionQueueSchema.index({ _id: -1 });
-pluginPagination(RoomActionQueueSchema);
+RoomHeartBeatSchema.index({ _id: -1 });
+pluginPagination(RoomHeartBeatSchema);
 
-export const RoomActionQueueType = new GraphQLObjectType({
-  name: "RoomActionQueueType",
+export const RoomHeartBeatType = new GraphQLObjectType({
+  name: "RoomHeartBeatType",
   fields: () => ({
     roomId: { type: GraphQLString },
-    playerId: { type: GraphQLString },
-    actionType: { type: GraphQLString },
-    payload: { type: GraphQLString },
-    actionSentAt: { type: DateType },
-    processedAt: { type: DateType },
+    userId: { type: GraphQLString },
+    lastHeartBeatAt: { type: DateType },
   }),
 });
 
-export default mongoose.model<RoomActionQueue, RoomActionQueueModel>(
-  "RoomActionQueue",
-  RoomActionQueueSchema
+export default mongoose.model<RoomHeartBeat, RoomHeartBeatModel>(
+  "RoomHeartBeat",
+  RoomHeartBeatSchema
 );

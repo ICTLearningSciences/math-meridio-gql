@@ -44,6 +44,8 @@ import submitProcessedActions from "./mutation/submit-processed-actions";
 import submitRoomAction from "./mutation/submit-room-action";
 import syncRoomData from "./mutation/sync-room-data";
 import createNewRoom from "./mutation/create-new-room";
+import roomHeartBeat from "./mutation/room-heart-beat";
+import fetchRoomHeartbeats from "./query/fetch-room-heartbeats";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -55,6 +57,7 @@ const PublicRootQuery = new GraphQLObjectType({
     fetchDiscussionStages,
     fetchInstructorDataHydration,
     fetchStudentDataHydration,
+    fetchRoomHeartbeats,
   },
 });
 
@@ -86,6 +89,7 @@ const PublicMutation = new GraphQLObjectType({
     submitRoomAction,
     syncRoomData,
     createNewRoom,
+    roomHeartBeat,
   },
 });
 

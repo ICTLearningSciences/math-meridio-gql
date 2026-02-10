@@ -5,39 +5,37 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLString, GraphQLObjectType, GraphQLBoolean } from "graphql";
-import RoomActionQueueModel from "../models/RoomActionQueue";
-import { DateType } from "../../schemas/types/date";
+import { GraphQLID, GraphQLObjectType } from "graphql";
+import RoomHeartBeatModel, {
+  RoomHeartBeat,
+  RoomHeartBeatType,
+} from "../models/RoomHeartBeat";
 
-export const submitRoomAction = {
-  type: GraphQLBoolean,
+export const roomHeartBeat = {
+  type: RoomHeartBeatType,
   args: {
-    roomId: { type: GraphQLString },
-    actionType: { type: GraphQLString },
-    payload: { type: GraphQLString },
-    actionSentAt: { type: DateType },
+    roomId: { type: GraphQLID },
   },
   resolve: async (
     _root: GraphQLObjectType,
-    args: {
-      roomId: string;
-      actionType: string;
-      payload: string;
-      actionSentAt: Date;
-    },
+    args: { roomId: string },
     context: { userId: string }
-  ): Promise<boolean> => {
-    if (!context.userId) throw new Error("Only authenticated users");
-
-    await RoomActionQueueModel.create({
-      roomId: args.roomId,
-      playerId: context.userId,
-      actionType: args.actionType,
-      payload: args.payload,
-      actionSentAt: args.actionSentAt,
-    });
-    return true;
+  ): Promise<RoomHeartBeat> => {
+    if (!context.userId) throw new Error("Unauthorized");
+    const roomHeartBeat = await RoomHeartBeatModel.findOneAndUpdate(
+      {
+        roomId: args.roomId,
+        userId: context.userId,
+      },
+      {
+        $set: {
+          lastHeartBeatAt: new Date(),
+        },
+      },
+      { new: true, upsert: true }
+    );
+    return roomHeartBeat;
   },
 };
 
-export default submitRoomAction;
+export default roomHeartBeat;
