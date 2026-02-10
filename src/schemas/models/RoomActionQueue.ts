@@ -6,7 +6,7 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import mongoose, { Schema, Document, Model } from "mongoose";
-import { GraphQLString, GraphQLObjectType } from "graphql";
+import { GraphQLString, GraphQLObjectType, GraphQLID } from "graphql";
 import {
   PaginatedResolveResult,
   PaginateOptions,
@@ -55,6 +55,7 @@ pluginPagination(RoomActionQueueSchema);
 export const RoomActionQueueType = new GraphQLObjectType({
   name: "RoomActionQueueType",
   fields: () => ({
+    _id: { type: GraphQLID },
     roomId: { type: GraphQLString },
     playerId: { type: GraphQLString },
     actionType: { type: GraphQLString },

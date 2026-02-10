@@ -91,6 +91,7 @@ describe("fetch room actions", () => {
           fetchRoomActions(filter: $filter, limit: $limit) {
             edges {
               node {
+                _id
                 roomId
                 playerId
                 actionType
@@ -105,12 +106,13 @@ describe("fetch room actions", () => {
           limit: 100,
         },
       });
-
+    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRoomActions.edges).to.have.lengthOf(1);
     expect(response.body.data.fetchRoomActions.edges[0].node.roomId).to.equal(
       roomId1
     );
+    expect(response.body.data.fetchRoomActions.edges[0].node._id).to.exist;
     expect(response.body.data.fetchRoomActions.edges[0].node.payload).to.equal(
       JSON.stringify({ message: "Room1 unprocessed" })
     );
