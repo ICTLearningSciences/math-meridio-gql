@@ -113,7 +113,8 @@ export function generateJwtToken(user: Player): UserAccessToken {
   const accessToken = jwt.sign(
     {
       id: user._id,
-      role: user.userRole,
+      userRole: user.userRole,
+      educationalRole: user.educationalRole,
       expirationDate,
     },
     process.env.JWT_SECRET,
@@ -132,7 +133,8 @@ export function generateAccessToken(user: Player): UserAccessToken {
   const accessToken = jwt.sign(
     {
       id: user._id,
-      role: user.userRole,
+      userRole: user.userRole,
+      educationalRole: user.educationalRole,
       expirationDate,
     },
     process.env.JWT_SECRET,

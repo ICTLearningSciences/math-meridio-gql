@@ -5,36 +5,33 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLString, GraphQLObjectType, GraphQLList } from "graphql";
+import { GraphQLString, GraphQLObjectType } from "graphql";
 import ClassModel from "../models/classes/Class";
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel from "../models/Player";
 
-export const createAndJoinRoom = {
+export const createNewRoom = {
   type: RoomType,
   args: {
-    playerId: { type: GraphQLString },
     gameId: { type: GraphQLString },
     gameName: { type: GraphQLString },
-    persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
     classId: { type: GraphQLString },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
-      playerId: string;
       gameId: string;
       gameName: string;
-      persistTruthGlobalStateData: string[];
       classId?: string;
-    }
+    },
+    context: { userId: string }
   ): Promise<Room> => {
     const rooms = await RoomModel.find({
       "gameData.gameId": args.gameId,
       deletedRoom: false,
     });
-    const player = await PlayerModel.findOne({ _id: args.playerId });
-    if (!player) throw new Error("Invalid player");
+    const player = await PlayerModel.findOne({ _id: context.userId });
+    if (!player) throw new Error("Unauthorized");
     if (args.classId) {
       const classRoom = await ClassModel.findOne({ _id: args.classId });
       if (!classRoom) throw new Error("Invalid class");
@@ -44,27 +41,21 @@ export const createAndJoinRoom = {
       ...(args.classId ? { classId: args.classId } : {}),
       gameData: {
         gameId: args.gameId,
-        players: [args.playerId],
+        players: [],
         chat: [],
+        persistTruthGlobalStateData: [],
+        playerStateData: [],
         globalStateData: {
           curStageId: "",
           curStepId: "",
-          roomOwnerId: args.playerId,
+          roomOwnerId: context.userId,
           discussionDataStringified: "",
           gameStateData: [],
         },
-        playerStateData: [
-          {
-            player: args.playerId,
-            animation: "",
-            gameStateData: [],
-          },
-        ],
-        persistTruthGlobalStateData: args.persistTruthGlobalStateData,
       },
       deletedRoom: false,
     });
   },
 };
 
-export default createAndJoinRoom;
+export default createNewRoom;

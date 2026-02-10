@@ -16,6 +16,9 @@ dotenv.config();
 //START MIDDLEWARE
 import mongoose from "mongoose";
 import privateSchema from "./schemas/privateSchema";
+import { UserRole } from "./schemas/types/types";
+import { getDataFromRequest } from "./helpers";
+import { EducationalRole } from "./schemas/models/Player";
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",")
@@ -120,6 +123,12 @@ export function createApp(): Express {
   app.use(
     "/graphql",
     graphqlHTTP(async (req: Request, res) => {
+      const jwtData = await getDataFromRequest(req);
+      const userRole = jwtData ? (jwtData.userRole as UserRole) : UserRole.USER;
+      const userEducationalRole = jwtData
+        ? (jwtData.userEducationalRole as EducationalRole)
+        : EducationalRole.STUDENT;
+      const userId = jwtData ? jwtData.userId : undefined;
       return {
         schema: publicSchema,
         graphiql: true,
@@ -127,6 +136,9 @@ export function createApp(): Express {
           req: req,
           res: res,
           subdomain: getSubdomainFromRequest(req),
+          userRole: userRole,
+          userEducationalRole: userEducationalRole,
+          userId: userId,
         },
       };
     })

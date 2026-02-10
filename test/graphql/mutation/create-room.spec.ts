@@ -11,6 +11,12 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { nonExistentId, player1Id } from "../../fixtures/mongodb/data";
+import mongoose from "mongoose";
+import { createUser, createClassroom, getToken } from "../../helpers";
+import { UserRole } from "../../../src/schemas/types/types";
+import { EducationalRole } from "../../../src/schemas/models/Player";
+import RoomModel from "../../../src/schemas/models/Room";
+const { ObjectId } = mongoose.Types;
 
 describe("create and join new room", () => {
   let app: Express;
@@ -58,6 +64,7 @@ describe("create and join new room", () => {
                 curStageId
                 curStepId
                 roomOwnerId
+                discussionDataStringified
                 gameStateData {
                   key
                   value
@@ -80,7 +87,7 @@ describe("create and join new room", () => {
           gameName: "Basketball-2",
         },
       });
-    console.log(JSON.stringify(response.body, null, 2));
+
     expect(response.status).to.equal(200);
     expect(response.body.data.createAndJoinRoom).to.eql({
       name: "Basketball-2 Solution Space 1",
@@ -99,6 +106,7 @@ describe("create and join new room", () => {
           curStageId: "",
           curStepId: "",
           roomOwnerId: player1Id,
+          discussionDataStringified: "",
           gameStateData: [],
         },
         playerStateData: [
@@ -170,6 +178,88 @@ describe("create and join new room", () => {
     expect(response.body).to.have.deep.nested.property(
       "errors[0].message",
       "Invalid player"
+    );
+  });
+
+  it(`can create a new room with a classId`, async () => {
+    const instructorUserId = new ObjectId().toString();
+    const classId = new ObjectId().toString();
+
+    await createUser(
+      instructorUserId,
+      UserRole.USER,
+      EducationalRole.INSTRUCTOR
+    );
+    await createClassroom(classId, instructorUserId);
+
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: `
+        mutation CreateAndJoinRoom($playerId: String!, $gameId: String!, $gameName: String!, $classId: String) {
+          createAndJoinRoom(playerId: $playerId, gameId: $gameId, gameName: $gameName, classId: $classId) {
+            _id
+            name
+            classId
+            gameData {
+              gameId
+              players {
+                _id
+              }
+            }
+          }
+        }`,
+        variables: {
+          playerId: player1Id,
+          gameId: "basketball-3",
+          gameName: "Basketball-3",
+          classId: classId,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body.data.createAndJoinRoom).to.have.property("_id");
+    expect(response.body.data.createAndJoinRoom.classId).to.equal(classId);
+    expect(response.body.data.createAndJoinRoom.name).to.equal(
+      "Basketball-3 Solution Space 1"
+    );
+
+    // Verify in database
+    const room = await RoomModel.findById(
+      response.body.data.createAndJoinRoom._id
+    );
+    expect(room?.classId?.toString()).to.equal(classId);
+  });
+
+  it(`fails if classId is invalid`, async () => {
+    const invalidClassId = new ObjectId().toString();
+
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: `
+        mutation CreateAndJoinRoom($playerId: String!, $gameId: String!, $gameName: String!, $classId: String) {
+          createAndJoinRoom(playerId: $playerId, gameId: $gameId, gameName: $gameName, classId: $classId) {
+            _id
+            name
+            classId
+            gameData {
+              gameId
+            }
+          }
+        }`,
+        variables: {
+          playerId: player1Id,
+          gameId: "basketball-4",
+          gameName: "Basketball-4",
+          classId: invalidClassId,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "Invalid class"
     );
   });
 });

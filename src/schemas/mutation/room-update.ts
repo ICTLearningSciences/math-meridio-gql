@@ -34,6 +34,7 @@ const GlobalStateDataInputType = new GraphQLInputObjectType({
     curStageId: { type: GraphQLString },
     curStepId: { type: GraphQLString },
     roomOwnerId: { type: GraphQLString },
+    discussionDataStringified: { type: GraphQLString },
     gameStateData: { type: new GraphQLList(GameStateDataInputType) },
   }),
 });
@@ -87,6 +88,11 @@ export const updateRoom = {
     if (args.gameData.globalStateData?.curStepId) {
       room.gameData.globalStateData.curStepId =
         args.gameData.globalStateData.curStepId;
+    }
+
+    if (args.gameData.globalStateData?.discussionDataStringified) {
+      room.gameData.globalStateData.discussionDataStringified =
+        args.gameData.globalStateData.discussionDataStringified;
     }
 
     for (const dataUpdate of args.gameData.globalStateData?.gameStateData ||

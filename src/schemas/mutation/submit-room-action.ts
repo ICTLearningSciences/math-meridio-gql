@@ -5,45 +5,39 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLID, GraphQLObjectType } from "graphql";
-import RoomModel, {
-  ChatMessage,
-  ChatMessageInputType,
-  Room,
-  RoomType,
-} from "../models/Room";
+import { GraphQLString, GraphQLObjectType, GraphQLBoolean } from "graphql";
+import RoomActionQueueModel from "../models/RoomActionQueue";
+import { DateType } from "../../schemas/types/date";
 
-export const sendMessage = {
-  type: RoomType,
+export const submitRoomAction = {
+  type: GraphQLBoolean,
   args: {
-    roomId: { type: GraphQLID },
-    msg: { type: ChatMessageInputType },
+    roomId: { type: GraphQLString },
+    actionType: { type: GraphQLString },
+    payload: { type: GraphQLString },
+    actionSentAt: { type: DateType },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
       roomId: string;
-      msg: ChatMessage;
-    }
-  ): Promise<Room> => {
-    const room = await RoomModel.findOne({
-      _id: args.roomId,
-      deletedRoom: false,
+      actionType: string;
+      payload: string;
+      actionSentAt: Date;
+    },
+    context: { userId: string }
+  ): Promise<boolean> => {
+    if (!context.userId) throw new Error("Only authenticated users");
+
+    await RoomActionQueueModel.create({
+      roomId: args.roomId,
+      playerId: context.userId,
+      actionType: args.actionType,
+      payload: args.payload,
+      actionSentAt: args.actionSentAt,
     });
-    if (!room) throw new Error("Invalid room");
-    return await RoomModel.findOneAndUpdate(
-      {
-        _id: args.roomId,
-        deletedRoom: false,
-      },
-      {
-        $push: {
-          "gameData.chat": args.msg,
-        },
-      },
-      { new: true }
-    );
+    return true;
   },
 };
 
-export default sendMessage;
+export default submitRoomAction;

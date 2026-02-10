@@ -5,45 +5,12 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLID, GraphQLObjectType } from "graphql";
-import RoomModel, {
-  ChatMessage,
-  ChatMessageInputType,
-  Room,
-  RoomType,
-} from "../models/Room";
+import findAll from "./find-all";
+import RoomHeartBeatModel, { RoomHeartBeatType } from "../models/RoomHeartBeat";
 
-export const sendMessage = {
-  type: RoomType,
-  args: {
-    roomId: { type: GraphQLID },
-    msg: { type: ChatMessageInputType },
-  },
-  resolve: async (
-    _root: GraphQLObjectType,
-    args: {
-      roomId: string;
-      msg: ChatMessage;
-    }
-  ): Promise<Room> => {
-    const room = await RoomModel.findOne({
-      _id: args.roomId,
-      deletedRoom: false,
-    });
-    if (!room) throw new Error("Invalid room");
-    return await RoomModel.findOneAndUpdate(
-      {
-        _id: args.roomId,
-        deletedRoom: false,
-      },
-      {
-        $push: {
-          "gameData.chat": args.msg,
-        },
-      },
-      { new: true }
-    );
-  },
-};
+export const fetchRoomHeartbeats = findAll({
+  nodeType: RoomHeartBeatType,
+  model: RoomHeartBeatModel,
+});
 
-export default sendMessage;
+export default fetchRoomHeartbeats;

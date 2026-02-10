@@ -8,6 +8,9 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLID, GraphQLString, GraphQLObjectType } from "graphql";
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel from "../models/Player";
+import ClassMembershipModel, {
+  ClassMembershipStatus,
+} from "../models/classes/ClassMembership";
 
 export const joinRoom = {
   type: RoomType,
@@ -31,6 +34,22 @@ export const joinRoom = {
     if (!player) throw new Error("Invalid player");
     if (room.gameData.players.includes(args.playerId))
       throw new Error("Already in room");
+
+    // If room has a class, ensure the student is a MEMBER of the class
+    if (room.classId) {
+      const classMembership = await ClassMembershipModel.findOne({
+        classId: room.classId,
+        userId: args.playerId,
+      });
+
+      if (
+        !classMembership ||
+        classMembership.status !== ClassMembershipStatus.MEMBER
+      ) {
+        throw new Error("User is not a member of this class");
+      }
+    }
+
     return await RoomModel.findOneAndUpdate(
       {
         _id: args.roomId,

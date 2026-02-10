@@ -12,7 +12,11 @@ The full terms of this copyright and license should always be found in the root 
 */
 import axios from "axios";
 import { GraphQLString, GraphQLObjectType, GraphQLNonNull } from "graphql";
-import PlayerModel, { LoginService } from "../models/Player";
+import PlayerModel, {
+  EducationalRole,
+  LoginService,
+  Player,
+} from "../models/Player";
 import {
   UserAccessTokenType,
   UserAccessToken,
@@ -57,20 +61,44 @@ export enum LoginType {
   SIGN_UP = "SIGN_UP",
 }
 
+function validateInstructorLogin(
+  googleResponse: GoogleResponse,
+  existingUser?: Player
+) {
+  const instructorEmails = process.env.INSTRUCTOR_EMAILS.split(",");
+  if (instructorEmails.includes(googleResponse.email)) {
+    return true;
+  }
+  if (existingUser.educationalRole === EducationalRole.INSTRUCTOR) {
+    return true;
+  }
+  throw new Error("User is not an instructor");
+}
+
 export const loginGoogle = {
   type: UserAccessTokenType,
   args: {
     accessToken: { type: GraphQLNonNull(GraphQLString) },
+    educationalLoginRole: { type: GraphQLString },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
       accessToken: string;
+      educationalLoginRole?: EducationalRole;
     },
     context: any // eslint-disable-line  @typescript-eslint/no-explicit-any
   ): Promise<UserAccessToken> => {
     try {
       const googleResponse = await authGoogle(args.accessToken);
+
+      const existingUser = await PlayerModel.findOne({
+        googleId: googleResponse.id,
+      });
+      let isInstructor = false;
+      if (args.educationalLoginRole === EducationalRole.INSTRUCTOR) {
+        isInstructor = validateInstructorLogin(googleResponse, existingUser);
+      }
       const user = await PlayerModel.findOneAndUpdate(
         {
           googleId: googleResponse.id,
@@ -82,6 +110,9 @@ export const loginGoogle = {
             email: googleResponse.email,
             lastLoginAt: new Date(),
             loginService: LoginService.GOOGLE,
+            ...(isInstructor
+              ? { educationalRole: EducationalRole.INSTRUCTOR }
+              : {}),
           },
         },
         {

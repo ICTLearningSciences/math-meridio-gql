@@ -12,6 +12,7 @@ import {
   GraphQLObjectType,
   GraphQLList,
   GraphQLID,
+  GraphQLInputObjectType,
 } from "graphql";
 import {
   PaginatedResolveResult,
@@ -21,6 +22,7 @@ import {
 } from "./Paginatation";
 import PlayerModel, { PlayerType } from "./Player";
 import GraphQLScalarType from "../types/anything-scalar-type";
+import { Class } from "./classes/Class";
 
 /** mongoose */
 
@@ -45,6 +47,7 @@ export interface GlobalStateData extends Document {
   curStageId: string;
   curStepId: string;
   roomOwnerId: string;
+  discussionDataStringified: string;
   gameStateData: GameStateData[];
 }
 
@@ -64,6 +67,7 @@ export interface GameData extends Document {
 }
 
 export interface Room extends Document {
+  classId?: Class["_id"];
   name: string;
   gameData: GameData;
   deletedRoom: boolean;
@@ -104,6 +108,7 @@ export const GlobalStateSchema = new Schema<GlobalStateData>(
     curStageId: { type: String },
     curStepId: { type: String },
     roomOwnerId: { type: String },
+    discussionDataStringified: { type: String, default: "{}" },
     gameStateData: [{ type: GameStateSchema }],
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
@@ -132,6 +137,7 @@ export const GameSchema = new Schema<GameData>(
 
 export const RoomSchema = new Schema<Room, RoomModel>(
   {
+    classId: { type: Schema.Types.ObjectId, ref: "Class" },
     name: { type: String },
     gameData: { type: GameSchema },
     deletedRoom: { type: Boolean },
@@ -175,6 +181,7 @@ export const GlobalStateDataType = new GraphQLObjectType({
     curStageId: { type: GraphQLString },
     curStepId: { type: GraphQLString },
     roomOwnerId: { type: GraphQLString },
+    discussionDataStringified: { type: GraphQLString },
     gameStateData: { type: new GraphQLList(GameStateDataType) },
   }),
 });
@@ -209,8 +216,75 @@ export const RoomType = new GraphQLObjectType({
   name: "RoomType",
   fields: () => ({
     _id: { type: GraphQLID },
+    classId: { type: GraphQLID },
     name: { type: GraphQLString },
     gameData: { type: GameDataType },
+    deletedRoom: { type: GraphQLBoolean },
+  }),
+});
+
+export const GameStateDataInputType = new GraphQLInputObjectType({
+  name: "GameStateDataInputType",
+  fields: () => ({
+    key: { type: GraphQLString },
+    value: { type: GraphQLScalarType },
+  }),
+});
+
+export const GlobalStateDataInputType = new GraphQLInputObjectType({
+  name: "GlobalStateDataInputType",
+  fields: () => ({
+    curStageId: { type: GraphQLString },
+    curStepId: { type: GraphQLString },
+    roomOwnerId: { type: GraphQLString },
+    discussionDataStringified: { type: GraphQLString },
+    gameStateData: { type: new GraphQLList(GameStateDataInputType) },
+  }),
+});
+
+export const PlayerStateDataInputType = new GraphQLInputObjectType({
+  name: "PlayerStateDataInputType",
+  fields: () => ({
+    player: { type: GraphQLString },
+    animation: { type: GraphQLString },
+    gameStateData: { type: new GraphQLList(GameStateDataInputType) },
+  }),
+});
+
+export const ChatMessageInputType = new GraphQLInputObjectType({
+  name: "ChatMessageInput",
+  fields: () => ({
+    id: { type: GraphQLString },
+    message: { type: GraphQLString },
+    sender: { type: GraphQLString },
+    senderId: { type: GraphQLString },
+    senderName: { type: GraphQLString },
+    isPromptResponse: { type: GraphQLBoolean },
+    sessionId: { type: GraphQLString },
+    displayType: { type: GraphQLString },
+    disableUserInput: { type: GraphQLBoolean },
+    mcqChoices: { type: new GraphQLList(GraphQLString) },
+  }),
+});
+
+export const GameDataInputType = new GraphQLInputObjectType({
+  name: "GameDataInputType",
+  fields: () => ({
+    gameId: { type: GraphQLString },
+    players: { type: new GraphQLList(GraphQLString) },
+    chat: { type: new GraphQLList(ChatMessageInputType) },
+    persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
+    globalStateData: { type: GlobalStateDataInputType },
+    playerStateData: { type: new GraphQLList(PlayerStateDataInputType) },
+  }),
+});
+
+export const RoomDataInputType = new GraphQLInputObjectType({
+  name: "RoomDataInputType",
+  fields: () => ({
+    classId: { type: GraphQLString },
+    name: { type: GraphQLString },
+    gameData: { type: GameDataInputType },
     deletedRoom: { type: GraphQLBoolean },
   }),
 });

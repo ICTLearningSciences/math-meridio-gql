@@ -8,6 +8,7 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLObjectType, GraphQLSchema } from "graphql";
 import fetchRoom from "./query/fetch-room";
 import fetchRooms from "./query/fetch-rooms";
+import fetchRoomActions from "./query/fetch-room-actions";
 import createAndJoinRoom from "./mutation/room-create-and-join";
 import joinRoom from "./mutation/room-join";
 import leaveRoom from "./mutation/room-leave";
@@ -23,17 +24,40 @@ import addOrUpdatePlayer from "./mutation/add-or-update-player";
 import fetchDiscussionStages from "./query/fetch-discussion-stages";
 import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
 
+import fetchInstructorDataHydration from "./query/fetch-instructor-data-hydration";
+import fetchStudentDataHydration from "./query/fetch-student-data-hydration";
+
 import loginGoogle from "./mutation/login-google";
 import refreshAccessToken from "./mutation/refresh-access-token";
 
+import createClassroom from "./mutation/create-classroom";
+import createNewClassInviteCode from "./mutation/create-new-class-invite-code";
+import revokeClassInviteCode from "./mutation/revoke-class-invite-code";
+import joinClassroom from "./mutation/join-classroom";
+import leaveClassroom from "./mutation/leave-classroom";
+import removeStudentFromClass from "./mutation/remove-student-from-class";
+import blockStudentFromClass from "./mutation/block-student-from-class";
+import unblockStudentFromClass from "./mutation/unblock-student-from-class";
+import adjustClassroomArchiveStatus from "./mutation/adjust-classroom-archive-status";
+import updateClassNameDescription from "./mutation/update-class-name-description";
+import submitProcessedActions from "./mutation/submit-processed-actions";
+import submitRoomAction from "./mutation/submit-room-action";
+import syncRoomData from "./mutation/sync-room-data";
+import createNewRoom from "./mutation/create-new-room";
+import roomHeartBeat from "./mutation/room-heart-beat";
+import fetchRoomHeartbeats from "./query/fetch-room-heartbeats";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
     fetchRoom,
     fetchRooms,
+    fetchRoomActions,
     fetchPlayer,
     fetchPlayers,
     fetchDiscussionStages,
+    fetchInstructorDataHydration,
+    fetchStudentDataHydration,
+    fetchRoomHeartbeats,
   },
 });
 
@@ -51,6 +75,21 @@ const PublicMutation = new GraphQLObjectType({
     addOrUpdateDiscussionStage,
     loginGoogle,
     refreshAccessToken,
+    createClassroom,
+    createNewClassInviteCode,
+    revokeClassInviteCode,
+    joinClassroom,
+    leaveClassroom,
+    removeStudentFromClass,
+    blockStudentFromClass,
+    unblockStudentFromClass,
+    adjustClassroomArchiveStatus,
+    updateClassNameDescription,
+    submitProcessedActions,
+    submitRoomAction,
+    syncRoomData,
+    createNewRoom,
+    roomHeartBeat,
   },
 });
 

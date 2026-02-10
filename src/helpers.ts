@@ -8,8 +8,10 @@ The full terms of this copyright and license should always be found in the root 
 import Ajv from "ajv";
 const ajv = new Ajv();
 import * as dotenv from "dotenv";
+import { Request } from "express";
 import mongoose from "mongoose";
 dotenv.config();
+import jwt from "jsonwebtoken";
 
 const queryPayloadSchema = {
   type: "object",
@@ -56,4 +58,34 @@ export function idOrNew(id: string): string {
 
 export function isId(id: string): boolean {
   return Boolean(id.match(/^[0-9a-fA-F]{24}$/));
+}
+
+export interface JwtData {
+  userId: string;
+  userRole: string;
+  userEducationalRole: string;
+}
+
+export async function getDataFromRequest(
+  req: Request
+): Promise<JwtData | undefined> {
+  try {
+    const splitAuthHeader = req.headers.authorization?.split(" ");
+    if (
+      splitAuthHeader.length === 2 &&
+      splitAuthHeader[0].toLowerCase() === "bearer"
+    ) {
+      const token = req.headers.authorization?.split(" ")[1];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const decodedJwt: any = jwt.verify(token, process.env.JWT_SECRET);
+      return {
+        userId: decodedJwt.id,
+        userRole: decodedJwt.userRole,
+        userEducationalRole: decodedJwt.educationalRole,
+      };
+    }
+    return undefined;
+  } catch (err) {
+    return undefined;
+  }
 }

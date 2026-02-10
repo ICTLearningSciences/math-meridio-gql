@@ -13,11 +13,36 @@ import request from "supertest";
 import {
   nonExistentId,
   player1Id,
-  player2Id,
   room1Id,
   room2Id,
   room3Id,
 } from "../../fixtures/mongodb/data";
+import mongoose from "mongoose";
+import {
+  createUser,
+  createClassroom,
+  createClassMembership,
+  createRoom,
+} from "../../helpers";
+import { UserRole } from "../../../src/schemas/types/types";
+import { EducationalRole } from "../../../src/schemas/models/Player";
+import { ClassMembershipStatus } from "../../../src/schemas/models/classes/ClassMembership";
+const { ObjectId } = mongoose.Types;
+
+export const smallJoinRoomQuery = `
+  mutation JoinRoom($playerId: String!, $roomId: ID!) {
+    joinRoom(playerId: $playerId, roomId: $roomId) {
+              _id
+            name
+            classId
+            gameData {
+              players {
+                _id
+              }
+            }
+    }
+  }
+`;
 
 describe("join room", () => {
   let app: Express;
@@ -242,6 +267,177 @@ describe("join room", () => {
     expect(response.body).to.have.deep.nested.property(
       "errors[0].message",
       "Invalid room"
+    );
+  });
+
+  it(`can join a room with no class attached`, async () => {
+    const studentUserId = new ObjectId().toString();
+    const roomId = new ObjectId().toString();
+
+    await createUser(studentUserId, UserRole.USER, EducationalRole.STUDENT);
+    await createRoom(roomId, undefined, []); // No classId
+
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: smallJoinRoomQuery,
+        variables: {
+          playerId: studentUserId,
+          roomId: roomId,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body.data.joinRoom).to.have.property("_id");
+    expect(response.body.data.joinRoom.gameData.players).to.have.lengthOf(1);
+    expect(response.body.data.joinRoom.gameData.players[0]._id).to.equal(
+      studentUserId
+    );
+  });
+
+  it(`can join a room with a class if user is a MEMBER`, async () => {
+    const instructorUserId = new ObjectId().toString();
+    const studentUserId = new ObjectId().toString();
+    const classId = new ObjectId().toString();
+    const roomId = new ObjectId().toString();
+
+    await createUser(
+      instructorUserId,
+      UserRole.USER,
+      EducationalRole.INSTRUCTOR
+    );
+    await createUser(studentUserId, UserRole.USER, EducationalRole.STUDENT);
+    await createClassroom(classId, instructorUserId);
+    await createClassMembership(
+      classId,
+      studentUserId,
+      ClassMembershipStatus.MEMBER
+    );
+    await createRoom(roomId, classId, []);
+
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: smallJoinRoomQuery,
+        variables: {
+          playerId: studentUserId,
+          roomId: roomId,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body.data.joinRoom).to.have.property("_id");
+    expect(response.body.data.joinRoom.classId).to.equal(classId);
+    expect(response.body.data.joinRoom.gameData.players).to.have.lengthOf(1);
+    expect(response.body.data.joinRoom.gameData.players[0]._id).to.equal(
+      studentUserId
+    );
+  });
+
+  it(`fails if room has a class and user is not a member`, async () => {
+    const instructorUserId = new ObjectId().toString();
+    const studentUserId = new ObjectId().toString();
+    const classId = new ObjectId().toString();
+    const roomId = new ObjectId().toString();
+
+    await createUser(
+      instructorUserId,
+      UserRole.USER,
+      EducationalRole.INSTRUCTOR
+    );
+    await createUser(studentUserId, UserRole.USER, EducationalRole.STUDENT);
+    await createClassroom(classId, instructorUserId);
+    // No class membership created
+    await createRoom(roomId, classId, []);
+
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: smallJoinRoomQuery,
+        variables: {
+          playerId: studentUserId,
+          roomId: roomId,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "User is not a member of this class"
+    );
+  });
+
+  it(`fails if room has a class and user is BLOCKED`, async () => {
+    const instructorUserId = new ObjectId().toString();
+    const studentUserId = new ObjectId().toString();
+    const classId = new ObjectId().toString();
+    const roomId = new ObjectId().toString();
+
+    await createUser(
+      instructorUserId,
+      UserRole.USER,
+      EducationalRole.INSTRUCTOR
+    );
+    await createUser(studentUserId, UserRole.USER, EducationalRole.STUDENT);
+    await createClassroom(classId, instructorUserId);
+    await createClassMembership(
+      classId,
+      studentUserId,
+      ClassMembershipStatus.BLOCKED
+    );
+    await createRoom(roomId, classId, []);
+
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: smallJoinRoomQuery,
+        variables: {
+          playerId: studentUserId,
+          roomId: roomId,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "User is not a member of this class"
+    );
+  });
+
+  it(`fails if room has a class and user is REMOVED`, async () => {
+    const instructorUserId = new ObjectId().toString();
+    const studentUserId = new ObjectId().toString();
+    const classId = new ObjectId().toString();
+    const roomId = new ObjectId().toString();
+
+    await createUser(
+      instructorUserId,
+      UserRole.USER,
+      EducationalRole.INSTRUCTOR
+    );
+    await createUser(studentUserId, UserRole.USER, EducationalRole.STUDENT);
+    await createClassroom(classId, instructorUserId);
+    await createClassMembership(
+      classId,
+      studentUserId,
+      ClassMembershipStatus.REMOVED
+    );
+    await createRoom(roomId, classId, []);
+
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: smallJoinRoomQuery,
+        variables: {
+          playerId: studentUserId,
+          roomId: roomId,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "User is not a member of this class"
     );
   });
 });

@@ -6,44 +6,36 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import { GraphQLID, GraphQLObjectType } from "graphql";
-import RoomModel, {
-  ChatMessage,
-  ChatMessageInputType,
-  Room,
-  RoomType,
-} from "../models/Room";
+import RoomHeartBeatModel, {
+  RoomHeartBeat,
+  RoomHeartBeatType,
+} from "../models/RoomHeartBeat";
 
-export const sendMessage = {
-  type: RoomType,
+export const roomHeartBeat = {
+  type: RoomHeartBeatType,
   args: {
     roomId: { type: GraphQLID },
-    msg: { type: ChatMessageInputType },
   },
   resolve: async (
     _root: GraphQLObjectType,
-    args: {
-      roomId: string;
-      msg: ChatMessage;
-    }
-  ): Promise<Room> => {
-    const room = await RoomModel.findOne({
-      _id: args.roomId,
-      deletedRoom: false,
-    });
-    if (!room) throw new Error("Invalid room");
-    return await RoomModel.findOneAndUpdate(
+    args: { roomId: string },
+    context: { userId: string }
+  ): Promise<RoomHeartBeat> => {
+    if (!context.userId) throw new Error("Unauthorized");
+    const roomHeartBeat = await RoomHeartBeatModel.findOneAndUpdate(
       {
-        _id: args.roomId,
-        deletedRoom: false,
+        roomId: args.roomId,
+        userId: context.userId,
       },
       {
-        $push: {
-          "gameData.chat": args.msg,
+        $set: {
+          lastHeartBeatAt: new Date(),
         },
       },
-      { new: true }
+      { new: true, upsert: true }
     );
+    return roomHeartBeat;
   },
 };
 
-export default sendMessage;
+export default roomHeartBeat;

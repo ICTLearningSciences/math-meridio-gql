@@ -67,6 +67,7 @@ describe("update discussion stage", () => {
               },
             ],
             lastStep: false,
+            requireAllUserInputs: false,
           },
           {
             stepId: "789",
@@ -142,6 +143,7 @@ describe("update discussion stage", () => {
               },
             ],
             lastStep: false,
+            requireAllUserInputs: false,
           },
           {
             stepId: "789",
@@ -218,6 +220,7 @@ describe("update discussion stage", () => {
               },
             ],
             lastStep: false,
+            requireAllUserInputs: false,
           },
           {
             stepId: "789",

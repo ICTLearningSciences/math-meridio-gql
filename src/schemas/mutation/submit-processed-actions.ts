@@ -5,45 +5,40 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLID, GraphQLObjectType } from "graphql";
-import RoomModel, {
-  ChatMessage,
-  ChatMessageInputType,
-  Room,
-  RoomType,
-} from "../models/Room";
+import {
+  GraphQLString,
+  GraphQLObjectType,
+  GraphQLList,
+  GraphQLBoolean,
+} from "graphql";
+import RoomActionQueueModel from "../models/RoomActionQueue";
 
-export const sendMessage = {
-  type: RoomType,
+export const submitProcessedActions = {
+  type: GraphQLBoolean,
   args: {
-    roomId: { type: GraphQLID },
-    msg: { type: ChatMessageInputType },
+    processedActionIds: { type: new GraphQLList(GraphQLString) },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
-      roomId: string;
-      msg: ChatMessage;
-    }
-  ): Promise<Room> => {
-    const room = await RoomModel.findOne({
-      _id: args.roomId,
-      deletedRoom: false,
-    });
-    if (!room) throw new Error("Invalid room");
-    return await RoomModel.findOneAndUpdate(
+      processedActionIds: string[];
+    },
+    context: { userId: string }
+  ): Promise<boolean> => {
+    if (!context.userId) throw new Error("Only authenticated users");
+
+    await RoomActionQueueModel.updateMany(
       {
-        _id: args.roomId,
-        deletedRoom: false,
+        _id: { $in: args.processedActionIds },
       },
       {
-        $push: {
-          "gameData.chat": args.msg,
+        $set: {
+          processedAt: new Date(),
         },
-      },
-      { new: true }
+      }
     );
+    return true;
   },
 };
 
-export default sendMessage;
+export default submitProcessedActions;

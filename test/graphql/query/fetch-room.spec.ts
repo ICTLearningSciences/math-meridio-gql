@@ -12,6 +12,9 @@ import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { nonExistentId, player1Id } from "../../fixtures/mongodb/data";
 import { room1Id } from "../../fixtures/mongodb/data";
+import { UserRole } from "../../../src/schemas/types/types";
+import { EducationalRole } from "../../../src/schemas/models/Player";
+import { getToken } from "../../helpers";
 
 describe("fetch room", () => {
   let app: Express;
@@ -28,8 +31,14 @@ describe("fetch room", () => {
   });
 
   it(`can fetch existing room by id`, async () => {
+    const token = await getToken(
+      player1Id,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
     const response = await request(app)
       .post("/graphql")
+      .set("Authorization", `Bearer ${token}`)
       .send({
         query: `
         query FetchRoom($roomId: ID!) {

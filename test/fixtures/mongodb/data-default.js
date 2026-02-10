@@ -35,6 +35,7 @@ module.exports = {
           curStageId: "Stage 1",
           curStepId: "Step 1",
           roomOwnerId: player1Id,
+          discussionDataStringified: "",
           gameStateData: [
             {
               key: "Global variable 1",
@@ -69,6 +70,7 @@ module.exports = {
           curStageId: "Stage 1",
           curStepId: "Step 1",
           roomOwnerId: player1Id,
+          discussionDataStringified: "",
           gameStateData: [
             {
               key: "Global variable 1",
@@ -103,6 +105,7 @@ module.exports = {
           curStageId: "Stage 1",
           curStepId: "Step 1",
           roomOwnerId: player1Id,
+          discussionDataStringified: "",
           gameStateData: [],
         },
         playerStateData: [],
@@ -134,6 +137,7 @@ module.exports = {
               saveResponseVariableName: "name",
               disableFreeInput: false,
               predefinedResponses: [],
+              requireAllUserInputs: false,
             },
             {
               stepId: "3",

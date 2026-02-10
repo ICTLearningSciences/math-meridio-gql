@@ -104,6 +104,7 @@ export const RequestUserInputStageStepType = new GraphQLObjectType({
     saveResponseVariableName: { type: GraphQLString },
     disableFreeInput: { type: GraphQLBoolean },
     predefinedResponses: { type: GraphQLList(PredefinedResponseType) },
+    requireAllUserInputs: { type: GraphQLBoolean },
   }),
 });
 
@@ -121,6 +122,7 @@ export const RequestUserInputStageStepTypeInput = new GraphQLInputObjectType({
     saveResponseVariableName: { type: GraphQLString },
     disableFreeInput: { type: GraphQLBoolean },
     predefinedResponses: { type: GraphQLList(PredefinedResponseTypeInput) },
+    requireAllUserInputs: { type: GraphQLBoolean },
   }),
 });
 
@@ -234,6 +236,7 @@ export const RequestUserInputStageStepSchema = new Schema({
   saveResponseVariableName: { type: String },
   disableFreeInput: { type: Boolean },
   predefinedResponses: [PredefinedResponseSchema],
+  requireAllUserInputs: { type: Boolean, default: false },
 });
 
 export const LogicStepConditionalSchema = new Schema({

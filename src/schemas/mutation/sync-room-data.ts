@@ -7,43 +7,38 @@ The full terms of this copyright and license should always be found in the root 
 
 import { GraphQLID, GraphQLObjectType } from "graphql";
 import RoomModel, {
-  ChatMessage,
-  ChatMessageInputType,
+  GameData,
+  GameDataInputType,
   Room,
   RoomType,
 } from "../models/Room";
 
-export const sendMessage = {
+export const syncRoomData = {
   type: RoomType,
   args: {
     roomId: { type: GraphQLID },
-    msg: { type: ChatMessageInputType },
+    gameData: { type: GameDataInputType },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
       roomId: string;
-      msg: ChatMessage;
-    }
+      gameData: GameData;
+    },
+    context: { userId: string }
   ): Promise<Room> => {
+    if (!context.userId) throw new Error("Unauthorized");
     const room = await RoomModel.findOne({
       _id: args.roomId,
       deletedRoom: false,
     });
     if (!room) throw new Error("Invalid room");
-    return await RoomModel.findOneAndUpdate(
-      {
-        _id: args.roomId,
-        deletedRoom: false,
-      },
-      {
-        $push: {
-          "gameData.chat": args.msg,
-        },
-      },
-      { new: true }
-    );
+
+    if (context.userId !== room.gameData.globalStateData?.roomOwnerId)
+      throw new Error("Unauthorized");
+    room.gameData = args.gameData;
+    return await room.save();
   },
 };
 
-export default sendMessage;
+export default syncRoomData;

@@ -46,6 +46,7 @@ export const fullDiscussionStageQueryData = `
                                   jumpToStepId
                                   responseWeight
                               }
+                              requireAllUserInputs
                           }
 
                           ... on PromptStageStepType{
@@ -122,7 +123,10 @@ describe("fetch discussion stages", () => {
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps[0].stepType
     ).to.equal(DiscussionStageStepType.SYSTEM_MESSAGE);
-
+    expect(
+      response.body.data.fetchDiscussionStages[0].flowsList[0].steps[1]
+        .requireAllUserInputs
+    ).to.equal(false);
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps[4]
     ).to.deep.equal({
