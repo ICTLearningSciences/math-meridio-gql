@@ -34,18 +34,19 @@ export const sendMessageToGameRoom = {
     },
     context: { userId: string }
   ): Promise<Room> => {
-    const room = await RoomModel.findOne({
+    const _room = await RoomModel.findOne({
       _id: args.roomId,
       deletedRoom: false,
-    });
-    if (!room) throw new Error("Failed to find room");
+    })
+    if (!_room) throw new Error("Failed to find room");
     const player = await PlayerModel.findOne({ _id: context.userId });
     if (!player) throw new Error("Unauthorized User");
-    if (!room.gameData.players.includes(context.userId)) {
+    if (!_room.gameData.players.includes(context.userId)) {
       throw new Error("User is not a player in the room");
     }
-    const discussionStages = await DiscussionStageModel.find();
-
+    const _discussionStages = await DiscussionStageModel.find();
+    const discussionStages = _discussionStages.map((stage) => stage.toObject());
+    const room = _room.toObject();
     const stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
 
     room.gameData = addUserMessageToChat(
@@ -58,7 +59,11 @@ export const sendMessageToGameRoom = {
     );
 
     // Quickly save message to the room so observers can see the message.
-    await room.save();
+    await RoomModel.findOneAndUpdate(
+      { _id: args.roomId },
+      { $set: { gameData: room.gameData } },
+      { new: true }
+    );
 
     if (
       stageAndStep.curStep.stepType ===

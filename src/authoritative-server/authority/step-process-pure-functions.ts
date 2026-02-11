@@ -35,11 +35,11 @@ import {
 } from "../llm-request/types";
 import {
   updateGameDataWithNextStep,
+  updateGlobalStateData,
   updatePlayerStateData,
 } from "./pure-state-modifiers";
 import {
-  addPromptResponseToGameData,
-  addSystemMessageToGameData,
+  addSystemMessageToChat,
   getGameDataCopy,
 } from "./state-modifier-helpers";
 import { getCurStageAndStep } from "./user-action-pure-functions";
@@ -57,7 +57,7 @@ export function startRequestUserInputStep(
   sessionId: string
 ): GameData {
   let gameData = getGameDataCopy(_gameData);
-  gameData = addSystemMessageToGameData(
+  gameData = addSystemMessageToChat(
     gameData,
     curStep.message,
     sessionId,
@@ -72,7 +72,7 @@ export function processNewSystemMessageStep(
   sessionId: string
 ): GameData {
   let gameData = getGameDataCopy(_gameData);
-  gameData = addSystemMessageToGameData(
+  gameData = addSystemMessageToChat(
     gameData,
     curStep.message,
     sessionId,
@@ -98,6 +98,7 @@ export async function processPromptStep(
   playerIdToUpdate: string,
   sessionId: string
 ): Promise<GameData> {
+  console.log(`Starting to process prompt step: ${curStep.stepId}`);
   let gameData = getGameDataCopy(_gameData);
   const collectedDiscussionData: CollectedDiscussionData = JSON.parse(
     gameData.globalStateData.discussionDataStringified
@@ -154,7 +155,7 @@ export async function processPromptStep(
 
   const requestFunction = async () => {
     const _response = await executePrompt(llmRequest);
-    const response = extractServiceStepResponse(_response, 0);
+    const response = _response.answer;
 
     if (curStep.outputDataType === PromptOutputTypes.JSON) {
       if (!isJsonString(response)) {
@@ -172,14 +173,22 @@ export async function processPromptStep(
           );
         }
       }
-      const resData = JSON.parse(response);
+      const resData: Record<string, any> = JSON.parse(response);
 
-      // aggregate the new JSON data
+      // Add new JSON data to the discussion data
       gameData.globalStateData.discussionDataStringified = JSON.stringify({
         ...collectedDiscussionData,
         ...resData,
       });
 
+      // Add new JSON data to the global state data
+      gameData = updateGlobalStateData(
+        gameData,
+        persistTruthFields,
+        Object.entries(resData).map(([key, value]) => ({ key, value }))
+      );
+
+      // Add new JSON data to the player state data
       gameData = updatePlayerStateData(
         gameData,
         persistTruthFields,
@@ -187,7 +196,13 @@ export async function processPromptStep(
         convertCollectedDataToGSData(resData)
       );
     } else {
-      gameData = addPromptResponseToGameData(gameData, response, sessionId);
+      // Add the prompt text response to the chat log
+      gameData = addSystemMessageToChat(
+        gameData,
+        response,
+        sessionId,
+        curStep.stepId,
+      );
     }
   };
 

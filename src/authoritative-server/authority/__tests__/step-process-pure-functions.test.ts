@@ -249,7 +249,6 @@ describe("step-process-pure-functions", () => {
           displayType: MessageDisplayType.TEXT,
           disableUserInput: false,
           mcqChoices: [],
-          isPromptResponse: false,
         },
         {
           messageId: "msg-2",
@@ -261,7 +260,6 @@ describe("step-process-pure-functions", () => {
           displayType: MessageDisplayType.TEXT,
           disableUserInput: false,
           mcqChoices: [],
-          isPromptResponse: false,
         },
       ];
 

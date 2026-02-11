@@ -190,7 +190,6 @@ describe("user-action-pure-functions", () => {
       const stateDataKeys2 = result2.globalStateData.gameStateData
         .map((item) => item.key)
         .filter((key) => key !== "stepResponseTracking");
-      console.log(stateDataKeys2);
       expect(stateDataKeys2.length).toBe(0);
     });
 

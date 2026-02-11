@@ -107,7 +107,7 @@ provider:
     ABE_SECRET_HEADER_VALUE: ${ssm:/abewriting-abe/secret_header_value, ''}
 functions:
   graphql:
-    timeout: 20
+    timeout: 30
     handler: src/lambda.handler
     events:
       - http:

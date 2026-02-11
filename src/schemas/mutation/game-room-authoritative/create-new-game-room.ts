@@ -80,7 +80,8 @@ export const createNewGameRoom = {
       const classRoom = await ClassModel.findOne({ _id: args.classId });
       if (!classRoom) throw new Error("Invalid class");
     }
-    const discussionStages = await DiscussionStageModel.find();
+    const _discussionStages = await DiscussionStageModel.find();
+    const discussionStages = _discussionStages.map((stage) => stage.toObject());
     const newRoom: Room = initializeGameRoom(
       context.userId,
       args.gameId,

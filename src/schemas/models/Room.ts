@@ -37,7 +37,6 @@ export interface ChatMessage {
   disableUserInput: boolean;
   mcqChoices: string[];
   sessionId: string;
-  isPromptResponse: boolean;
   fromStepId?: string;
 }
 
@@ -106,7 +105,6 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
     displayType: { type: String },
     disableUserInput: { type: Boolean },
     mcqChoices: [{ type: String }],
-    isPromptResponse: { type: Boolean },
     fromStepId: { type: String },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
@@ -182,7 +180,6 @@ export const ChatMessageType = new GraphQLObjectType({
     disableUserInput: { type: GraphQLBoolean },
     mcqChoices: { type: new GraphQLList(GraphQLString) },
     sessionId: { type: GraphQLString },
-    isPromptResponse: { type: GraphQLBoolean },
     fromStepId: { type: GraphQLString },
   }),
 });
@@ -279,7 +276,6 @@ export const ChatMessageInputType = new GraphQLInputObjectType({
     sender: { type: GraphQLString },
     senderId: { type: GraphQLString },
     senderName: { type: GraphQLString },
-    isPromptResponse: { type: GraphQLBoolean },
     fromStepId: { type: GraphQLString },
     sessionId: { type: GraphQLString },
     displayType: { type: GraphQLString },

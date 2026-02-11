@@ -13,7 +13,7 @@ The full terms of this copyright and license should always be found in the root 
 
 /// <reference types="jest" />
 import { GameData } from "../../../schemas/models/Room";
-import { addSystemMessageToGameData } from "../state-modifier-helpers";
+import { addSystemMessageToChat } from "../state-modifier-helpers";
 import { createBaseGameData } from "./helpers";
 import { MessageDisplayType, SenderType } from "../../llm-request/types";
 
@@ -27,14 +27,14 @@ describe("pure-state-modifiers", () => {
     jest.clearAllMocks();
   });
 
-  describe("addSystemMessageToGameData", () => {
+  describe("addSystemMessageToChat", () => {
     it("should add a system message to the chat with sessionId", () => {
       const mockSessionId = "test-session-123";
 
       const gameData: GameData = createBaseGameData();
 
       const message = "Test system message";
-      const result = addSystemMessageToGameData(
+      const result = addSystemMessageToChat(
         gameData,
         message,
         mockSessionId,
@@ -49,7 +49,7 @@ describe("pure-state-modifiers", () => {
       const gameData: GameData = createBaseGameData();
 
       const message = "Test message without session";
-      const result = addSystemMessageToGameData(gameData, message, "", "");
+      const result = addSystemMessageToChat(gameData, message, "", "");
 
       expect(result.chat).toHaveLength(1);
       expect(result.chat[0].sessionId).toBe("");
@@ -68,7 +68,6 @@ describe("pure-state-modifiers", () => {
             displayType: MessageDisplayType.TEXT,
             disableUserInput: false,
             mcqChoices: [],
-            isPromptResponse: false,
           },
         ],
         players: [],
@@ -85,7 +84,7 @@ describe("pure-state-modifiers", () => {
       };
 
       const message = "New system message";
-      const result = addSystemMessageToGameData(
+      const result = addSystemMessageToChat(
         gameData,
         message,
         "session-456",
@@ -102,7 +101,7 @@ describe("pure-state-modifiers", () => {
       const originalGameData: GameData = createBaseGameData();
       const message = "New system message";
 
-      const updatedGameData = addSystemMessageToGameData(
+      const updatedGameData = addSystemMessageToChat(
         originalGameData,
         message,
         "session-456",

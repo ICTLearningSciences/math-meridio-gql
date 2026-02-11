@@ -27,11 +27,11 @@ export function getGameDataCopy(gameData: GameData): GameData {
   return JSON.parse(JSON.stringify(gameData));
 }
 
-export function addSystemMessageToGameData(
+export function addSystemMessageToChat(
   _gameData: GameData,
   newMessage: string,
   sessionId: string,
-  fromStepId: string
+  fromStepId: string,
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
   const processMessageWithDiscussionData = replaceStoredDataInString(
@@ -52,7 +52,6 @@ export function addSystemMessageToGameData(
     sender: SenderType.SYSTEM,
     senderId: "",
     senderName: "",
-    isPromptResponse: false,
     fromStepId: fromStepId,
     disableUserInput: false,
     mcqChoices: [],
@@ -87,35 +86,12 @@ export function addUserMessageToChat(
     sender: SenderType.PLAYER,
     senderId: senderId,
     senderName: senderName,
-    isPromptResponse: false,
     fromStepId: "",
     disableUserInput: false,
     mcqChoices: [],
     message: newMessage,
     sessionId: sessionId || "",
     displayType: MessageDisplayType.TEXT,
-  });
-  return gameData;
-}
-
-export function addPromptResponseToGameData(
-  _gameData: GameData,
-  newMessage: string,
-  sessionId: string
-): GameData {
-  const gameData: GameData = getGameDataCopy(_gameData);
-  gameData.chat.push({
-    messageId: crypto.randomUUID(),
-    sender: SenderType.SYSTEM,
-    senderId: "",
-    senderName: "",
-    fromStepId: "",
-    disableUserInput: false,
-    mcqChoices: [],
-    message: newMessage,
-    sessionId: sessionId || "",
-    displayType: MessageDisplayType.TEXT,
-    isPromptResponse: true,
   });
   return gameData;
 }
