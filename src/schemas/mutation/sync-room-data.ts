@@ -7,7 +7,7 @@ The full terms of this copyright and license should always be found in the root 
 
 import { GraphQLID, GraphQLObjectType } from "graphql";
 import RoomModel, {
-  GameData,
+  GameDataDocument,
   GameDataInputType,
   Room,
   RoomType,
@@ -23,7 +23,7 @@ export const syncRoomData = {
     _root: GraphQLObjectType,
     args: {
       roomId: string;
-      gameData: GameData;
+      gameData: GameDataDocument;
     },
     context: { userId: string }
   ): Promise<Room> => {

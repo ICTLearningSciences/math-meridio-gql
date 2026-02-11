@@ -26,8 +26,8 @@ import { Class } from "./classes/Class";
 
 /** mongoose */
 
-export interface ChatMessage extends Document {
-  id: string;
+export interface ChatMessage {
+  messageId: string;
   message: string;
   sender: string;
   senderId: string;
@@ -36,14 +36,19 @@ export interface ChatMessage extends Document {
   disableUserInput: boolean;
   mcqChoices: string[];
   sessionId: string;
+  isPromptResponse: boolean;
 }
 
-export interface GameStateData extends Document {
+export interface ChatMessageDocument extends Document, ChatMessage {}
+
+export interface GameStateData {
   key: string;
   value: any; // eslint-disable-line  @typescript-eslint/no-explicit-any
 }
 
-export interface GlobalStateData extends Document {
+export interface GameStateDataDocument extends GameStateData, Document {}
+
+export interface GlobalStateData {
   curStageId: string;
   curStepId: string;
   roomOwnerId: string;
@@ -51,13 +56,17 @@ export interface GlobalStateData extends Document {
   gameStateData: GameStateData[];
 }
 
-export interface PlayerStateData extends Document {
+export interface GlobalStateDataDocument extends GlobalStateData, Document {}
+
+export interface PlayerStateData {
   player: string;
   animation: string;
   gameStateData: GameStateData[];
 }
 
-export interface GameData extends Document {
+export interface PlayerStateDataDocument extends PlayerStateData, Document {}
+
+export interface GameData {
   gameId: string;
   players: string[];
   chat: ChatMessage[];
@@ -66,23 +75,27 @@ export interface GameData extends Document {
   playerStateData: PlayerStateData[];
 }
 
-export interface Room extends Document {
+export interface GameDataDocument extends GameData, Document {}
+
+export interface Room {
   classId?: Class["_id"];
   name: string;
-  gameData: GameData;
+  gameData: GameDataDocument;
   deletedRoom: boolean;
 }
 
-export interface RoomModel extends Model<Room> {
+export interface RoomDocument extends Room, Document {}
+
+export interface RoomModel extends Model<RoomDocument> {
   paginate(
-    query?: PaginateQuery<Room>,
+    query?: PaginateQuery<RoomDocument>,
     options?: PaginateOptions
-  ): Promise<PaginatedResolveResult<Room>>;
+  ): Promise<PaginatedResolveResult<RoomDocument>>;
 }
 
 export const ChatMessageSchema = new Schema<ChatMessage>(
   {
-    id: { type: String },
+    messageId: { type: String },
     message: { type: String },
     sender: { type: String },
     senderId: { type: String },
@@ -91,6 +104,7 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
     displayType: { type: String },
     disableUserInput: { type: Boolean },
     mcqChoices: [{ type: String }],
+    isPromptResponse: { type: Boolean },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -103,7 +117,7 @@ export const GameStateSchema = new Schema<GameStateData>(
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-export const GlobalStateSchema = new Schema<GlobalStateData>(
+export const GlobalStateSchema = new Schema<GlobalStateDataDocument>(
   {
     curStageId: { type: String },
     curStepId: { type: String },
@@ -114,7 +128,7 @@ export const GlobalStateSchema = new Schema<GlobalStateData>(
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-export const PlayerStateSchema = new Schema<PlayerStateData>(
+export const PlayerStateSchema = new Schema<PlayerStateDataDocument>(
   {
     player: { type: String },
     animation: { type: String },
@@ -123,7 +137,7 @@ export const PlayerStateSchema = new Schema<PlayerStateData>(
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-export const GameSchema = new Schema<GameData>(
+export const GameSchema = new Schema<GameDataDocument>(
   {
     gameId: { type: String },
     players: [{ type: String }],
@@ -135,7 +149,7 @@ export const GameSchema = new Schema<GameData>(
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-export const RoomSchema = new Schema<Room, RoomModel>(
+export const RoomSchema = new Schema<RoomDocument, RoomModel>(
   {
     classId: { type: Schema.Types.ObjectId, ref: "Class" },
     name: { type: String },
@@ -148,14 +162,15 @@ export const RoomSchema = new Schema<Room, RoomModel>(
 RoomSchema.index({ _id: -1 });
 pluginPagination(RoomSchema);
 
-export default mongoose.model<Room, RoomModel>("Room", RoomSchema);
+export default mongoose.model<RoomDocument, RoomModel>("Room", RoomSchema);
 
 /** gql */
 
 export const ChatMessageType = new GraphQLObjectType({
   name: "ChatMessageType",
   fields: () => ({
-    id: { type: GraphQLString },
+    _id: { type: GraphQLID },
+    messageId: { type: GraphQLString },
     message: { type: GraphQLString },
     sender: { type: GraphQLString },
     senderId: { type: GraphQLString },
@@ -164,6 +179,7 @@ export const ChatMessageType = new GraphQLObjectType({
     disableUserInput: { type: GraphQLBoolean },
     mcqChoices: { type: new GraphQLList(GraphQLString) },
     sessionId: { type: GraphQLString },
+    isPromptResponse: { type: GraphQLBoolean },
   }),
 });
 
@@ -201,7 +217,7 @@ export const GameDataType = new GraphQLObjectType({
     gameId: { type: GraphQLString },
     players: {
       type: new GraphQLList(PlayerType),
-      resolve: function (game: GameData) {
+      resolve: function (game: GameDataDocument) {
         return PlayerModel.find({ _id: { $in: game.players } });
       },
     },
@@ -254,7 +270,7 @@ export const PlayerStateDataInputType = new GraphQLInputObjectType({
 export const ChatMessageInputType = new GraphQLInputObjectType({
   name: "ChatMessageInput",
   fields: () => ({
-    id: { type: GraphQLString },
+    messageId: { type: GraphQLString },
     message: { type: GraphQLString },
     sender: { type: GraphQLString },
     senderId: { type: GraphQLString },

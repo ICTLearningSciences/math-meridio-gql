@@ -35,7 +35,7 @@ export const leaveRoomMutation = `
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId

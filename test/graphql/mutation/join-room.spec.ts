@@ -112,7 +112,7 @@ describe("join room", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId
@@ -171,7 +171,7 @@ describe("join room", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId
@@ -230,7 +230,7 @@ describe("join room", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId

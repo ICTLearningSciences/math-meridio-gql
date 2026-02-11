@@ -10,50 +10,51 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-import mongoose, { Document, Model, Schema } from "mongoose";
-import { PlayerDocument } from "./Player";
 
-export interface RefreshToken extends Document {
-  user: PlayerDocument["_id"];
-  token: string;
-  expires: Date;
-  created: Date;
-  createdByIp: string;
-  revoked: Date;
-  revokedByIp: string;
-  replacedByToken: string;
-  isExpired: boolean;
-  isActive: boolean;
+import { AzureOpenAiStepDataType, isAzureOpenAiData } from "./azure-ai-service";
+import { GeminiStepDataType, isGeminiData } from "./gemini-ai-service";
+import { isOpenAiData, OpenAiStepDataType } from "./open-ai-service";
+
+export interface AiStepData<ReqType, ResType> {
+  aiServiceRequestParams: ReqType; // OpenAI.Chat.Completions.ChatCompletionCreateParams for OpenAi
+  aiServiceResponse: ResType; // OpenAI.Chat.Completions.ChatCompletion.Choice[] for OpenAi
 }
 
-export const RefreshTokenSchema = new Schema<RefreshToken, RefreshTokenModel>({
-  user: { type: Schema.Types.ObjectId, ref: "Player" },
-  token: { type: String },
-  expires: { type: Date },
-  created: { type: Date, default: Date.now },
-  createdByIp: { type: String },
-  revoked: { type: Date },
-  revokedByIp: { type: String },
-  replacedByToken: { type: String },
-});
+export interface AiResponseType<AiStepDataType> {
+  aiAllStepsData: AiStepDataType[];
+  answer: string;
+}
 
-RefreshTokenSchema.virtual("isExpired").get(function () {
-  return Date.now() >= this.expires.getTime();
-});
+export interface AiJobStatusType<ServiceResponseType> {
+  jobStatus: string;
+  apiError: string;
+  aiServiceResponse: ServiceResponseType;
+}
 
-RefreshTokenSchema.virtual("isActive").get(function () {
-  return !this.revoked && !this.isExpired;
-});
+/**
+ * Merge all types here for use in abstract locations
+ */
 
-RefreshTokenSchema.set("toJSON", {
-  virtuals: true,
-  versionKey: false,
-});
+export type AiServiceStepDataTypes =
+  | OpenAiStepDataType
+  | GeminiStepDataType
+  | AzureOpenAiStepDataType;
+export type AiServicesResponseTypes = AiResponseType<AiServiceStepDataTypes>;
+export type AiServicesJobStatusResponseTypes =
+  AiJobStatusType<AiServicesResponseTypes>;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface RefreshTokenModel extends Model<RefreshToken> {}
-
-export default mongoose.model<RefreshToken, RefreshTokenModel>(
-  "RefreshToken",
-  RefreshTokenSchema
-);
+export function extractServiceStepResponse(
+  aiServiceResponse: AiServicesResponseTypes,
+  stepNumber: number
+): string {
+  const currentStep = aiServiceResponse.aiAllStepsData[stepNumber];
+  if (isAzureOpenAiData(currentStep)) {
+    return currentStep.aiServiceResponse.output_text || "";
+  } else if (isOpenAiData(currentStep)) {
+    return currentStep.aiServiceResponse.output_text || "";
+  } else if (isGeminiData(currentStep)) {
+    return currentStep.aiServiceResponse.text || "";
+  } else {
+    throw new Error("Invalid step data");
+  }
+}

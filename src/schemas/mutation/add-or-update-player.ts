@@ -13,7 +13,11 @@ import {
   GraphQLList,
   GraphQLInt,
 } from "graphql";
-import PlayerModel, { Player, PlayerType } from "../models/Player";
+import PlayerModel, {
+  Player,
+  PlayerDocument,
+  PlayerType,
+} from "../models/Player";
 
 const AvatarInputType = new GraphQLInputObjectType({
   name: "AvatarInput",
@@ -44,7 +48,7 @@ export const addOrUpdatePlayer = {
   },
   resolve: async (
     _root: GraphQLObjectType,
-    args: { playerId: string; playerFieldsToUpdate: Player }
+    args: { playerId: string; playerFieldsToUpdate: PlayerDocument }
   ): Promise<Player> => {
     if (!args.playerId) {
       throw new Error("Player ID is required");

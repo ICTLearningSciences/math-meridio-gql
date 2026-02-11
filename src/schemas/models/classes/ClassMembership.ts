@@ -14,7 +14,7 @@ import {
   pluginPagination,
 } from "../Paginatation";
 import { Class } from "./Class";
-import { Player } from "../Player";
+import { Player, PlayerDocument } from "../Player";
 
 export enum ClassMembershipStatus {
   MEMBER = "Member",
@@ -25,7 +25,7 @@ export enum ClassMembershipStatus {
 
 export interface ClassMembership extends Document {
   classId: Class["_id"];
-  userId: Player["_id"];
+  userId: PlayerDocument["_id"];
   status: ClassMembershipStatus;
 }
 

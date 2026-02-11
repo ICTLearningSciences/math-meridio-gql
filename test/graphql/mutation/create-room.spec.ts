@@ -51,7 +51,7 @@ describe("create and join new room", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId
@@ -139,7 +139,7 @@ describe("create and join new room", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId

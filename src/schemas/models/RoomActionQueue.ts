@@ -14,25 +14,28 @@ import {
   pluginPagination,
 } from "./Paginatation";
 import DateType from "../../schemas/types/date";
+import { RoomActionType } from "../../classes/llm-request/types";
 
-export interface RoomActionQueue extends Document {
+export interface RoomActionQueue {
   roomId: string;
   playerId: string;
-  actionType: string;
+  actionType: RoomActionType;
   payload: string;
   actionSentAt: Date;
   processedAt: Date;
 }
 
-export interface RoomActionQueueModel extends Model<RoomActionQueue> {
+export interface RoomActionQueueDocument extends RoomActionQueue, Document {}
+
+export interface RoomActionQueueModel extends Model<RoomActionQueueDocument> {
   paginate(
-    query?: PaginateQuery<RoomActionQueue>,
+    query?: PaginateQuery<RoomActionQueueDocument>,
     options?: PaginateOptions
-  ): Promise<PaginatedResolveResult<RoomActionQueue>>;
+  ): Promise<PaginatedResolveResult<RoomActionQueueDocument>>;
 }
 
 export const RoomActionQueueSchema = new Schema<
-  RoomActionQueue,
+  RoomActionQueueDocument,
   RoomActionQueueModel
 >(
   {
@@ -65,7 +68,7 @@ export const RoomActionQueueType = new GraphQLObjectType({
   }),
 });
 
-export default mongoose.model<RoomActionQueue, RoomActionQueueModel>(
+export default mongoose.model<RoomActionQueueDocument, RoomActionQueueModel>(
   "RoomActionQueue",
   RoomActionQueueSchema
 );

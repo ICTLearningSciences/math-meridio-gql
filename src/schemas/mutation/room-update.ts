@@ -13,7 +13,7 @@ import {
   GraphQLObjectType,
 } from "graphql";
 import RoomModel, {
-  GameData,
+  GameDataDocument,
   GameStateData,
   Room,
   RoomType,
@@ -67,7 +67,7 @@ export const updateRoom = {
     _root: GraphQLObjectType,
     args: {
       roomId: string;
-      gameData: GameData;
+      gameData: GameDataDocument;
     }
   ): Promise<Room> => {
     const room = await RoomModel.findOne({

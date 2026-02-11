@@ -33,7 +33,7 @@ export const fullUpdateRoomMutation = `
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId

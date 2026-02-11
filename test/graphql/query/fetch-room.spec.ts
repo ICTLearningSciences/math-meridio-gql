@@ -56,7 +56,7 @@ describe("fetch room", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId
@@ -151,7 +151,7 @@ describe("fetch room", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId

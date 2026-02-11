@@ -28,7 +28,7 @@ export const renameRoomMutation = `
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId

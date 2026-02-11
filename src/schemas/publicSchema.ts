@@ -46,6 +46,7 @@ import syncRoomData from "./mutation/sync-room-data";
 import createNewRoom from "./mutation/create-new-room";
 import roomHeartBeat from "./mutation/room-heart-beat";
 import fetchRoomHeartbeats from "./query/fetch-room-heartbeats";
+import testLlmCall from "./mutation/llm/test-llm-call";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -90,6 +91,7 @@ const PublicMutation = new GraphQLObjectType({
     syncRoomData,
     createNewRoom,
     roomHeartBeat,
+    testLlmCall,
   },
 });
 

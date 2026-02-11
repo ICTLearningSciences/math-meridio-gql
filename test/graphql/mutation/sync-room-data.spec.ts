@@ -90,7 +90,7 @@ describe("sync room data", () => {
       players: [userId1],
       chat: [
         {
-          id: "msg1",
+          messageId: "msg1",
           message: "Hello",
           sender: "system",
           senderId: userId1,
@@ -248,7 +248,7 @@ describe("sync room data", () => {
       players: [userId1],
       chat: [
         {
-          id: "msg1",
+          messageId: "msg1",
           message: "New message",
           sender: "user",
           senderId: userId1,

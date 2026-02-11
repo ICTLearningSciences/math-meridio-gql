@@ -41,7 +41,7 @@ export interface Avatar extends Document {
   variants: string[];
 }
 
-export interface Player extends Document {
+export interface Player {
   clientId: string;
   name: string;
   description: string;
@@ -54,6 +54,8 @@ export interface Player extends Document {
   educationalRole: EducationalRole;
 }
 
+export interface PlayerDocument extends Document, Player {}
+
 export const AvatarSchema = new Schema<Avatar>(
   {
     type: { type: String },
@@ -65,7 +67,7 @@ export const AvatarSchema = new Schema<Avatar>(
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-export const PlayerSchema = new Schema<Player, PlayerModel>(
+export const PlayerSchema = new Schema<PlayerDocument, PlayerModel>(
   {
     clientId: { type: String },
     name: { type: String },
@@ -93,17 +95,20 @@ export const PlayerSchema = new Schema<Player, PlayerModel>(
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-export interface PlayerModel extends Model<Player> {
+export interface PlayerModel extends Model<PlayerDocument> {
   paginate(
-    query?: PaginateQuery<Player>,
+    query?: PaginateQuery<PlayerDocument>,
     options?: PaginateOptions
-  ): Promise<PaginatedResolveResult<Player>>;
+  ): Promise<PaginatedResolveResult<PlayerDocument>>;
 }
 
 PlayerSchema.index({ _id: -1 });
 pluginPagination(PlayerSchema);
 
-export default mongoose.model<Player, PlayerModel>("Player", PlayerSchema);
+export default mongoose.model<PlayerDocument, PlayerModel>(
+  "Player",
+  PlayerSchema
+);
 
 /** gql */
 

@@ -29,7 +29,7 @@ export const sendMessageMutation = `
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId
@@ -82,7 +82,7 @@ describe("send message", () => {
         variables: {
           roomId: room1Id,
           msg: {
-            id: "new message",
+            messageId: "new message",
             message: "New Message",
             sender: "PLAYER",
             senderId: player1Id,
@@ -108,7 +108,7 @@ describe("send message", () => {
         ],
         chat: [
           {
-            id: "new message",
+            messageId: "new message",
             message: "New Message",
             sender: "PLAYER",
             senderId: player1Id,
