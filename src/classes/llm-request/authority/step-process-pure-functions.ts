@@ -18,6 +18,8 @@ import {
   recursivelyConvertExpectedDataToAiPromptString,
   recursiveUpdateAdditionalInfo,
   replaceStoredDataInString,
+  chatLogToString,
+  isJsonString,
 } from "./helpers/helpers";
 import {
   CollectedDiscussionData,
@@ -27,7 +29,6 @@ import {
   RequestUserInputStageStep,
   SystemMessageStageStep,
 } from "../../../schemas/models/DiscussionStage/types";
-import { chatLogToString, isJsonString } from "./helpers/helpers";
 import {
   GenericLlmRequest,
   JsonResponseData,
@@ -141,7 +142,7 @@ export async function processPromptStep(
     curStep.outputDataType === PromptOutputTypes.JSON
   ) {
     const jsonResponseData: JsonResponseData[] = JSON.parse(
-      curStep.jsonResponseData
+      curStep.jsonResponseData || "[]"
     );
     llmRequest.responseFormat += recursivelyConvertExpectedDataToAiPromptString(
       recursiveUpdateAdditionalInfo(jsonResponseData, collectedDiscussionData)
@@ -157,7 +158,7 @@ export async function processPromptStep(
         throw new Error(`Did not receive valid JSON data: ${response}`);
       }
       const jsonResponseData: JsonResponseData[] = JSON.parse(
-        curStep.jsonResponseData
+        curStep.jsonResponseData || "[]"
       );
       if (curStep.jsonResponseData && curStep.jsonResponseData.length > 0) {
         if (!receivedExpectedData(jsonResponseData, response)) {

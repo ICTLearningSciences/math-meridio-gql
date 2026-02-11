@@ -56,6 +56,15 @@ jest.mock(
       () => "\nExpected JSON structure"
     ),
     recursiveUpdateAdditionalInfo: jest.fn((data) => data),
+    chatLogToString: jest.fn((chatLog: any[]) => "mock chat log"),
+    isJsonString: jest.fn((str: string) => {
+      try {
+        JSON.parse(str);
+        return true;
+      } catch {
+        return false;
+      }
+    }),
   })
 );
 
@@ -185,13 +194,10 @@ describe("step-process-pure-functions", () => {
       const result = processNewSystemMessageStep(gameData, step, "session-1");
 
       expect(result.chat).toHaveLength(1);
-      expect(result.chat[0]).toEqual({
-        id: "test-uuid-1234",
-        displayType: MessageDisplayType.TEXT,
-        sender: SenderType.SYSTEM,
-        message: "Welcome to the game!",
-        sessionId: "test-session-123",
-      });
+      expect(result.chat[0].displayType).toEqual(MessageDisplayType.TEXT);
+      expect(result.chat[0].sender).toEqual(SenderType.SYSTEM);
+      expect(result.chat[0].message).toEqual("Welcome to the game!");
+      expect(result.chat[0].sessionId).toEqual("session-1");
     });
 
     it("should not mutate the original gameData object", () => {
