@@ -14,7 +14,7 @@ import {
   pluginPagination,
 } from "./Paginatation";
 import DateType from "../../schemas/types/date";
-import { RoomActionType } from "../../classes/llm-request/types";
+import { RoomActionType } from "../../authoritative-server/llm-request/types";
 
 export interface RoomActionQueue {
   roomId: string;

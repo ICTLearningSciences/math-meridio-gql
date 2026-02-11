@@ -23,6 +23,7 @@ import {
 import PlayerModel, { PlayerType } from "./Player";
 import GraphQLScalarType from "../types/anything-scalar-type";
 import { Class } from "./classes/Class";
+import { DiscussionStageStepType } from "./DiscussionStage/types";
 
 /** mongoose */
 
@@ -37,6 +38,7 @@ export interface ChatMessage {
   mcqChoices: string[];
   sessionId: string;
   isPromptResponse: boolean;
+  fromStepId?: string;
 }
 
 export interface ChatMessageDocument extends Document, ChatMessage {}
@@ -80,7 +82,7 @@ export interface GameDataDocument extends GameData, Document {}
 export interface Room {
   classId?: Class["_id"];
   name: string;
-  gameData: GameDataDocument;
+  gameData: GameData;
   deletedRoom: boolean;
 }
 
@@ -105,6 +107,7 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
     disableUserInput: { type: Boolean },
     mcqChoices: [{ type: String }],
     isPromptResponse: { type: Boolean },
+    fromStepId: { type: String },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -180,6 +183,7 @@ export const ChatMessageType = new GraphQLObjectType({
     mcqChoices: { type: new GraphQLList(GraphQLString) },
     sessionId: { type: GraphQLString },
     isPromptResponse: { type: GraphQLBoolean },
+    fromStepId: { type: GraphQLString },
   }),
 });
 
@@ -276,6 +280,7 @@ export const ChatMessageInputType = new GraphQLInputObjectType({
     senderId: { type: GraphQLString },
     senderName: { type: GraphQLString },
     isPromptResponse: { type: GraphQLBoolean },
+    fromStepId: { type: GraphQLString },
     sessionId: { type: GraphQLString },
     displayType: { type: GraphQLString },
     disableUserInput: { type: GraphQLBoolean },

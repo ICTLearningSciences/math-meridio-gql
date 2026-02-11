@@ -4,12 +4,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-/*
-This software is Copyright ©️ 2020 The University of Southern California. All Rights Reserved. 
-Permission to use, copy, modify, and distribute this software and its documentation for educational, research and non-profit purposes, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and subject to the full license file found in the root of this software deliverable. Permission to make commercial use of this software may be obtained by contacting:  USC Stevens Center for Innovation University of Southern California 1150 S. Olive Street, Suite 2300, Los Angeles, CA 90115, USA Email: accounting@stevens.usc.edu
 
-The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
-*/
 import { CancelToken } from "axios";
 import {
   convertCollectedDataToGSData,
@@ -24,36 +19,37 @@ import {
 import {
   CollectedDiscussionData,
   DiscussionStage,
+  DiscussionStageStep,
   DiscussionStageStepType,
   PromptStageStep,
   RequestUserInputStageStep,
   SystemMessageStageStep,
-} from "../../../schemas/models/DiscussionStage/types";
+} from "../../schemas/models/DiscussionStage/types";
 import {
   GenericLlmRequest,
   JsonResponseData,
   PromptOutputTypes,
   PromptRoles,
+  SenderType,
   TargetAiModelServiceType,
-} from "../types";
+} from "../llm-request/types";
 import {
-  initializeResponseTracking,
+  updateGameDataWithNextStep,
   updatePlayerStateData,
 } from "./pure-state-modifiers";
 import {
   addPromptResponseToGameData,
   addSystemMessageToGameData,
-  everyPlayerHasRespondedToStep,
   getGameDataCopy,
-  getAllStepResponseTrackingFromGameState,
 } from "./state-modifier-helpers";
 import { getCurStageAndStep } from "./user-action-pure-functions";
-import { GameData } from "../../../schemas/models/Room";
+import { GameData } from "../../schemas/models/Room";
 import {
   AiServicesResponseTypes,
   extractServiceStepResponse,
-} from "../ai-services/ai-service-types";
-import { syncLlmRequest } from "../llm-request";
+} from "../llm-request/ai-services/ai-service-types";
+import { syncLlmRequest } from "../llm-request/llm-request";
+import { getGameById } from "authoritative-server/games/game-helpers";
 
 export function startRequestUserInputStep(
   _gameData: GameData,
@@ -61,10 +57,12 @@ export function startRequestUserInputStep(
   sessionId: string
 ): GameData {
   let gameData = getGameDataCopy(_gameData);
-  if (curStep.requireAllUserInputs) {
-    gameData = initializeResponseTracking(gameData);
-  }
-  gameData = addSystemMessageToGameData(gameData, curStep.message, sessionId);
+  gameData = addSystemMessageToGameData(
+    gameData,
+    curStep.message,
+    sessionId,
+    curStep.stepId
+  );
   return gameData;
 }
 
@@ -74,7 +72,12 @@ export function processNewSystemMessageStep(
   sessionId: string
 ): GameData {
   let gameData = getGameDataCopy(_gameData);
-  gameData = addSystemMessageToGameData(gameData, curStep.message, sessionId);
+  gameData = addSystemMessageToGameData(
+    gameData,
+    curStep.message,
+    sessionId,
+    curStep.stepId
+  );
   return gameData;
 }
 
@@ -196,7 +199,6 @@ export async function processPromptStep(
 export async function processCurStep(
   _gameData: GameData,
   discussionStages: DiscussionStage[],
-  setResponsePending: (pending: boolean) => void,
   targetAiServiceModel: TargetAiModelServiceType,
   playerIdToUpdate: string,
   sessionId: string
@@ -214,7 +216,6 @@ export async function processCurStep(
       gameData = processConditionalStep(gameData);
       break;
     case DiscussionStageStepType.PROMPT:
-      setResponsePending(true);
       gameData = await processPromptStep(
         gameData,
         curStep,
@@ -224,7 +225,6 @@ export async function processCurStep(
         playerIdToUpdate,
         sessionId
       );
-      setResponsePending(false);
       break;
     default:
       throw new Error(`Unknown step type: ${curStep}`);
@@ -232,22 +232,55 @@ export async function processCurStep(
   return gameData;
 }
 
-function isRequestUserInputStepComplete(
-  gameData: GameData,
+export function isRequestUserInputStepComplete(
+  _gameData: GameData,
   curStep: RequestUserInputStageStep
 ): boolean {
-  const { allStepResponseTracking } =
-    getAllStepResponseTrackingFromGameState(gameData);
-  if (!curStep.requireAllUserInputs) {
-    return true; // do not require all user inputs, so we assume the step is complete
+  // Just check the chat log for the messages that came after the request user input step.
+  const gameData = getGameDataCopy(_gameData);
+  let mostRecentSystemMessageIdx = -1;
+  let mostRecentUserMessageIdx = -1;
+
+  for (let i = 0; i < gameData.chat.length; i++) {
+    if (gameData.chat[i].fromStepId === curStep.stepId) {
+      mostRecentSystemMessageIdx = i;
+    }
+    if (gameData.chat[i].sender === SenderType.PLAYER) {
+      mostRecentUserMessageIdx = i;
+    }
   }
-  const targetStepResponseTracking = allStepResponseTracking.find(
-    (stepResponseTracking) => stepResponseTracking.stepId === curStep.stepId
-  );
-  if (!targetStepResponseTracking) {
-    return false; // step response tracking not found, so the step is not complete
+  if (mostRecentSystemMessageIdx === -1) {
+    // Find most recent system message.
+    for (let i = gameData.chat.length - 1; i >= 0; i--) {
+      if (gameData.chat[i].sender === SenderType.SYSTEM) {
+        mostRecentSystemMessageIdx = i;
+        break;
+      }
+    }
   }
-  return everyPlayerHasRespondedToStep(targetStepResponseTracking);
+
+  // If no system message was found, then the step is not complete.
+  if (mostRecentSystemMessageIdx === -1) {
+    return false;
+  }
+
+  if (curStep.requireAllUserInputs) {
+    // Require all user inputs, so we check that every player provided a response AFTER the user inputs system message.
+    const playerIds = gameData.playerStateData.map((player) => player.player);
+    const messagesAfterInputStepMessage = gameData.chat.slice(
+      mostRecentSystemMessageIdx + 1
+    );
+    const userMessagesAfterInputStepMessage =
+      messagesAfterInputStepMessage.filter(
+        (msg) => msg.sender === SenderType.PLAYER
+      );
+    return playerIds.every((playerId) =>
+      userMessagesAfterInputStepMessage.some((msg) => msg.senderId === playerId)
+    );
+  } else {
+    // Do not require all user inputs, so we check that the users message came after the most recent system message.
+    return mostRecentUserMessageIdx > mostRecentSystemMessageIdx;
+  }
 }
 
 export async function isDiscussionStageStepComplete(
@@ -292,4 +325,50 @@ export async function isSimulationStageComplete(
       }
     })
   );
+}
+
+/**
+ * Goes to the next step and continues processing steps until we reach the next request user input step.
+ * This means we process prompts, system messages, and conditionals until we reach the next request user input step, of which will still have its message added to the chat.
+ */
+export async function processStepsUntilNextRequestUserInputStep(
+  _gameData: GameData,
+  discussionStages: DiscussionStage[],
+  targetAiServiceModel: TargetAiModelServiceType,
+  playerIdToUpdate: string,
+  sessionId: string
+): Promise<GameData> {
+  let gameData = getGameDataCopy(_gameData);
+  let stepAndStage = getCurStageAndStep(gameData, discussionStages);
+  const curGame = getGameById(gameData.gameId, discussionStages);
+
+  do {
+    const curStage = curGame.stageList.find(
+      (stage) => stage.stage.clientId === gameData.globalStateData.curStageId
+    );
+    gameData = updateGameDataWithNextStep(
+      gameData,
+      curStage,
+      stepAndStage.curStep
+    );
+    stepAndStage = getCurStageAndStep(gameData, discussionStages);
+    console.log(
+      `current stage: ${JSON.stringify(stepAndStage.curStage.title)} : ${
+        stepAndStage.curStage.clientId
+      }`
+    );
+    console.log(
+      `processing ${stepAndStage.curStep.stepType} step: ${stepAndStage.curStep.stepId}`
+    );
+    gameData = await processCurStep(
+      gameData,
+      discussionStages,
+      targetAiServiceModel,
+      playerIdToUpdate,
+      sessionId
+    );
+  } while (
+    stepAndStage.curStep.stepType !== DiscussionStageStepType.REQUEST_USER_INPUT
+  );
+  return gameData;
 }

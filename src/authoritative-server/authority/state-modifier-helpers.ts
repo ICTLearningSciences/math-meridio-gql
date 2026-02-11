@@ -4,68 +4,59 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-/*
-This software is Copyright ©️ 2020 The University of Southern California. All Rights Reserved. 
-Permission to use, copy, modify, and distribute this software and its documentation for educational, research and non-profit purposes, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and subject to the full license file found in the root of this software deliverable. Permission to make commercial use of this software may be obtained by contacting:  USC Stevens Center for Innovation University of Southern California 1150 S. Olive Street, Suite 2300, Los Angeles, CA 90115, USA Email: accounting@stevens.usc.edu
 
-The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
-*/
-import { GameData } from "../../../schemas/models/Room";
-import { MessageDisplayType, SenderType } from "../types";
+import {
+  AbstractGameData,
+  MessageDisplayType,
+  SenderType,
+} from "../llm-request/types";
+import { GameData } from "../../schemas/models/Room";
 
 import * as crypto from "node:crypto"; // Use 'node:crypto' for ESM or require('crypto') for CommonJS
-
-export const STEP_RESPONSE_TRACKING_KEY = "stepResponseTracking";
-
-export interface StepResponseTracking {
-  stepId: string;
-  requiredPlayerIds: string[];
-  responses: Record<string, string>; // playerId -> message
-  allResponsesReceivedOnce: boolean; // once true, no longer require all responses for this step
-}
+import { replaceStoredDataInString } from "./helpers/helpers";
+import {
+  DiscussionStageStep,
+  DiscussionStageStepType,
+} from "schemas/models/DiscussionStage/types";
+import {
+  updateDiscussionData,
+  updateGlobalStateData,
+} from "./pure-state-modifiers";
 
 export function getGameDataCopy(gameData: GameData): GameData {
   return JSON.parse(JSON.stringify(gameData));
 }
 
-export interface GetResponseTrackingFromGameState {
-  allResponseTrackingIndexInGameStateData: number;
-  allStepResponseTracking: StepResponseTracking[];
-}
-
-export function getAllStepResponseTrackingFromGameState(gameData: GameData) {
-  const responseTrackingIdx = gameData.globalStateData.gameStateData.findIndex(
-    (gameData) => gameData.key === STEP_RESPONSE_TRACKING_KEY
-  );
-  if (responseTrackingIdx === -1) {
-    return {
-      allResponseTrackingIndexInGameStateData: -1,
-      allStepResponseTracking: [],
-    };
-  }
-  return {
-    allResponseTrackingIndexInGameStateData: responseTrackingIdx,
-    allStepResponseTracking: gameData.globalStateData.gameStateData[
-      responseTrackingIdx
-    ].value as StepResponseTracking[],
-  };
-}
-
 export function addSystemMessageToGameData(
   _gameData: GameData,
   newMessage: string,
-  sessionId: string
+  sessionId: string,
+  fromStepId: string
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
+  const processMessageWithDiscussionData = replaceStoredDataInString(
+    newMessage,
+    JSON.parse(gameData.globalStateData.discussionDataStringified || "{}")
+  );
+  const gameStateDataAsRecord: Record<string, string> =
+    gameData.globalStateData.gameStateData.reduce((acc, data) => {
+      acc[data.key] = data.value;
+      return acc;
+    }, {} as Record<string, string>);
+  const processedMessageWithGameStateData = replaceStoredDataInString(
+    processMessageWithDiscussionData,
+    gameStateDataAsRecord
+  );
   gameData.chat.push({
     messageId: crypto.randomUUID(),
     sender: SenderType.SYSTEM,
     senderId: "",
     senderName: "",
     isPromptResponse: false,
+    fromStepId: fromStepId,
     disableUserInput: false,
     mcqChoices: [],
-    message: newMessage,
+    message: processedMessageWithGameStateData,
     sessionId: sessionId || "",
     displayType: MessageDisplayType.TEXT,
   });
@@ -74,18 +65,30 @@ export function addSystemMessageToGameData(
 
 export function addUserMessageToChat(
   _gameData: GameData,
+  curStep: DiscussionStageStep,
   newMessage: string,
   senderId: string,
   senderName: string,
   sessionId: string
 ): GameData {
-  const gameData: GameData = getGameDataCopy(_gameData);
+  let gameData: GameData = getGameDataCopy(_gameData);
+
+  // TODO: need to add the response to the global state data if save variable of the current step exists.
+  if (
+    curStep.stepType === DiscussionStageStepType.REQUEST_USER_INPUT &&
+    curStep.saveResponseVariableName
+  ) {
+    gameData = updateDiscussionData(gameData, [
+      { key: curStep.saveResponseVariableName, value: newMessage },
+    ]);
+  }
   gameData.chat.push({
     messageId: crypto.randomUUID(),
     sender: SenderType.PLAYER,
     senderId: senderId,
     senderName: senderName,
     isPromptResponse: false,
+    fromStepId: "",
     disableUserInput: false,
     mcqChoices: [],
     message: newMessage,
@@ -106,6 +109,7 @@ export function addPromptResponseToGameData(
     sender: SenderType.SYSTEM,
     senderId: "",
     senderName: "",
+    fromStepId: "",
     disableUserInput: false,
     mcqChoices: [],
     message: newMessage,
@@ -114,16 +118,6 @@ export function addPromptResponseToGameData(
     isPromptResponse: true,
   });
   return gameData;
-}
-
-export function everyPlayerHasRespondedToStep(
-  stepResponseTracking: StepResponseTracking
-): boolean {
-  const playersWithResponses = Object.keys(stepResponseTracking.responses);
-  return (
-    playersWithResponses.length ===
-    stepResponseTracking.requiredPlayerIds.length
-  );
 }
 
 export function evaluateCondition(

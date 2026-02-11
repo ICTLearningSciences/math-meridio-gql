@@ -19,7 +19,7 @@ const { ObjectId } = mongoose.Types;
 
 const createNewRoomMutation = `
   mutation CreateNewRoom($gameId: String!, $gameName: String!, $classId: String) {
-    createNewRoom(gameId: $gameId, gameName: $gameName, classId: $classId) {
+    createNewGameRoom(gameId: $gameId, gameName: $gameName, classId: $classId) {
       _id
       name
       classId
@@ -99,15 +99,17 @@ describe("create new room", () => {
       });
 
     expect(response.status).to.equal(200);
-    expect(response.body.data.createNewRoom).to.exist;
-    expect(response.body.data.createNewRoom._id).to.exist;
-    expect(response.body.data.createNewRoom.name).to.equal(
+    expect(response.body.data.createNewGameRoom).to.exist;
+    expect(response.body.data.createNewGameRoom._id).to.exist;
+    expect(response.body.data.createNewGameRoom.name).to.equal(
       "Math Challenge Solution Space 1"
     );
-    expect(response.body.data.createNewRoom.classId).to.be.null;
-    expect(response.body.data.createNewRoom.deletedRoom).to.equal(false);
+    expect(response.body.data.createNewGameRoom.classId).to.be.null;
+    expect(response.body.data.createNewGameRoom.deletedRoom).to.equal(false);
 
-    const room = await RoomModel.findById(response.body.data.createNewRoom._id);
+    const room = await RoomModel.findById(
+      response.body.data.createNewGameRoom._id
+    );
     expect(room).to.exist;
     expect(room?.name).to.equal("Math Challenge Solution Space 1");
   });
@@ -126,15 +128,15 @@ describe("create new room", () => {
       });
 
     expect(response.status).to.equal(200);
-    expect(response.body.data.createNewRoom).to.exist;
-    expect(response.body.data.createNewRoom._id).to.exist;
-    expect(response.body.data.createNewRoom.name).to.equal(
+    expect(response.body.data.createNewGameRoom).to.exist;
+    expect(response.body.data.createNewGameRoom._id).to.exist;
+    expect(response.body.data.createNewGameRoom.name).to.equal(
       "Math Challenge Solution Space 1"
     );
-    expect(response.body.data.createNewRoom.classId).to.equal(classId);
-    expect(response.body.data.createNewRoom.deletedRoom).to.equal(false);
-    expect(response.body.data.createNewRoom.gameData).to.exist;
-    expect(response.body.data.createNewRoom.gameData).to.deep.equal({
+    expect(response.body.data.createNewGameRoom.classId).to.equal(classId);
+    expect(response.body.data.createNewGameRoom.deletedRoom).to.equal(false);
+    expect(response.body.data.createNewGameRoom.gameData).to.exist;
+    expect(response.body.data.createNewGameRoom.gameData).to.deep.equal({
       gameId: "game123",
       players: [],
       chat: [],
@@ -149,7 +151,9 @@ describe("create new room", () => {
       },
     });
 
-    const room = await RoomModel.findById(response.body.data.createNewRoom._id);
+    const room = await RoomModel.findById(
+      response.body.data.createNewGameRoom._id
+    );
     expect(room).to.exist;
     expect(room?.classId?.toString()).to.equal(classId);
   });
@@ -204,7 +208,9 @@ describe("create new room", () => {
 
     expect(response.status).to.equal(200);
 
-    const room = await RoomModel.findById(response.body.data.createNewRoom._id);
+    const room = await RoomModel.findById(
+      response.body.data.createNewGameRoom._id
+    );
     expect(room?.gameData).to.exist;
   });
 });

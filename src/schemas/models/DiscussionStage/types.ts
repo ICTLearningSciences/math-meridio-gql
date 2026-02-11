@@ -45,6 +45,7 @@ export enum DiscussionStageStepType {
   REQUEST_USER_INPUT = "REQUEST_USER_INPUT",
   PROMPT = "PROMPT",
   CONDITIONAL = "CONDITIONAL",
+  NONE = "NONE",
 }
 
 export interface StageBuilderStep {

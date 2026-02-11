@@ -310,7 +310,6 @@ describe("fetch rooms", () => {
           deletedRoom: false,
         },
       });
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRooms).to.eql([]);
   });

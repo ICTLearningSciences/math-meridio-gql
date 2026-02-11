@@ -43,10 +43,11 @@ import updateClassNameDescription from "./mutation/update-class-name-description
 import submitProcessedActions from "./mutation/submit-processed-actions";
 import submitRoomAction from "./mutation/submit-room-action";
 import syncRoomData from "./mutation/sync-room-data";
-import createNewRoom from "./mutation/create-new-room";
+import createNewGameRoom from "./mutation/game-room-authoritative/create-new-game-room";
 import roomHeartBeat from "./mutation/room-heart-beat";
 import fetchRoomHeartbeats from "./query/fetch-room-heartbeats";
 import testLlmCall from "./mutation/llm/test-llm-call";
+import sendMessageToGameRoom from "./mutation/game-room-authoritative/send-message-to-game-room";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -89,9 +90,10 @@ const PublicMutation = new GraphQLObjectType({
     submitProcessedActions,
     submitRoomAction,
     syncRoomData,
-    createNewRoom,
+    createNewGameRoom,
     roomHeartBeat,
     testLlmCall,
+    sendMessageToGameRoom,
   },
 });
 

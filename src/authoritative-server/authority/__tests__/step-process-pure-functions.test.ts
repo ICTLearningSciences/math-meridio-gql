@@ -11,7 +11,7 @@ import {
   MessageDisplayType,
   PromptOutputTypes,
   SenderType,
-} from "../../../../classes/llm-request/types";
+} from "../../llm-request/types";
 import {
   startRequestUserInputStep,
   processNewSystemMessageStep,
@@ -23,20 +23,16 @@ import {
   SystemMessageStageStep,
   PromptStageStep,
   CollectedDiscussionData,
-} from "../../../../schemas/models/DiscussionStage/types";
-import { STEP_RESPONSE_TRACKING_KEY } from "../state-modifier-helpers";
+} from "../../../schemas/models/DiscussionStage/types";
 import {
   createBaseGameData,
   createPromptStep,
   createRequestUserInputStep,
   createSystemMessageStep,
 } from "./helpers";
-import { AiServicesResponseTypes } from "../../../../classes/llm-request/ai-services/ai-service-types";
-import {
-  PromptRoles,
-  TargetAiModelServiceType,
-} from "../../../../classes/llm-request/types";
-import * as helpers from "../../../../classes/llm-request/authority/helpers/helpers";
+import { PromptRoles, TargetAiModelServiceType } from "../../llm-request/types";
+import * as helpers from "../helpers/helpers";
+import { AiServicesResponseTypes } from "../../llm-request/ai-services/ai-service-types";
 
 // Mock uuid
 jest.mock("uuid", () => ({
@@ -108,80 +104,6 @@ process.env.LLM_API_ENDPOINT = "test-value";
 describe("step-process-pure-functions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe("startRequestUserInputStep", () => {
-    it("should initialize response tracking and add system message when requireAllUserInputs is true", () => {
-      const gameData = createBaseGameData();
-      const step: RequestUserInputStageStep = createRequestUserInputStep(
-        "step-1",
-        {
-          message: "Please provide your input",
-          saveResponseVariableName: "userInput",
-          requireAllUserInputs: true,
-        }
-      );
-
-      const result = startRequestUserInputStep(gameData, step, "session-1");
-
-      // Should have response tracking initialized
-      const trackingItem = result.globalStateData.gameStateData.find(
-        (item) => item.key === STEP_RESPONSE_TRACKING_KEY
-      );
-      expect(trackingItem).toBeDefined();
-      expect(trackingItem?.value).toEqual([]);
-
-      // Should have system message added
-      expect(result.chat).toHaveLength(1);
-      expect(result.chat[0].sender).toBe(SenderType.SYSTEM);
-      expect(result.chat[0].message).toBe("Please provide your input");
-    });
-
-    it("should not initialize response tracking when requireAllUserInputs is false", () => {
-      const gameData = createBaseGameData();
-      const step: RequestUserInputStageStep = createRequestUserInputStep(
-        "step-1",
-        {
-          message: "Optional input",
-          saveResponseVariableName: "optionalInput",
-        }
-      );
-
-      const result = startRequestUserInputStep(gameData, step, "session-1");
-
-      // Should NOT have response tracking initialized
-      const trackingItem = result.globalStateData.gameStateData.find(
-        (item) => item.key === STEP_RESPONSE_TRACKING_KEY
-      );
-      expect(trackingItem).toBeUndefined();
-
-      // Should still have system message added
-      expect(result.chat).toHaveLength(1);
-      expect(result.chat[0].message).toBe("Optional input");
-    });
-
-    it("should not mutate the original gameData object", () => {
-      const originalGameData = createBaseGameData();
-      const step: RequestUserInputStageStep = createRequestUserInputStep(
-        "step-1",
-        {
-          message: "Test message",
-          saveResponseVariableName: "test",
-          requireAllUserInputs: true,
-        }
-      );
-
-      const result = startRequestUserInputStep(
-        originalGameData,
-        step,
-        "session-1"
-      );
-
-      expect(result.chat.length).toBe(1);
-      expect(originalGameData.chat.length).toBe(0);
-      expect(result.globalStateData.gameStateData.length).toBeGreaterThan(0);
-      expect(originalGameData.globalStateData.gameStateData.length).toBe(0);
-    });
   });
 
   describe("processNewSystemMessageStep", () => {

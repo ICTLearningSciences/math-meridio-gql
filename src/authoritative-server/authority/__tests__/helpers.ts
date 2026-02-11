@@ -11,12 +11,9 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 /// <reference types="jest" />
-import { Player, PlayerDocument } from "../../../../schemas/models/Player";
-import {
-  LoginService,
-  EducationalRole,
-} from "../../../../schemas/models/Player";
-import { GameData } from "../../../../schemas/models/Room";
+import { PlayerDocument } from "../../../schemas/models/Player";
+import { LoginService, EducationalRole } from "../../../schemas/models/Player";
+import { GameData } from "../../../schemas/models/Room";
 import {
   Checking,
   ConditionalActivityStep,
@@ -28,10 +25,10 @@ import {
   PromptStageStep,
   NumericOperations,
   LogicStepConditional,
-} from "../../../../schemas/models/DiscussionStage/types";
-import { DiscussionCurrentStage } from "../../../../schemas/models/DiscussionStage/types";
-import { UserRole } from "../../../../schemas/types/types";
-import { PromptOutputTypes } from "../../../../classes/llm-request/types";
+} from "../../../schemas/models/DiscussionStage/types";
+import { DiscussionCurrentStage } from "../../../schemas/models/DiscussionStage/types";
+import { UserRole } from "../../../schemas/types/types";
+import { PromptOutputTypes } from "../../llm-request/types";
 import * as crypto from "node:crypto";
 
 export function createMockPlayer(id: string, name: string): PlayerDocument {

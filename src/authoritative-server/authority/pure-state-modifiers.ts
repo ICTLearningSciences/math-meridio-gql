@@ -4,14 +4,8 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-/*
-This software is Copyright ©️ 2020 The University of Southern California. All Rights Reserved. 
-Permission to use, copy, modify, and distribute this software and its documentation for educational, research and non-profit purposes, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and subject to the full license file found in the root of this software deliverable. Permission to make commercial use of this software may be obtained by contacting:  USC Stevens Center for Innovation University of Southern California 1150 S. Olive Street, Suite 2300, Los Angeles, CA 90115, USA Email: accounting@stevens.usc.edu
 
-The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
-*/
-
-import { GameData, GameStateData } from "../../../schemas/models/Room";
+import { GameData, GameStateData } from "../../schemas/models/Room";
 import {
   Checking,
   ConditionalActivityStep,
@@ -21,122 +15,9 @@ import {
   IStage,
   CollectedDiscussionData,
   CurrentStage,
-} from "../../../schemas/models/DiscussionStage/types";
+} from "../../schemas/models/DiscussionStage/types";
 import { getFirstStepId, replaceStoredDataInString } from "./helpers/helpers";
-import {
-  evaluateCondition,
-  everyPlayerHasRespondedToStep,
-  getGameDataCopy,
-  getAllStepResponseTrackingFromGameState,
-  STEP_RESPONSE_TRACKING_KEY,
-  StepResponseTracking,
-} from "./state-modifier-helpers";
-
-/**
- * Initializes the response tracking for the whole game,
- */
-export function initializeResponseTracking(_gameData: GameData): GameData {
-  const gameData: GameData = getGameDataCopy(_gameData);
-  const existingTracking = gameData.globalStateData.gameStateData.find(
-    (gameDataKeyValue) => gameDataKeyValue.key === STEP_RESPONSE_TRACKING_KEY
-  );
-  if (existingTracking) {
-    return gameData;
-  }
-  const newTracking = {
-    key: STEP_RESPONSE_TRACKING_KEY,
-    value: [] as StepResponseTracking[],
-  };
-  gameData.globalStateData.gameStateData.push(newTracking);
-  return gameData;
-}
-
-/**
- * Adds response tracking for a step to the global state data
- */
-export function addResponseTrackingForStep(
-  _gameData: GameData,
-  stepId: string
-): GameData {
-  const gameData: GameData = getGameDataCopy(_gameData);
-  const updatedGameData = initializeResponseTracking(gameData);
-  const existingTrackingItem =
-    updatedGameData.globalStateData.gameStateData.find(
-      (gameDataKeyValue) => gameDataKeyValue.key === STEP_RESPONSE_TRACKING_KEY
-    );
-  if (!existingTrackingItem) {
-    throw new Error("Step response tracking item not found");
-  }
-  const existingTracking = existingTrackingItem.value as StepResponseTracking[];
-  const existingStepTracking = existingTracking.find(
-    (stepTracking) => stepTracking.stepId === stepId
-  );
-
-  if (existingStepTracking) {
-    return updatedGameData;
-  }
-
-  existingTracking.push({
-    stepId,
-    requiredPlayerIds: _gameData.players,
-    responses: {},
-    allResponsesReceivedOnce: false,
-  });
-
-  existingTrackingItem.value = existingTracking;
-  updatedGameData.globalStateData.gameStateData =
-    updatedGameData.globalStateData.gameStateData.map((gameDataKeyValue) => {
-      if (gameDataKeyValue.key === STEP_RESPONSE_TRACKING_KEY) {
-        return existingTrackingItem;
-      }
-      return gameDataKeyValue;
-    });
-
-  return updatedGameData;
-}
-
-export function recordPlayerResponseForStep(
-  _gameData: GameData,
-  stepId: string,
-  playerId: string,
-  message: string
-): GameData {
-  let gameData: GameData = getGameDataCopy(_gameData);
-  gameData = addResponseTrackingForStep(gameData, stepId);
-  const {
-    allResponseTrackingIndexInGameStateData: stepTrackingIndex,
-    allStepResponseTracking,
-  } = getAllStepResponseTrackingFromGameState(gameData);
-  const targetStepResponseTracking = allStepResponseTracking.find(
-    (stepResponseTracking) => stepResponseTracking.stepId === stepId
-  );
-  if (!targetStepResponseTracking) {
-    throw new Error(`Step response tracking not found for step ${stepId}`);
-  }
-  const existingMessage = targetStepResponseTracking.responses[playerId];
-  if (existingMessage) {
-    // append to existing message
-    targetStepResponseTracking.responses[playerId] =
-      existingMessage + "\t" + message;
-  } else {
-    // new message
-    targetStepResponseTracking.responses[playerId] = message;
-  }
-
-  const everyPlayerHasResponded = everyPlayerHasRespondedToStep(
-    targetStepResponseTracking
-  );
-
-  if (everyPlayerHasResponded) {
-    targetStepResponseTracking.allResponsesReceivedOnce = true;
-  }
-
-  gameData.globalStateData.gameStateData[stepTrackingIndex] = {
-    key: STEP_RESPONSE_TRACKING_KEY,
-    value: allStepResponseTracking,
-  };
-  return gameData;
-}
+import { evaluateCondition, getGameDataCopy } from "./state-modifier-helpers";
 
 /**
  * Updates the global game state data with the new data
@@ -164,6 +45,23 @@ export function updateGlobalStateData(
       gameData.globalStateData.gameStateData.push(newGameData);
     }
   }
+  return gameData;
+}
+
+export function updateDiscussionData(
+  _gameData: GameData,
+  newData: GameStateData[]
+): GameData {
+  const gameData: GameData = getGameDataCopy(_gameData);
+  const collectedDiscussionData: CollectedDiscussionData = JSON.parse(
+    gameData.globalStateData.discussionDataStringified || "{}"
+  );
+  for (const data of newData) {
+    collectedDiscussionData[data.key] = data.value;
+  }
+  gameData.globalStateData.discussionDataStringified = JSON.stringify(
+    collectedDiscussionData
+  );
   return gameData;
 }
 

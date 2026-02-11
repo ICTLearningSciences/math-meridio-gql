@@ -10,13 +10,13 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-import { syncLlmRequest } from "../../../classes/llm-request/llm-request";
+import { syncLlmRequest } from "../../../authoritative-server/llm-request/llm-request";
 import {
   AiServiceNames,
   GenericLlmRequest,
   PromptOutputTypes,
   PromptRoles,
-} from "../../../classes/llm-request/types";
+} from "../../../authoritative-server/llm-request/types";
 import { GraphQLObjectType, GraphQLString } from "graphql";
 
 export const testLlmCall = {

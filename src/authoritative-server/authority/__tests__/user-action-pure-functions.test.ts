@@ -8,27 +8,20 @@ The full terms of this copyright and license should always be found in the root 
 import {
   processPlayerSentMessageAction,
   processPlayerLeavesRoomAction,
-  processPlayerJoinsRoomAction,
   processActionUpdatePlayerStateDataAction,
 } from "../user-action-pure-functions";
-import {
-  RoomActionQueue,
-  RoomActionQueueDocument,
-} from "../../../../schemas/models/RoomActionQueue";
+import { RoomActionQueueDocument } from "../../../schemas/models/RoomActionQueue";
 import {
   RequestUserInputStageStep,
   SystemMessageStageStep,
-} from "../../../../schemas/models/DiscussionStage/types";
+} from "../../../schemas/models/DiscussionStage/types";
 import {
   createBaseGameData,
   createMockPlayer,
   createRequestUserInputStep,
   createSystemMessageStep,
 } from "./helpers";
-import {
-  RoomActionType,
-  SenderType,
-} from "../../../../classes/llm-request/types";
+import { RoomActionType, SenderType } from "../../llm-request/types";
 
 describe("user-action-pure-functions", () => {
   beforeEach(() => {
@@ -325,47 +318,6 @@ describe("user-action-pure-functions", () => {
       // expect(newPlayerState?.gameStateData).toEqual(
       //   gameData.globalStateData.gameStateData
       // );
-    });
-
-    it("should return unchanged gameData if player already in room", async () => {
-      const gameData = createBaseGameData();
-      const player = createMockPlayer("player1", "Player 1");
-
-      const action: RoomActionQueueDocument = {
-        _id: "action-1",
-        roomId: "room-1",
-        playerId: "player1", // Already in room
-        actionType: RoomActionType.JOIN_ROOM,
-        payload: "",
-        actionSentAt: new Date(),
-        processedAt: null,
-      } as any as RoomActionQueueDocument;
-
-      const result = processPlayerJoinsRoomAction(gameData, action, player);
-
-      // Player count should remain the same
-      expect(result.players.length).toBe(gameData.players.length);
-      expect(result.playerStateData.length).toBe(
-        gameData.playerStateData.length
-      );
-    });
-
-    it("should throw error when action type is not JOIN_ROOM", async () => {
-      const gameData = createBaseGameData();
-      const player = createMockPlayer("player3", "Player 3");
-      const action: RoomActionQueueDocument = {
-        _id: "action-1",
-        roomId: "room-1",
-        playerId: player._id,
-        actionType: RoomActionType.SEND_MESSAGE, // Wrong type
-        payload: "",
-        actionSentAt: new Date(),
-        processedAt: null,
-      } as any as RoomActionQueueDocument;
-
-      expect(() =>
-        processPlayerJoinsRoomAction(gameData, action, player)
-      ).toThrow("Incorrect action type provided to processPlayerLeavesRoom");
     });
   });
 

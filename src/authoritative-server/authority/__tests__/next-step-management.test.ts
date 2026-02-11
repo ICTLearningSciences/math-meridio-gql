@@ -10,7 +10,7 @@ import { updateGameDataWithNextStep } from "../pure-state-modifiers";
 import {
   Checking,
   NumericOperations,
-} from "../../../../schemas/models/DiscussionStage/types";
+} from "../../../schemas/models/DiscussionStage/types";
 import {
   createBaseGameData,
   createMockDiscussionStage,

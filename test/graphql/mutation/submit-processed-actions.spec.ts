@@ -76,8 +76,6 @@ describe("submit processed actions", () => {
         },
       });
 
-    console.log(JSON.stringify(response.body, null, 2));
-
     expect(response.status).to.equal(200);
     expect(response.body.data.submitProcessedActions).to.equal(true);
 

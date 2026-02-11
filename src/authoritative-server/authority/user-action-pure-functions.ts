@@ -4,21 +4,15 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-/*
-This software is Copyright ©️ 2020 The University of Southern California. All Rights Reserved. 
-Permission to use, copy, modify, and distribute this software and its documentation for educational, research and non-profit purposes, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and subject to the full license file found in the root of this software deliverable. Permission to make commercial use of this software may be obtained by contacting:  USC Stevens Center for Innovation University of Southern California 1150 S. Olive Street, Suite 2300, Los Angeles, CA 90115, USA Email: accounting@stevens.usc.edu
 
-The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
-*/
 import {
   DiscussionStage,
   DiscussionStageStep,
   DiscussionStageStepType,
-} from "../../../schemas/models/DiscussionStage/types";
-import { RoomActionType } from "../types";
-import { PlayerDocument } from "../../../schemas/models/Player";
+} from "../../schemas/models/DiscussionStage/types";
+import { RoomActionType } from "../llm-request/types";
+import { PlayerDocument } from "../../schemas/models/Player";
 import {
-  recordPlayerResponseForStep,
   syncGlobalGameStateKeysToPlayers,
   syncGlobalTruthDataToPlayers,
   updateGlobalStateData,
@@ -28,9 +22,9 @@ import {
   addUserMessageToChat,
   getGameDataCopy,
 } from "./state-modifier-helpers";
-import PlayerModel from "../../../schemas/models/Player";
-import { RoomActionQueueDocument } from "../../../schemas/models/RoomActionQueue";
-import { GameData, GameStateData } from "../../../schemas/models/Room";
+import PlayerModel from "../../schemas/models/Player";
+import { RoomActionQueueDocument } from "../../schemas/models/RoomActionQueue";
+import { GameData, GameStateData } from "../../schemas/models/Room";
 
 /**
  * Adds message to the chat log, records the players response for the step, updates global state data with the users response (if saveResponseAsVariableName exists), syncs all players with the global state truths.
@@ -49,16 +43,11 @@ export function processPlayerSentMessageAction(
   }
   gameData = addUserMessageToChat(
     gameData,
+    curStep,
     incomingMessage,
     sendingPlayer._id,
     sendingPlayer.name,
     sessionId
-  );
-  gameData = recordPlayerResponseForStep(
-    gameData,
-    curStep.stepId,
-    sendingPlayer._id,
-    incomingMessage
   );
   if (
     curStep.stepType === DiscussionStageStepType.REQUEST_USER_INPUT &&
@@ -119,27 +108,21 @@ export function processPlayerLeavesRoomAction(
   return gameData;
 }
 
-export function processPlayerJoinsRoomAction(
+export function addPlayerToRoom(
   _gameData: GameData,
-  curAction: RoomActionQueueDocument,
-  requestingPlayer: PlayerDocument
+  playerToAdd: PlayerDocument
 ) {
-  if (curAction.actionType !== RoomActionType.JOIN_ROOM) {
-    throw new Error(
-      "Incorrect action type provided to processPlayerLeavesRoom"
-    );
-  }
   const gameData = getGameDataCopy(_gameData);
-  const alreadyInRoom = gameData.players.find((p) => p === curAction.playerId);
+  const alreadyInRoom = gameData.players.find((p) => p === playerToAdd._id);
   if (alreadyInRoom) {
     console.log("Player already in room");
     return gameData;
   }
 
-  gameData.players.push(requestingPlayer._id);
+  gameData.players.push(playerToAdd._id);
 
   gameData.playerStateData.push({
-    player: requestingPlayer._id,
+    player: playerToAdd._id,
     animation: "",
     gameStateData: gameData.globalStateData.gameStateData,
   });
@@ -230,11 +213,7 @@ export async function processActions(
         break;
       case RoomActionType.JOIN_ROOM: {
         const requestingPlayer = await PlayerModel.findById(action.playerId);
-        gameData = processPlayerJoinsRoomAction(
-          gameData,
-          action,
-          requestingPlayer
-        );
+        gameData = addPlayerToRoom(gameData, requestingPlayer);
         break;
       }
       case RoomActionType.UPDATE_ROOM:

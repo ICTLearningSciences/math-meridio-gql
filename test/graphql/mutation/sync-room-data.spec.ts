@@ -128,7 +128,6 @@ describe("sync room data", () => {
           gameData: gameData,
         },
       });
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.syncRoomData).to.exist;
     expect(response.body.data.syncRoomData._id).to.equal(roomId);
