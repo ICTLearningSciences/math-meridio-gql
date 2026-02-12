@@ -12,7 +12,14 @@ import {
   IStage,
 } from "../../../schemas/models/DiscussionStage/types";
 import { Schema, Validator } from "jsonschema";
-import { ChatMessage, GameStateData } from "../../../schemas/models/Room";
+import {
+  ChatMessage,
+  GameStateData,
+  Room,
+  RoomPhase,
+  RoomModel as RoomModelType,
+} from "../../../schemas/models/Room";
+import { ObjectId } from "mongoose";
 
 export function replaceStoredDataInString(
   str: string,
@@ -174,4 +181,133 @@ export const SIMULTAION_VIEWED_KEY = "viewed-simulation";
 
 export function getSimulationViewedKey(stageId: string): string {
   return `${SIMULTAION_VIEWED_KEY}-${stageId}`;
+}
+
+/**
+ * Result of attempting to acquire a processing lock
+ */
+export interface ProcessingLockResult {
+  success: boolean;
+  room: Room | null;
+  reason?:
+    | "ALREADY_PROCESSING"
+    | "MAX_RETRIES"
+    | "ROOM_NOT_FOUND"
+    | "ROOM_DELETED";
+}
+
+/**
+ * Attempts to acquire a processing lock on a room using optimistic locking with retries.
+ *
+ * Flow:
+ * 1. Try to set phase=PROCESSING and increment version (only if versionNumber matches)
+ * 2. If successful, return success with the updated room
+ * 3. If failed (version changed):
+ *    - Fetch fresh room state
+ *    - If room doesn't exist or is deleted → return ROOM_NOT_FOUND
+ *    - If room.phase === PROCESSING → return ALREADY_PROCESSING (someone else has lock)
+ *    - Otherwise, retry with new versionNumber
+ * 4. Repeat up to MAX_RETRIES times
+ * 5. If max retries exceeded → return MAX_RETRIES with latest room state
+ *
+ * @param roomId - The ID of the room to lock
+ * @param currentVersionNumber - The current version number of the room (for optimistic locking)
+ * @param RoomModel - The Mongoose Room model
+ * @returns ProcessingLockResult indicating success/failure and the latest room state
+ */
+export async function verifyProcessingLock(
+  roomId: string,
+  currentVersionNumber: number,
+  RoomModel: RoomModelType
+): Promise<ProcessingLockResult> {
+  const MAX_RETRIES = 3;
+  let attempt = 0;
+  let versionNumber = currentVersionNumber;
+
+  while (attempt < MAX_RETRIES) {
+    console.log(
+      `[verifyProcessingLock] Attempt ${
+        attempt + 1
+      }/${MAX_RETRIES} for room ${roomId} with version ${versionNumber}`
+    );
+
+    // Try to acquire the lock by setting phase to PROCESSING
+    const roomSetToProcessing = await RoomModel.findOneAndUpdate(
+      {
+        _id: roomId,
+        versionNumber: versionNumber,
+        deletedRoom: false, // Edge case: don't lock deleted rooms
+      },
+      {
+        $set: { phase: RoomPhase.PROCESSING },
+        $inc: { versionNumber: 1 },
+      },
+      { new: true }
+    );
+
+    // Success! We got the lock
+    if (roomSetToProcessing) {
+      console.log(
+        `[verifyProcessingLock] Successfully acquired lock for room ${roomId}`
+      );
+      return {
+        success: true,
+        room: roomSetToProcessing.toObject(),
+      };
+    }
+
+    // Failed to get lock, fetch fresh room state to understand why
+    console.log(
+      `[verifyProcessingLock] Failed to acquire lock for room ${roomId}, checking room state...`
+    );
+
+    const freshRoom = await RoomModel.findOne({
+      _id: roomId,
+      deletedRoom: false,
+    });
+
+    // Edge case: Room doesn't exist or was deleted
+    if (!freshRoom) {
+      console.log(
+        `[verifyProcessingLock] Room ${roomId} not found or was deleted`
+      );
+      return {
+        success: false,
+        room: null,
+        reason: "ROOM_NOT_FOUND",
+      };
+    }
+
+    // Check if someone else already has the lock
+    if (freshRoom.phase === RoomPhase.PROCESSING) {
+      console.log(
+        `[verifyProcessingLock] Room ${roomId} is already being processed by another request`
+      );
+      return {
+        success: false,
+        room: freshRoom.toObject(),
+        reason: "ALREADY_PROCESSING",
+      };
+    }
+
+    // Room was updated for another reason (e.g., chat message), retry with new version
+    console.log(
+      `[verifyProcessingLock] Room ${roomId} was updated (version ${freshRoom.versionNumber}), retrying...`
+    );
+    versionNumber = freshRoom.versionNumber;
+    attempt++;
+  }
+
+  // Max retries exceeded, fetch final state and return
+  console.log(`[verifyProcessingLock] Max retries exceeded for room ${roomId}`);
+  const finalRoom = await RoomModel.findOne({
+    _id: roomId,
+    deletedRoom: false,
+  });
+
+  return {
+    success: false,
+    room: finalRoom ? finalRoom.toObject() : null,
+    reason: "MAX_RETRIES",
+  };
 }

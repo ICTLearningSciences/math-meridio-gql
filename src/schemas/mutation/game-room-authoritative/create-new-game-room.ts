@@ -37,6 +37,7 @@ export function initializeGameRoom(
     name: `${game.name} Solution Space ${numExistingGameRooms + 1}`,
     ...(classId ? { classId } : {}),
     phase: RoomPhase.NO_ACTIVE_PROCESSING,
+    versionNumber: 1,
     gameData: {
       gameId: gameId,
       players: [],

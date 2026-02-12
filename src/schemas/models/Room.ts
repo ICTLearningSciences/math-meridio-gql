@@ -13,6 +13,7 @@ import {
   GraphQLList,
   GraphQLID,
   GraphQLInputObjectType,
+  GraphQLInt,
 } from "graphql";
 import {
   PaginatedResolveResult,
@@ -78,7 +79,6 @@ export interface GameData {
 export interface GameDataDocument extends GameData, Document {}
 
 export enum RoomPhase {
-  WAITING_INPUT = "WAITING_INPUT",
   PROCESSING = "PROCESSING",
   NO_ACTIVE_PROCESSING = "NO_ACTIVE_PROCESSING",
 }
@@ -88,6 +88,7 @@ export interface Room {
   name: string;
   gameData: GameData;
   phase: RoomPhase;
+  versionNumber: number;
   deletedRoom: boolean;
 }
 
@@ -167,6 +168,7 @@ export const RoomSchema = new Schema<RoomDocument, RoomModel>(
       default: RoomPhase.NO_ACTIVE_PROCESSING,
     },
     deletedRoom: { type: Boolean },
+    versionNumber: { type: Number, default: 1 },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -249,6 +251,7 @@ export const RoomType = new GraphQLObjectType({
     gameData: { type: GameDataType },
     phase: { type: GraphQLString },
     deletedRoom: { type: GraphQLBoolean },
+    versionNumber: { type: GraphQLInt },
   }),
 });
 
@@ -315,5 +318,6 @@ export const RoomDataInputType = new GraphQLInputObjectType({
     name: { type: GraphQLString },
     gameData: { type: GameDataInputType },
     deletedRoom: { type: GraphQLBoolean },
+    versionNumber: { type: GraphQLInt },
   }),
 });
