@@ -53,7 +53,7 @@ export interface GlobalStateData {
   curStageId: string;
   curStepId: string;
   roomOwnerId: string;
-  discussionDataStringified: string;
+  discussionData: Record<string, any>;
   gameStateData: GameStateData[];
 }
 
@@ -78,10 +78,17 @@ export interface GameData {
 
 export interface GameDataDocument extends GameData, Document {}
 
+export enum RoomPhase {
+  WAITING_INPUT = "WAITING_INPUT",
+  PROCESSING = "PROCESSING",
+  NO_ACTIVE_PROCESSING = "NO_ACTIVE_PROCESSING",
+}
+
 export interface Room {
   classId?: Class["_id"];
   name: string;
   gameData: GameData;
+  phase: RoomPhase;
   deletedRoom: boolean;
 }
 
@@ -123,7 +130,7 @@ export const GlobalStateSchema = new Schema<GlobalStateDataDocument>(
     curStageId: { type: String },
     curStepId: { type: String },
     roomOwnerId: { type: String },
-    discussionDataStringified: { type: String, default: "{}" },
+    discussionData: { type: Schema.Types.Mixed, default: {} },
     gameStateData: [{ type: GameStateSchema }],
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
@@ -155,6 +162,11 @@ export const RoomSchema = new Schema<RoomDocument, RoomModel>(
     classId: { type: Schema.Types.ObjectId, ref: "Class" },
     name: { type: String },
     gameData: { type: GameSchema },
+    phase: {
+      type: String,
+      enum: RoomPhase,
+      default: RoomPhase.NO_ACTIVE_PROCESSING,
+    },
     deletedRoom: { type: Boolean },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
@@ -198,7 +210,7 @@ export const GlobalStateDataType = new GraphQLObjectType({
     curStageId: { type: GraphQLString },
     curStepId: { type: GraphQLString },
     roomOwnerId: { type: GraphQLString },
-    discussionDataStringified: { type: GraphQLString },
+    discussionData: { type: GraphQLScalarType },
     gameStateData: { type: new GraphQLList(GameStateDataType) },
   }),
 });
@@ -236,6 +248,7 @@ export const RoomType = new GraphQLObjectType({
     classId: { type: GraphQLID },
     name: { type: GraphQLString },
     gameData: { type: GameDataType },
+    phase: { type: GraphQLString },
     deletedRoom: { type: GraphQLBoolean },
   }),
 });
@@ -254,7 +267,7 @@ export const GlobalStateDataInputType = new GraphQLInputObjectType({
     curStageId: { type: GraphQLString },
     curStepId: { type: GraphQLString },
     roomOwnerId: { type: GraphQLString },
-    discussionDataStringified: { type: GraphQLString },
+    discussionData: { type: GraphQLScalarType },
     gameStateData: { type: new GraphQLList(GameStateDataInputType) },
   }),
 });

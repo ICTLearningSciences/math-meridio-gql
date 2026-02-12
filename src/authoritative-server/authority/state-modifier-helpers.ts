@@ -31,12 +31,12 @@ export function addSystemMessageToChat(
   _gameData: GameData,
   newMessage: string,
   sessionId: string,
-  fromStepId: string,
+  fromStepId: string
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
   const processMessageWithDiscussionData = replaceStoredDataInString(
     newMessage,
-    JSON.parse(gameData.globalStateData.discussionDataStringified || "{}")
+    gameData.globalStateData.discussionData || {}
   );
   const gameStateDataAsRecord: Record<string, string> =
     gameData.globalStateData.gameStateData.reduce((acc, data) => {

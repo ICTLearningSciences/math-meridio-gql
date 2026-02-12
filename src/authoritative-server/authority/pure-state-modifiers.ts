@@ -53,15 +53,12 @@ export function updateDiscussionData(
   newData: GameStateData[]
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
-  const collectedDiscussionData: CollectedDiscussionData = JSON.parse(
-    gameData.globalStateData.discussionDataStringified || "{}"
-  );
+  const collectedDiscussionData: CollectedDiscussionData =
+    gameData.globalStateData.discussionData || {};
   for (const data of newData) {
     collectedDiscussionData[data.key] = data.value;
   }
-  gameData.globalStateData.discussionDataStringified = JSON.stringify(
-    collectedDiscussionData
-  );
+  gameData.globalStateData.discussionData = collectedDiscussionData;
   return gameData;
 }
 
@@ -170,9 +167,8 @@ export function getNextStepFromConditionalStage(
   step: ConditionalActivityStep,
   gameData: GameData
 ): string {
-  const collectedDiscussionData: CollectedDiscussionData = JSON.parse(
-    gameData.globalStateData.discussionDataStringified
-  );
+  const collectedDiscussionData: CollectedDiscussionData =
+    gameData.globalStateData.discussionData || {};
   const hydratedConditionals = step.conditionals.map((c) => ({
     ...c,
     expectedValue: replaceStoredDataInString(
@@ -242,9 +238,8 @@ export function updateGameDataWithNextStep(
   curStep: DiscussionStageStep
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
-  const collectedDiscussionData: CollectedDiscussionData = JSON.parse(
-    gameData.globalStateData.discussionDataStringified || "{}"
-  );
+  const collectedDiscussionData: CollectedDiscussionData =
+    gameData.globalStateData.discussionData || {};
   if (curStep.lastStep) {
     const nextStage = curStage.getNextStage(collectedDiscussionData);
     const nextStepId = getFirstStepId(nextStage);

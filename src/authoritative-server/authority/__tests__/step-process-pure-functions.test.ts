@@ -167,7 +167,7 @@ describe("step-process-pure-functions", () => {
 
     it("should process TEXT output type and add response to chat", async () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const step: PromptStageStep = createPromptStep("step-1", {
         promptText: "Generate a response",
@@ -194,11 +194,11 @@ describe("step-process-pure-functions", () => {
       expect(result.chat[0].message).toBe("This is the AI response");
     });
 
-    it("should process JSON output type and update discussionDataStringified", async () => {
+    it("should process JSON output type and update discussionData", async () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         existingKey: "existingValue",
-      });
+      };
 
       const step: PromptStageStep = createPromptStep("step-1", {
         promptText: "Generate JSON data",
@@ -225,9 +225,7 @@ describe("step-process-pure-functions", () => {
         "session-1"
       );
 
-      const parsedData = JSON.parse(
-        result.globalStateData.discussionDataStringified
-      );
+      const parsedData = result.globalStateData.discussionData;
       expect(parsedData).toEqual({
         existingKey: "existingValue",
         newKey: "newValue",
@@ -237,7 +235,7 @@ describe("step-process-pure-functions", () => {
 
     it("should include chat log context in prompts when includeChatLogContext is true", async () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
       gameData.chat = [
         {
           messageId: "msg-1",
@@ -304,9 +302,9 @@ describe("step-process-pure-functions", () => {
       );
 
       const gameData = createBaseGameData();
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         userName: "John",
-      });
+      };
 
       const step: PromptStageStep = createPromptStep("step-1", {
         promptText: "Hello {{userName}}",
@@ -348,7 +346,7 @@ describe("step-process-pure-functions", () => {
       ]);
 
       const gameData = createBaseGameData();
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const step: PromptStageStep = createPromptStep("step-1", {
         promptText: "Calculate score",
@@ -389,7 +387,7 @@ describe("step-process-pure-functions", () => {
       ).mockReturnValue('\nExpected: { "name": "string", "age": "number" }');
 
       const gameData = createBaseGameData();
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const step: PromptStageStep = createPromptStep("step-1", {
         promptText: "Get user info",
@@ -438,7 +436,7 @@ describe("step-process-pure-functions", () => {
 
     it("should throw error when JSON output type receives invalid JSON", async () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const step: PromptStageStep = createPromptStep("step-1", {
         promptText: "Generate JSON",
@@ -466,7 +464,7 @@ describe("step-process-pure-functions", () => {
       (helpers.receivedExpectedData as jest.Mock).mockReturnValue(false);
 
       const gameData = createBaseGameData();
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const step: PromptStageStep = createPromptStep("step-1", {
         promptText: "Generate JSON",
@@ -501,8 +499,7 @@ describe("step-process-pure-functions", () => {
 
     it("should not mutate the original gameData object", async () => {
       const originalGameData = createBaseGameData();
-      originalGameData.globalStateData.discussionDataStringified =
-        JSON.stringify({});
+      originalGameData.globalStateData.discussionData = {};
       const originalChatLength = originalGameData.chat.length;
 
       const step: PromptStageStep = createPromptStep("step-1", {
@@ -530,7 +527,7 @@ describe("step-process-pure-functions", () => {
 
     it("should handle persistTruthFields correctly when updating player state", async () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
       // Pre-populate player with a truth field
       gameData.playerStateData[0].gameStateData.push({
         key: "hasCompletedIntro",

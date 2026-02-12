@@ -37,7 +37,7 @@ export const sendMessageToGameRoom = {
     const _room = await RoomModel.findOne({
       _id: args.roomId,
       deletedRoom: false,
-    })
+    });
     if (!_room) throw new Error("Failed to find room");
     const player = await PlayerModel.findOne({ _id: context.userId });
     if (!player) throw new Error("Unauthorized User");
@@ -49,6 +49,7 @@ export const sendMessageToGameRoom = {
     const room = _room.toObject();
     const stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
 
+    // TODO: $push message and new discussion data
     room.gameData = addUserMessageToChat(
       room.gameData,
       stageAndStep.curStep,

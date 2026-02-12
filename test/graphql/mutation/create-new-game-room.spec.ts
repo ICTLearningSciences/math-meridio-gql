@@ -44,7 +44,7 @@ const createNewRoomMutation = `
           curStageId
           curStepId
           roomOwnerId
-          discussionDataStringified
+          discussionData
           gameStateData {
             key
             value
@@ -146,7 +146,7 @@ describe("create new room", () => {
         curStageId: "",
         curStepId: "",
         roomOwnerId: userId,
-        discussionDataStringified: "",
+        discussionData: {},
         gameStateData: [],
       },
     });

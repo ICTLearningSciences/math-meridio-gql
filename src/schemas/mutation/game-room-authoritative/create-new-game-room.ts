@@ -7,7 +7,7 @@ The full terms of this copyright and license should always be found in the root 
 
 import { GraphQLString, GraphQLObjectType } from "graphql";
 import ClassModel from "../../models/classes/Class";
-import RoomModel, { Room, RoomType } from "../../models/Room";
+import RoomModel, { Room, RoomPhase, RoomType } from "../../models/Room";
 import PlayerModel from "../../models/Player";
 import { addPlayerToRoom } from "../../../authoritative-server/authority/user-action-pure-functions";
 import { getGameById } from "../../../authoritative-server/games/game-helpers";
@@ -36,6 +36,7 @@ export function initializeGameRoom(
   return {
     name: `${game.name} Solution Space ${numExistingGameRooms + 1}`,
     ...(classId ? { classId } : {}),
+    phase: RoomPhase.NO_ACTIVE_PROCESSING,
     gameData: {
       gameId: gameId,
       players: [],
@@ -46,7 +47,7 @@ export function initializeGameRoom(
         curStageId: firstStage.stage.clientId,
         curStepId: firstStepId,
         roomOwnerId: userId,
-        discussionDataStringified: "{}",
+        discussionData: {},
         gameStateData: [],
       },
     },

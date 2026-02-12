@@ -100,9 +100,8 @@ export async function processPromptStep(
 ): Promise<GameData> {
   console.log(`Starting to process prompt step: ${curStep.stepId}`);
   let gameData = getGameDataCopy(_gameData);
-  const collectedDiscussionData: CollectedDiscussionData = JSON.parse(
-    gameData.globalStateData.discussionDataStringified
-  );
+  const collectedDiscussionData: CollectedDiscussionData =
+    gameData.globalStateData.discussionData || {};
   // handle replacing promptText with stored data
   const promptText = replaceStoredDataInString(
     curStep.promptText,
@@ -176,10 +175,10 @@ export async function processPromptStep(
       const resData: Record<string, any> = JSON.parse(response);
 
       // Add new JSON data to the discussion data
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         ...collectedDiscussionData,
         ...resData,
-      });
+      };
 
       // Add new JSON data to the global state data
       gameData = updateGlobalStateData(
@@ -201,7 +200,7 @@ export async function processPromptStep(
         gameData,
         response,
         sessionId,
-        curStep.stepId,
+        curStep.stepId
       );
     }
   };

@@ -35,7 +35,7 @@ module.exports = {
           curStageId: "Stage 1",
           curStepId: "Step 1",
           roomOwnerId: player1Id,
-          discussionDataStringified: "",
+          discussionData: {},
           gameStateData: [
             {
               key: "Global variable 1",
@@ -70,7 +70,7 @@ module.exports = {
           curStageId: "Stage 1",
           curStepId: "Step 1",
           roomOwnerId: player1Id,
-          discussionDataStringified: "",
+          discussionData: {},
           gameStateData: [
             {
               key: "Global variable 1",
@@ -105,7 +105,7 @@ module.exports = {
           curStageId: "Stage 1",
           curStepId: "Step 1",
           roomOwnerId: player1Id,
-          discussionDataStringified: "",
+          discussionData: {},
           gameStateData: [],
         },
         playerStateData: [],

@@ -26,7 +26,7 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "last-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       // Create a stage with a flow containing steps
       const stage = createMockDiscussionStage([
@@ -69,7 +69,7 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "step-with-jump";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const stage = createMockDiscussionStage([
         {
@@ -102,9 +102,9 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         userChoice: "option1",
-      });
+      };
 
       const stage = createMockDiscussionStage([
         {
@@ -160,9 +160,9 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         score: 95,
-      });
+      };
 
       const stage = createMockDiscussionStage([
         {
@@ -218,9 +218,9 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         isComplete: "true",
-      });
+      };
 
       const stage = createMockDiscussionStage([
         {
@@ -262,9 +262,9 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         items: ["item1", "item2", "item3", "item4"],
-      });
+      };
 
       const stage = createMockDiscussionStage([
         {
@@ -320,9 +320,9 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         answer: "This is a long answer with more than 10 characters",
-      });
+      };
 
       const stage = createMockDiscussionStage([
         {
@@ -378,9 +378,9 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         selectedOptions: ["premium", "feature1", "feature2"],
-      });
+      };
 
       const stage = createMockDiscussionStage([
         {
@@ -436,9 +436,9 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         feedback: "The service was excellent and very helpful",
-      });
+      };
 
       const stage = createMockDiscussionStage([
         {
@@ -494,9 +494,9 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({
+      gameData.globalStateData.discussionData = {
         value: 10,
-      });
+      };
 
       const stage = createMockDiscussionStage([
         {
@@ -568,7 +568,7 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "step-2";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const stage = createMockDiscussionStage([
         {
@@ -596,7 +596,7 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "nonexistent-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const stage = createMockDiscussionStage([
         {
@@ -620,7 +620,7 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "missing-step";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       // Create a flow but the step won't be in it
       const stage = createMockDiscussionStage([
@@ -645,7 +645,7 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "last-step-no-jump";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const stage = createMockDiscussionStage([
         {
@@ -670,7 +670,7 @@ describe("next-step-management", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.curStageId = "current-stage";
       gameData.globalStateData.curStepId = "step-1";
-      gameData.globalStateData.discussionDataStringified = JSON.stringify({});
+      gameData.globalStateData.discussionData = {};
 
       const originalStageId = gameData.globalStateData.curStageId;
       const originalStepId = gameData.globalStateData.curStepId;
