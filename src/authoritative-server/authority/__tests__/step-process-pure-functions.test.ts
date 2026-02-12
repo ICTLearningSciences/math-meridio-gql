@@ -37,26 +37,23 @@ jest.mock("uuid", () => ({
 }));
 
 // Mock helper functions from discussion-stage-builder
-jest.mock(
-  "../../../../../src/classes/llm-request/authority/helpers/helpers.ts",
-  () => ({
-    replaceStoredDataInString: jest.fn((str: string) => str), // Default: no replacement
-    receivedExpectedData: jest.fn(() => true),
-    recursivelyConvertExpectedDataToAiPromptString: jest.fn(
-      () => "\nExpected JSON structure"
-    ),
-    recursiveUpdateAdditionalInfo: jest.fn((data) => data),
-    chatLogToString: jest.fn((chatLog: any[]) => "mock chat log"),
-    isJsonString: jest.fn((str: string) => {
-      try {
-        JSON.parse(str);
-        return true;
-      } catch {
-        return false;
-      }
-    }),
-  })
-);
+jest.mock("../helpers/helpers.ts", () => ({
+  replaceStoredDataInString: jest.fn((str: string) => str), // Default: no replacement
+  receivedExpectedData: jest.fn(() => true),
+  recursivelyConvertExpectedDataToAiPromptString: jest.fn(
+    () => "\nExpected JSON structure"
+  ),
+  recursiveUpdateAdditionalInfo: jest.fn((data) => data),
+  chatLogToString: jest.fn((chatLog: any[]) => "mock chat log"),
+  isJsonString: jest.fn((str: string) => {
+    try {
+      JSON.parse(str);
+      return true;
+    } catch {
+      return false;
+    }
+  }),
+}));
 
 // Helper to create mock AI service response
 function createMockAiResponse(responseText: string): AiServicesResponseTypes {
@@ -361,7 +358,7 @@ describe("step-process-pure-functions", () => {
 
       const player1Data = result.playersGameStateData["player1"];
       expect(player1Data).toEqual({
-        playerScore: "100",
+        score: 100,
       });
     });
 

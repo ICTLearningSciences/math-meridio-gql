@@ -86,15 +86,11 @@ describe("game-state-updates", () => {
       const result = updateGlobalStateData(gameData, [], newData);
 
       expect(Object.keys(result.globalStateData.gameStateData).length).toBe(3);
-      expect(result.globalStateData.gameStateData["existing1"]?.value).toBe(
+      expect(result.globalStateData.gameStateData["existing1"]).toBe(
         "updated1"
       );
-      expect(result.globalStateData.gameStateData["new1"]?.value).toBe(
-        "value2"
-      );
-      expect(result.globalStateData.gameStateData["new2"]?.value).toBe(
-        "value3"
-      );
+      expect(result.globalStateData.gameStateData["new1"]).toBe("value2");
+      expect(result.globalStateData.gameStateData["new2"]).toBe("value3");
     });
 
     it("should not mutate the original gameData object", () => {
@@ -104,7 +100,9 @@ describe("game-state-updates", () => {
       const result = updateGlobalStateData(gameData, [], newData);
 
       expect(Object.keys(result.globalStateData.gameStateData).length).toBe(1);
-      expect(gameData.globalStateData.gameStateData.length).toBe(0);
+      expect(Object.keys(gameData.globalStateData.gameStateData).length).toBe(
+        0
+      );
     });
   });
 

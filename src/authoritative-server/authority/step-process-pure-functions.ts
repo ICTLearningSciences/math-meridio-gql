@@ -44,7 +44,7 @@ import { getCurStageAndStep } from "./user-action-pure-functions";
 import { GameData } from "../../schemas/models/Room";
 import { AiServicesResponseTypes } from "../llm-request/ai-services/ai-service-types";
 import { syncLlmRequest } from "../llm-request/llm-request";
-import { getGameById } from "authoritative-server/games/game-helpers";
+import { getGameById } from "../../authoritative-server/games/game-helpers";
 
 export function startRequestUserInputStep(
   _gameData: GameData,

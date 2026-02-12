@@ -75,16 +75,12 @@ export function updatePlayerStateData(
     const existingPlayerGameDataItem = existingPlayerGameStateData[key];
     if (
       existingPlayerGameDataItem &&
-      existingPlayerGameDataItem.value === "true" &&
+      existingPlayerGameDataItem === "true" &&
       persistTruthFields.includes(key)
     ) {
       continue;
     }
-    if (existingPlayerGameDataItem) {
-      existingPlayerGameDataItem.value = value;
-    } else {
-      existingPlayerGameStateData[key] = value;
-    }
+    existingPlayerGameStateData[key] = value;
   }
   return gameData;
 }
@@ -111,9 +107,9 @@ export function syncGlobalTruthDataToPlayers(
     )) {
       const existingPlayerGameStateData = playerData[persistTruthFieldKey];
       if (existingPlayerGameStateData) {
-        existingPlayerGameStateData.value = globalTruthData.value;
+        playerData[persistTruthFieldKey] = globalTruthData;
       } else {
-        playerData[persistTruthFieldKey] = globalTruthData.value;
+        playerData[persistTruthFieldKey] = globalTruthData;
       }
     }
   }

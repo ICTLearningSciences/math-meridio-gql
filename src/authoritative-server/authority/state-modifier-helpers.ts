@@ -13,7 +13,7 @@ import { replaceStoredDataInString } from "./helpers/helpers";
 import {
   DiscussionStageStep,
   DiscussionStageStepType,
-} from "schemas/models/DiscussionStage/types";
+} from "../../schemas/models/DiscussionStage/types";
 import { updateDiscussionData } from "./pure-state-modifiers";
 
 export function getGameDataCopy(gameData: GameData): GameData {
