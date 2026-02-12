@@ -72,6 +72,7 @@ export enum RoomPhase {
 }
 
 export interface Room {
+  _id: string;
   classId?: Class["_id"];
   name: string;
   gameData: GameData;
@@ -80,7 +81,7 @@ export interface Room {
   deletedRoom: boolean;
 }
 
-export interface RoomDocument extends Room, Document {}
+export interface RoomDocument extends Omit<Room, "_id">, Document {}
 
 export interface RoomModel extends Model<RoomDocument> {
   paginate(

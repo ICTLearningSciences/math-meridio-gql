@@ -19,7 +19,7 @@ import {
   processStepsUntilNextRequestUserInputStep,
 } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { AiServiceNames } from "../../../authoritative-server/llm-request/types";
-
+import mongoose from "mongoose";
 /**
  * Initializes the new game room with the first stage and step.
  */
@@ -34,6 +34,7 @@ export function initializeGameRoom(
   const firstStage = game.stageList[0];
   const firstStepId = getFirstStepId(firstStage.stage);
   return {
+    _id: new mongoose.Types.ObjectId().toString(),
     name: `${game.name} Solution Space ${numExistingGameRooms + 1}`,
     ...(classId ? { classId } : {}),
     phase: RoomPhase.NO_ACTIVE_PROCESSING,
@@ -84,18 +85,20 @@ export const createNewGameRoom = {
     }
     const _discussionStages = await DiscussionStageModel.find();
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
-    const newRoom: Room = initializeGameRoom(
+    const _newRoom: Room = initializeGameRoom(
       context.userId,
       args.gameId,
       args.classId || "",
       discussionStages,
       rooms.length
     );
+    _newRoom.gameData = addPlayerToRoom(_newRoom.gameData, player);
+    const newRoom: Room = await (await RoomModel.create(_newRoom)).toObject();
+    console.log("created new room: ", JSON.stringify(newRoom, null, 2));
 
-    newRoom.gameData = addPlayerToRoom(newRoom.gameData, player);
-
-    newRoom.gameData = await processCurStep(
-      newRoom.gameData,
+    // Process the first step.
+    const roomWithFirstStepProcessed: Room = await processCurStep(
+      newRoom,
       discussionStages,
       {
         serviceName: AiServiceNames.OPEN_AI,
@@ -105,19 +108,28 @@ export const createNewGameRoom = {
       args.sessionId
     );
 
-    // TODO: start processing steps up to request user input step.
-    newRoom.gameData = await processStepsUntilNextRequestUserInputStep(
-      newRoom.gameData,
-      discussionStages,
-      {
-        serviceName: AiServiceNames.OPEN_AI,
-        model: "gpt-4o-mini",
-      },
-      context.userId,
-      args.sessionId
+    console.log(
+      "room with first step processed: ",
+      JSON.stringify(roomWithFirstStepProcessed, null, 2)
     );
-    const roomCreated = await RoomModel.create(newRoom);
-    return roomCreated;
+
+    // Now process all other steps until we reach a request user input step.
+    const roomWithProcessedSteps: Room =
+      await processStepsUntilNextRequestUserInputStep(
+        roomWithFirstStepProcessed,
+        discussionStages,
+        {
+          serviceName: AiServiceNames.OPEN_AI,
+          model: "gpt-4o-mini",
+        },
+        context.userId,
+        args.sessionId
+      );
+    console.log(
+      "room with processed steps: ",
+      JSON.stringify(roomWithProcessedSteps, null, 2)
+    );
+    return roomWithProcessedSteps;
   },
 };
 

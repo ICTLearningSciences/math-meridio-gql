@@ -6,27 +6,51 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 /// <reference types="jest" />
-import { updateGameDataWithNextStep } from "../pure-state-modifiers";
+import * as pureStateModifiers from "../pure-state-modifiers";
+import { updateRoomWithNextStep } from "../pure-state-modifiers";
 import {
   Checking,
   NumericOperations,
 } from "../../../schemas/models/DiscussionStage/types";
 import {
-  createBaseGameData,
   createMockDiscussionStage,
   createMockCurrentStage,
   createConditionalStep,
   createConditional,
   createSystemMessageStep,
+  createBaseRoom,
 } from "./helpers";
 
 describe("next-step-management", () => {
-  describe("updateGameDataWithNextStep", () => {
-    it("should move to next stage and reset to first step when curStep.lastStep is true", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "last-step";
-      gameData.globalStateData.discussionData = {};
+  let updateRoomStageAndOrStepSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    // Mock updateRoomStageAndOrStep to return a room with updated values
+    updateRoomStageAndOrStepSpy = jest
+      .spyOn(pureStateModifiers, "updateRoomStageAndOrStep")
+      .mockImplementation(async (room, stageId, stepId) => {
+        const updatedRoom = { ...room };
+        if (stageId) {
+          updatedRoom.gameData.globalStateData.curStageId = stageId;
+        }
+        if (stepId) {
+          updatedRoom.gameData.globalStateData.curStepId = stepId;
+        }
+        return updatedRoom;
+      });
+  });
+
+  afterEach(() => {
+    updateRoomStageAndOrStepSpy.mockRestore();
+    jest.clearAllMocks();
+  });
+
+  describe("updateRoomWithNextStep", () => {
+    it("should move to next stage and reset to first step when curStep.lastStep is true", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "last-step";
+      room.gameData.globalStateData.discussionData = {};
 
       // Create a stage with a flow containing steps
       const stage = createMockDiscussionStage([
@@ -53,23 +77,33 @@ describe("next-step-management", () => {
       const curStage = createMockCurrentStage(stage, nextStage);
       const curStep = createSystemMessageStep("last-step", { lastStep: true });
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
+
+      // Verify updateRoomStageAndOrStep was called with correct parameters
+      expect(updateRoomStageAndOrStepSpy).toHaveBeenCalledWith(
+        room,
+        nextStage.clientId,
+        nextStage.flowsList[0].steps[0].stepId
+      );
+      expect(updateRoomStageAndOrStepSpy).toHaveBeenCalledTimes(1);
 
       // Should move to next stage
-      expect(result.globalStateData.curStageId).toBe(nextStage.clientId);
+      expect(result.gameData.globalStateData.curStageId).toBe(
+        nextStage.clientId
+      );
       // Should reset to first step of the stage (based on getFirstStepId which returns flowsList[0].steps[0].stepId)
-      expect(result.globalStateData.curStepId).toBe(
+      expect(result.gameData.globalStateData.curStepId).toBe(
         nextStage.flowsList[0].steps[0].stepId
       );
       // Should have called getNextStage
       expect(curStage.getNextStage({})).toBe(nextStage);
     });
 
-    it("should use jumpToStepId when present (non-conditional, non-lastStep)", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "step-with-jump";
-      gameData.globalStateData.discussionData = {};
+    it("should use jumpToStepId when present (non-conditional, non-lastStep)", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "step-with-jump";
+      room.gameData.globalStateData.discussionData = {};
 
       const stage = createMockDiscussionStage([
         {
@@ -90,19 +124,27 @@ describe("next-step-management", () => {
         jumpToStepId: "target-step",
       });
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
+
+      // Verify updateRoomStageAndOrStep was called with undefined stageId and target stepId
+      expect(updateRoomStageAndOrStepSpy).toHaveBeenCalledWith(
+        room,
+        undefined,
+        "target-step"
+      );
+      expect(updateRoomStageAndOrStepSpy).toHaveBeenCalledTimes(1);
 
       // Should jump to the target step
-      expect(result.globalStateData.curStepId).toBe("target-step");
+      expect(result.gameData.globalStateData.curStepId).toBe("target-step");
       // Stage should remain the same
-      expect(result.globalStateData.curStageId).toBe("current-stage");
+      expect(result.gameData.globalStateData.curStageId).toBe("current-stage");
     });
 
-    it("should handle CONDITIONAL step with VALUE checking (string comparison)", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionData = {
+    it("should handle CONDITIONAL step with VALUE checking (string comparison)", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "conditional-step";
+      room.gameData.globalStateData.discussionData = {
         userChoice: "option1",
       };
 
@@ -151,16 +193,24 @@ describe("next-step-management", () => {
         ),
       ]);
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
-      expect(result.globalStateData.curStepId).toBe("target-step-1");
+      // Verify the conditional logic chose the correct step
+      expect(updateRoomStageAndOrStepSpy).toHaveBeenCalledWith(
+        room,
+        undefined,
+        "target-step-1"
+      );
+      expect(updateRoomStageAndOrStepSpy).toHaveBeenCalledTimes(1);
+
+      expect(result.gameData.globalStateData.curStepId).toBe("target-step-1");
     });
 
-    it("should handle CONDITIONAL step with VALUE checking (numeric comparison)", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionData = {
+    it("should handle CONDITIONAL step with VALUE checking (numeric comparison)", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "conditional-step";
+      room.gameData.globalStateData.discussionData = {
         score: 95,
       };
 
@@ -209,16 +259,16 @@ describe("next-step-management", () => {
         ),
       ]);
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
-      expect(result.globalStateData.curStepId).toBe("high-score-step");
+      expect(result.gameData.globalStateData.curStepId).toBe("high-score-step");
     });
 
-    it("should handle CONDITIONAL step with VALUE checking (boolean conversion)", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionData = {
+    it("should handle CONDITIONAL step with VALUE checking (boolean conversion)", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "conditional-step";
+      room.gameData.globalStateData.discussionData = {
         isComplete: "true",
       };
 
@@ -253,16 +303,16 @@ describe("next-step-management", () => {
         ),
       ]);
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
-      expect(result.globalStateData.curStepId).toBe("completed-step");
+      expect(result.gameData.globalStateData.curStepId).toBe("completed-step");
     });
 
-    it("should handle CONDITIONAL step with LENGTH checking (array)", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionData = {
+    it("should handle CONDITIONAL step with LENGTH checking (array)", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "conditional-step";
+      room.gameData.globalStateData.discussionData = {
         items: ["item1", "item2", "item3", "item4"],
       };
 
@@ -311,16 +361,16 @@ describe("next-step-management", () => {
         ),
       ]);
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
-      expect(result.globalStateData.curStepId).toBe("many-items-step");
+      expect(result.gameData.globalStateData.curStepId).toBe("many-items-step");
     });
 
-    it("should handle CONDITIONAL step with LENGTH checking (string)", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionData = {
+    it("should handle CONDITIONAL step with LENGTH checking (string)", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "conditional-step";
+      room.gameData.globalStateData.discussionData = {
         answer: "This is a long answer with more than 10 characters",
       };
 
@@ -369,16 +419,18 @@ describe("next-step-management", () => {
         ),
       ]);
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
-      expect(result.globalStateData.curStepId).toBe("long-answer-step");
+      expect(result.gameData.globalStateData.curStepId).toBe(
+        "long-answer-step"
+      );
     });
 
-    it("should handle CONDITIONAL step with CONTAINS checking (array)", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionData = {
+    it("should handle CONDITIONAL step with CONTAINS checking (array)", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "conditional-step";
+      room.gameData.globalStateData.discussionData = {
         selectedOptions: ["premium", "feature1", "feature2"],
       };
 
@@ -427,16 +479,16 @@ describe("next-step-management", () => {
         ),
       ]);
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
-      expect(result.globalStateData.curStepId).toBe("premium-step");
+      expect(result.gameData.globalStateData.curStepId).toBe("premium-step");
     });
 
-    it("should handle CONDITIONAL step with CONTAINS checking (string)", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionData = {
+    it("should handle CONDITIONAL step with CONTAINS checking (string)", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "conditional-step";
+      room.gameData.globalStateData.discussionData = {
         feedback: "The service was excellent and very helpful",
       };
 
@@ -485,16 +537,16 @@ describe("next-step-management", () => {
         ),
       ]);
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
-      expect(result.globalStateData.curStepId).toBe("positive-step");
+      expect(result.gameData.globalStateData.curStepId).toBe("positive-step");
     });
 
-    it("should return first matching conditional when multiple conditions exist", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "conditional-step";
-      gameData.globalStateData.discussionData = {
+    it("should return first matching conditional when multiple conditions exist", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "conditional-step";
+      room.gameData.globalStateData.discussionData = {
         value: 10,
       };
 
@@ -558,17 +610,17 @@ describe("next-step-management", () => {
         ),
       ]);
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
       // Should match the first condition even though all three would be true
-      expect(result.globalStateData.curStepId).toBe("first-match");
+      expect(result.gameData.globalStateData.curStepId).toBe("first-match");
     });
 
-    it("should move to next sequential step in flow when no special conditions", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "step-2";
-      gameData.globalStateData.discussionData = {};
+    it("should move to next sequential step in flow when no special conditions", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "step-2";
+      room.gameData.globalStateData.discussionData = {};
 
       const stage = createMockDiscussionStage([
         {
@@ -585,18 +637,18 @@ describe("next-step-management", () => {
       const curStage = createMockCurrentStage(stage);
       const curStep = createSystemMessageStep("step-2");
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
       // Should move to the next step in sequence
-      expect(result.globalStateData.curStepId).toBe("step-3");
-      expect(result.globalStateData.curStageId).toBe("current-stage");
+      expect(result.gameData.globalStateData.curStepId).toBe("step-3");
+      expect(result.gameData.globalStateData.curStageId).toBe("current-stage");
     });
 
     it("should throw error when flow not found for current step", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "nonexistent-step";
-      gameData.globalStateData.discussionData = {};
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "nonexistent-step";
+      room.gameData.globalStateData.discussionData = {};
 
       const stage = createMockDiscussionStage([
         {
@@ -612,15 +664,15 @@ describe("next-step-management", () => {
       const curStep = createSystemMessageStep("nonexistent-step");
 
       expect(() => {
-        updateGameDataWithNextStep(gameData, curStage, curStep);
+        updateRoomWithNextStep(room, curStage, curStep);
       }).toThrow("Unable to find flow for step: nonexistent-step");
     });
 
     it("should throw error when current step not found in flow", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "missing-step";
-      gameData.globalStateData.discussionData = {};
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "missing-step";
+      room.gameData.globalStateData.discussionData = {};
 
       // Create a flow but the step won't be in it
       const stage = createMockDiscussionStage([
@@ -637,15 +689,15 @@ describe("next-step-management", () => {
       const curStep = createSystemMessageStep("missing-step");
 
       expect(() => {
-        updateGameDataWithNextStep(gameData, curStage, curStep);
+        updateRoomWithNextStep(room, curStage, curStep);
       }).toThrow("Unable to find flow for step: missing-step");
     });
 
     it("should throw error when at end of flow with no next step", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "last-step-no-jump";
-      gameData.globalStateData.discussionData = {};
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "last-step-no-jump";
+      room.gameData.globalStateData.discussionData = {};
 
       const stage = createMockDiscussionStage([
         {
@@ -662,18 +714,18 @@ describe("next-step-management", () => {
       const curStep = createSystemMessageStep("last-step-no-jump");
 
       expect(() => {
-        updateGameDataWithNextStep(gameData, curStage, curStep);
+        updateRoomWithNextStep(room, curStage, curStep);
       }).toThrow("No next step found");
     });
 
-    it("should not mutate the original gameData object", () => {
-      const gameData = createBaseGameData();
-      gameData.globalStateData.curStageId = "current-stage";
-      gameData.globalStateData.curStepId = "step-1";
-      gameData.globalStateData.discussionData = {};
+    it("should not mutate the original gameData object", async () => {
+      const room = createBaseRoom();
+      room.gameData.globalStateData.curStageId = "current-stage";
+      room.gameData.globalStateData.curStepId = "step-1";
+      room.gameData.globalStateData.discussionData = {};
 
-      const originalStageId = gameData.globalStateData.curStageId;
-      const originalStepId = gameData.globalStateData.curStepId;
+      const originalStageId = room.gameData.globalStateData.curStageId;
+      const originalStepId = room.gameData.globalStateData.curStepId;
 
       const stage = createMockDiscussionStage([
         {
@@ -688,14 +740,14 @@ describe("next-step-management", () => {
       const curStage = createMockCurrentStage(stage);
       const curStep = createSystemMessageStep("step-1");
 
-      const result = updateGameDataWithNextStep(gameData, curStage, curStep);
+      const result = await updateRoomWithNextStep(room, curStage, curStep);
 
       // Result should have changed
-      expect(result.globalStateData.curStepId).toBe("step-2");
+      expect(result.gameData.globalStateData.curStepId).toBe("step-2");
 
       // Original should remain unchanged
-      expect(gameData.globalStateData.curStageId).toBe(originalStageId);
-      expect(gameData.globalStateData.curStepId).toBe(originalStepId);
+      expect(room.gameData.globalStateData.curStageId).toBe(originalStageId);
+      expect(room.gameData.globalStateData.curStepId).toBe(originalStepId);
     });
   });
 });

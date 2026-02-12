@@ -115,8 +115,8 @@ export const sendMessageToGameRoom = {
         console.log(
           "we are ready to move on from an input step and continue processing."
         );
-        room.gameData = await processStepsUntilNextRequestUserInputStep(
-          room.gameData,
+        room = await processStepsUntilNextRequestUserInputStep(
+          room,
           discussionStages,
           {
             serviceName: AiServiceNames.OPEN_AI,

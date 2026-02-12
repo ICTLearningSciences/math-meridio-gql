@@ -14,18 +14,17 @@ import {
   DiscussionStageStep,
   DiscussionStageStepType,
 } from "../../schemas/models/DiscussionStage/types";
-import { updateDiscussionData } from "./pure-state-modifiers";
 
 export function getGameDataCopy(gameData: GameData): GameData {
   return JSON.parse(JSON.stringify(gameData));
 }
 
-export function addSystemMessageToChat(
+export function buildSystemMessage(
   _gameData: GameData,
   newMessage: string,
   sessionId: string,
   fromStepId: string
-): GameData {
+): ChatMessage {
   const gameData: GameData = getGameDataCopy(_gameData);
   const processMessageWithDiscussionData = replaceStoredDataInString(
     newMessage,
@@ -35,7 +34,7 @@ export function addSystemMessageToChat(
     processMessageWithDiscussionData,
     gameData.globalStateData.gameStateData || {}
   );
-  gameData.chat.push({
+  return {
     messageId: crypto.randomUUID(),
     sender: SenderType.SYSTEM,
     senderId: "",
@@ -46,8 +45,7 @@ export function addSystemMessageToChat(
     message: processedMessageWithGameStateData,
     sessionId: sessionId || "",
     displayType: MessageDisplayType.TEXT,
-  });
-  return gameData;
+  };
 }
 
 export function buildUserMessage(
@@ -68,31 +66,6 @@ export function buildUserMessage(
     sessionId: sessionId || "",
     displayType: MessageDisplayType.TEXT,
   };
-}
-
-export function addUserMessageToChat(
-  _gameData: GameData,
-  curStep: DiscussionStageStep,
-  newMessage: string,
-  senderId: string,
-  senderName: string,
-  sessionId: string
-): GameData {
-  let gameData: GameData = getGameDataCopy(_gameData);
-
-  // TODO: need to add the response to the global state data if save variable of the current step exists.
-  if (
-    curStep.stepType === DiscussionStageStepType.REQUEST_USER_INPUT &&
-    curStep.saveResponseVariableName
-  ) {
-    gameData = updateDiscussionData(gameData, {
-      [curStep.saveResponseVariableName]: newMessage,
-    });
-  }
-  gameData.chat.push(
-    buildUserMessage(newMessage, senderId, senderName, sessionId)
-  );
-  return gameData;
 }
 
 export function evaluateCondition(

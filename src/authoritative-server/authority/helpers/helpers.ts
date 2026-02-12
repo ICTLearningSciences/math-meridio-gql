@@ -6,7 +6,6 @@ The full terms of this copyright and license should always be found in the root 
 */
 import { JsonResponseData } from "../../../authoritative-server/llm-request/types";
 import {
-  CollectedDiscussionData,
   DiscussionStage,
   isDiscussionStage,
   IStage,
@@ -14,7 +13,6 @@ import {
 import { Schema, Validator } from "jsonschema";
 import {
   ChatMessage,
-  GameStateData,
   Room,
   RoomPhase,
   RoomModel as RoomModelType,

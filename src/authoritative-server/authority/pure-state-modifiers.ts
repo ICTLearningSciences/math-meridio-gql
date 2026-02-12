@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GameData } from "../../schemas/models/Room";
+import { GameData, Room } from "../../schemas/models/Room";
 import {
   Checking,
   ConditionalActivityStep,
@@ -19,70 +19,28 @@ import {
 import { getFirstStepId, replaceStoredDataInString } from "./helpers/helpers";
 import { evaluateCondition, getGameDataCopy } from "./state-modifier-helpers";
 import { GameStateData } from "../../schemas/models/Room";
+import RoomModel from "../../schemas/models/Room";
 
 /**
- * Updates the global game state data with the new data
+ * Ensures we don't overwrite the truth data, by removing any keys from the new data that are in the persist truth global state data and are set to true already.
  */
-export function updateGlobalStateData(
-  _gameData: GameData,
-  persistTruthFields: string[],
+export function removePersistTruthDataFromNewData(
+  gameData: GameData,
   newData: GameStateData
-): GameData {
-  const gameData: GameData = getGameDataCopy(_gameData);
+): GameStateData {
+  const newDataWithoutPersistTruthData: GameStateData = {};
   for (const [key, value] of Object.entries(newData)) {
     const existingGameDataItem = gameData.globalStateData.gameStateData[key];
     if (
       existingGameDataItem &&
       existingGameDataItem === "true" &&
-      persistTruthFields.includes(key)
+      gameData.persistTruthGlobalStateData.includes(key)
     ) {
       continue;
     }
-    gameData.globalStateData.gameStateData[key] = value;
+    newDataWithoutPersistTruthData[key] = value;
   }
-  return gameData;
-}
-
-export function updateDiscussionData(
-  _gameData: GameData,
-  newData: GameStateData
-): GameData {
-  const gameData: GameData = getGameDataCopy(_gameData);
-  const collectedDiscussionData: CollectedDiscussionData =
-    gameData.globalStateData.discussionData || {};
-  for (const [key, value] of Object.entries(newData)) {
-    collectedDiscussionData[key] = value;
-  }
-  gameData.globalStateData.discussionData = collectedDiscussionData;
-  return gameData;
-}
-
-/**
- * Updates the players individual game state data with the new data
- */
-export function updatePlayerStateData(
-  _gameData: GameData,
-  persistTruthFields: string[],
-  playerId: string,
-  newPlayerGameStateData: GameStateData
-): GameData {
-  const gameData: GameData = getGameDataCopy(_gameData);
-  for (const [key, value] of Object.entries(newPlayerGameStateData)) {
-    const existingPlayerGameStateData = gameData.playersGameStateData[playerId];
-    if (!existingPlayerGameStateData) {
-      throw new Error(`Player data not found for player ${playerId}`);
-    }
-    const existingPlayerGameDataItem = existingPlayerGameStateData[key];
-    if (
-      existingPlayerGameDataItem &&
-      existingPlayerGameDataItem === "true" &&
-      persistTruthFields.includes(key)
-    ) {
-      continue;
-    }
-    existingPlayerGameStateData[key] = value;
-  }
-  return gameData;
+  return newDataWithoutPersistTruthData;
 }
 
 /**
@@ -209,24 +167,44 @@ export function getNextStepFromConditionalStage(
   throw new Error("Failed to find next step id for ");
 }
 
+export async function updateRoomStageAndOrStep(
+  room: Room,
+  stageId?: string,
+  stepId?: string
+): Promise<Room> {
+  const updateOperations: Record<string, any> = {};
+  if (stageId) {
+    updateOperations[`gameData.globalStateData.curStageId`] = stageId;
+  }
+  if (stepId) {
+    updateOperations[`gameData.globalStateData.curStepId`] = stepId;
+  }
+  const updatedRoom = await RoomModel.findOneAndUpdate(
+    { _id: room._id },
+    { $set: updateOperations },
+    { new: true }
+  );
+  if (!updatedRoom) {
+    throw new Error(`Failed to update room: ${room._id}`);
+  }
+  return updatedRoom.toObject();
+}
+
 /**
  * Updates the game data with the next step.
  * IMPORTANT: This function assumes the current step is complete.
  */
-export function updateGameDataWithNextStep(
-  _gameData: GameData,
+export async function updateRoomWithNextStep(
+  room: Room,
   curStage: CurrentStage<IStage>,
   curStep: DiscussionStageStep
-): GameData {
-  const gameData: GameData = getGameDataCopy(_gameData);
+): Promise<Room> {
   const collectedDiscussionData: CollectedDiscussionData =
-    gameData.globalStateData.discussionData || {};
+    room.gameData.globalStateData.discussionData || {};
   if (curStep.lastStep) {
     const nextStage = curStage.getNextStage(collectedDiscussionData);
     const nextStepId = getFirstStepId(nextStage);
-    gameData.globalStateData.curStageId = nextStage.clientId;
-    gameData.globalStateData.curStepId = nextStepId;
-    return gameData;
+    return await updateRoomStageAndOrStep(room, nextStage.clientId, nextStepId);
   }
 
   // getNextStep
@@ -235,17 +213,19 @@ export function updateGameDataWithNextStep(
   if (curStep.stepType === DiscussionStageStepType.CONDITIONAL) {
     const nextStep = getNextStepFromConditionalStage(
       curStep as ConditionalActivityStep,
-      gameData
+      room.gameData
     );
     if (nextStep) {
-      gameData.globalStateData.curStepId = nextStep;
-      return gameData;
+      return await updateRoomStageAndOrStep(room, undefined, nextStep);
     }
   }
 
   if (curStep.jumpToStepId) {
-    gameData.globalStateData.curStepId = curStep.jumpToStepId;
-    return gameData;
+    return await updateRoomStageAndOrStep(
+      room,
+      undefined,
+      curStep.jumpToStepId
+    );
   }
 
   // find next step in the flow
@@ -276,14 +256,11 @@ export function updateGameDataWithNextStep(
       );
     } else {
       const nextStep = currentFlowList.steps[nextStepIndex];
-      gameData.globalStateData.curStepId = nextStep.stepId;
-      return gameData;
+      return await updateRoomStageAndOrStep(room, undefined, nextStep.stepId);
     }
   } else {
     // Is a simulation stage, just need to get the next stage id
-    gameData.globalStateData.curStepId = curStage.getNextStage(
-      collectedDiscussionData
-    ).clientId;
-    return gameData;
+    const nextStage = curStage.getNextStage(collectedDiscussionData);
+    return await updateRoomStageAndOrStep(room, nextStage.clientId, undefined);
   }
 }

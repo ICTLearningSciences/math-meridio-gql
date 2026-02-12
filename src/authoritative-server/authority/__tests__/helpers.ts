@@ -13,7 +13,7 @@ The full terms of this copyright and license should always be found in the root 
 /// <reference types="jest" />
 import { PlayerDocument } from "../../../schemas/models/Player";
 import { LoginService, EducationalRole } from "../../../schemas/models/Player";
-import { GameData } from "../../../schemas/models/Room";
+import { GameData, Room, RoomPhase } from "../../../schemas/models/Room";
 import {
   Checking,
   ConditionalActivityStep,
@@ -45,6 +45,17 @@ export function createMockPlayer(id: string, name: string): PlayerDocument {
     educationalRole: EducationalRole.STUDENT,
     clientId: id,
   } as any as PlayerDocument;
+}
+
+export function createBaseRoom(): Room {
+  return {
+    _id: "test-room-id",
+    name: "Test Room",
+    gameData: createBaseGameData(),
+    phase: RoomPhase.NO_ACTIVE_PROCESSING,
+    versionNumber: 1,
+    deletedRoom: false,
+  };
 }
 
 export function createBaseGameData(): GameData {
