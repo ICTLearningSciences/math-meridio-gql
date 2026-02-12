@@ -26,11 +26,8 @@ export function addPlayerToRoom(
 
   gameData.players.push(playerToAdd._id);
 
-  gameData.playerStateData.push({
-    player: playerToAdd._id,
-    animation: "",
-    gameStateData: gameData.globalStateData.gameStateData,
-  });
+  gameData.playersGameStateData[playerToAdd._id] =
+    gameData.globalStateData.gameStateData || {};
 
   return gameData;
 }

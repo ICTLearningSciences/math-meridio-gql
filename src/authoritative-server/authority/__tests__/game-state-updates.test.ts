@@ -23,91 +23,87 @@ describe("game-state-updates", () => {
   describe("updateGlobalStateData", () => {
     it("should add new game state data when key doesn't exist", () => {
       const gameData = createBaseGameData();
-      const newData: GameStateData[] = [{ key: "newKey", value: "newValue" }];
+      const newData: GameStateData = { newKey: "newValue" };
 
       const result = updateGlobalStateData(gameData, [], newData);
 
-      expect(result.globalStateData.gameStateData).toHaveLength(1);
-      expect(result.globalStateData.gameStateData[0]).toEqual({
-        key: "newKey",
-        value: "newValue",
-      });
+      expect(Object.keys(result.globalStateData.gameStateData).length).toBe(1);
+      expect(result.globalStateData.gameStateData["newKey"]).toBe("newValue");
     });
 
     it("should update existing game state data when key exists and not in persistTruthFields", () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.gameStateData = [
-        { key: "existingKey", value: "oldValue" },
-      ];
-      const newData: GameStateData[] = [
-        { key: "existingKey", value: "newValue" },
-      ];
+      gameData.globalStateData.gameStateData = {
+        existingKey: "oldValue",
+      };
+      const newData: GameStateData = {
+        existingKey: "newValue",
+      };
 
       const result = updateGlobalStateData(gameData, [], newData);
 
-      expect(result.globalStateData.gameStateData).toHaveLength(1);
-      expect(result.globalStateData.gameStateData[0].value).toBe("newValue");
+      expect(Object.keys(result.globalStateData.gameStateData).length).toBe(1);
+      expect(result.globalStateData.gameStateData["existingKey"]).toBe(
+        "newValue"
+      );
     });
 
     it("should persist existing 'true' values for fields in persistTruthFields (not overwrite)", () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.gameStateData = [
-        { key: "truthField", value: "true" },
-      ];
-      const newData: GameStateData[] = [{ key: "truthField", value: "false" }];
+      gameData.globalStateData.gameStateData = {
+        truthField: "true",
+      };
+      const newData: GameStateData = { truthField: "false" };
 
       const result = updateGlobalStateData(gameData, ["truthField"], newData);
 
-      expect(result.globalStateData.gameStateData[0].value).toBe("true");
+      expect(result.globalStateData.gameStateData["truthField"]).toBe("true");
     });
 
     it("should update 'false' values even if field is in persistTruthFields (only 'true' is persisted)", () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.gameStateData = [
-        { key: "truthField", value: "false" },
-      ];
-      const newData: GameStateData[] = [{ key: "truthField", value: "true" }];
+      gameData.globalStateData.gameStateData = {
+        truthField: "false",
+      };
+      const newData: GameStateData = { truthField: "true" };
 
       const result = updateGlobalStateData(gameData, ["truthField"], newData);
 
-      expect(result.globalStateData.gameStateData[0].value).toBe("true");
+      expect(result.globalStateData.gameStateData["truthField"]).toBe("true");
     });
 
     it("should handle multiple new data items at once", () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.gameStateData = [
-        { key: "existing1", value: "value1" },
-      ];
-      const newData: GameStateData[] = [
-        { key: "existing1", value: "updated1" },
-        { key: "new1", value: "value2" },
-        { key: "new2", value: "value3" },
-      ];
+      gameData.globalStateData.gameStateData = {
+        existing1: "value1",
+      };
+      const newData: GameStateData = {
+        existing1: "updated1",
+        new1: "value2",
+        new2: "value3",
+      };
 
       const result = updateGlobalStateData(gameData, [], newData);
 
-      expect(result.globalStateData.gameStateData).toHaveLength(3);
-      expect(
-        result.globalStateData.gameStateData.find((d) => d.key === "existing1")
-          ?.value
-      ).toBe("updated1");
-      expect(
-        result.globalStateData.gameStateData.find((d) => d.key === "new1")
-          ?.value
-      ).toBe("value2");
-      expect(
-        result.globalStateData.gameStateData.find((d) => d.key === "new2")
-          ?.value
-      ).toBe("value3");
+      expect(Object.keys(result.globalStateData.gameStateData).length).toBe(3);
+      expect(result.globalStateData.gameStateData["existing1"]?.value).toBe(
+        "updated1"
+      );
+      expect(result.globalStateData.gameStateData["new1"]?.value).toBe(
+        "value2"
+      );
+      expect(result.globalStateData.gameStateData["new2"]?.value).toBe(
+        "value3"
+      );
     });
 
     it("should not mutate the original gameData object", () => {
       const gameData = createBaseGameData();
-      const newData: GameStateData[] = [{ key: "newKey", value: "newValue" }];
+      const newData: GameStateData = { newKey: "newValue" };
 
       const result = updateGlobalStateData(gameData, [], newData);
 
-      expect(result.globalStateData.gameStateData.length).toBe(1);
+      expect(Object.keys(result.globalStateData.gameStateData).length).toBe(1);
       expect(gameData.globalStateData.gameStateData.length).toBe(0);
     });
   });
@@ -115,45 +111,38 @@ describe("game-state-updates", () => {
   describe("updatePlayerStateData", () => {
     it("should add new player state data when key doesn't exist", () => {
       const gameData = createBaseGameData();
-      const newData: GameStateData[] = [
-        { key: "playerKey", value: "playerValue" },
-      ];
+      const newData: GameStateData = {
+        playerKey: "playerValue",
+      };
 
       const result = updatePlayerStateData(gameData, [], "player1", newData);
 
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      expect(player1Data?.gameStateData).toHaveLength(1);
-      expect(player1Data?.gameStateData[0]).toEqual({
-        key: "playerKey",
-        value: "playerValue",
-      });
+      const player1Data = result.playersGameStateData["player1"];
+      expect(Object.keys(player1Data).length).toBe(1);
+      expect(player1Data["playerKey"]).toEqual("playerValue");
     });
 
     it("should update existing player state data when key exists and not in persistTruthFields", () => {
       const gameData = createBaseGameData();
-      gameData.playerStateData[0].gameStateData = [
-        { key: "existingKey", value: "oldValue" },
-      ];
-      const newData: GameStateData[] = [
-        { key: "existingKey", value: "newValue" },
-      ];
+      gameData.playersGameStateData["player1"] = {
+        existingKey: "oldValue",
+      };
+      const newData: GameStateData = {
+        existingKey: "newValue",
+      };
 
       const result = updatePlayerStateData(gameData, [], "player1", newData);
 
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      expect(player1Data?.gameStateData[0].value).toBe("newValue");
+      const player1Data = result.playersGameStateData["player1"];
+      expect(player1Data["existingKey"]).toBe("newValue");
     });
 
     it("should persist existing 'true' values for fields in persistTruthFields (not overwrite)", () => {
       const gameData = createBaseGameData();
-      gameData.playerStateData[0].gameStateData = [
-        { key: "truthField", value: "true" },
-      ];
-      const newData: GameStateData[] = [{ key: "truthField", value: "false" }];
+      gameData.playersGameStateData["player1"] = {
+        truthField: "true",
+      };
+      const newData: GameStateData = { truthField: "false" };
 
       const result = updatePlayerStateData(
         gameData,
@@ -162,18 +151,16 @@ describe("game-state-updates", () => {
         newData
       );
 
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      expect(player1Data?.gameStateData[0].value).toBe("true");
+      const player1Data = result.playersGameStateData["player1"];
+      expect(player1Data["truthField"]).toBe("true");
     });
 
     it("should update 'false' values even if field is in persistTruthFields", () => {
       const gameData = createBaseGameData();
-      gameData.playerStateData[0].gameStateData = [
-        { key: "truthField", value: "false" },
-      ];
-      const newData: GameStateData[] = [{ key: "truthField", value: "true" }];
+      gameData.playersGameStateData["player1"] = {
+        truthField: "false",
+      };
+      const newData: GameStateData = { truthField: "true" };
 
       const result = updatePlayerStateData(
         gameData,
@@ -182,15 +169,13 @@ describe("game-state-updates", () => {
         newData
       );
 
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      expect(player1Data?.gameStateData[0].value).toBe("true");
+      const player1Data = result.playersGameStateData["player1"];
+      expect(player1Data["truthField"]).toBe("true");
     });
 
     it("should throw error when player not found", () => {
       const gameData = createBaseGameData();
-      const newData: GameStateData[] = [{ key: "key", value: "value" }];
+      const newData: GameStateData = { key: "value" };
 
       expect(() => {
         updatePlayerStateData(gameData, [], "nonexistent-player", newData);
@@ -199,60 +184,48 @@ describe("game-state-updates", () => {
 
     it("should handle multiple new data items at once for a player", () => {
       const gameData = createBaseGameData();
-      gameData.playerStateData[0].gameStateData = [
-        { key: "existing1", value: "value1" },
-      ];
-      const newData: GameStateData[] = [
-        { key: "existing1", value: "updated1" },
-        { key: "new1", value: "value2" },
-        { key: "new2", value: "value3" },
-      ];
+      gameData.playersGameStateData["player1"] = {
+        existing1: "value1",
+      };
+      const newData: GameStateData = {
+        existing1: "updated1",
+        new1: "value2",
+        new2: "value3",
+      };
 
       const result = updatePlayerStateData(gameData, [], "player1", newData);
 
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      expect(player1Data?.gameStateData).toHaveLength(3);
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "existing1")?.value
-      ).toBe("updated1");
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "new1")?.value
-      ).toBe("value2");
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "new2")?.value
-      ).toBe("value3");
+      const player1Data = result.playersGameStateData["player1"];
+      expect(Object.keys(player1Data).length).toBe(3);
+      expect(player1Data["existing1"]).toBe("updated1");
+      expect(player1Data["new1"]).toBe("value2");
+      expect(player1Data["new2"]).toBe("value3");
     });
 
     it("should not mutate the original gameData object", () => {
       const gameData = createBaseGameData();
-      const newData: GameStateData[] = [{ key: "newKey", value: "newValue" }];
+      const newData: GameStateData = { newKey: "newValue" };
 
       const result = updatePlayerStateData(gameData, [], "player1", newData);
 
-      const resultPlayer1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      const originalPlayer1Data = gameData.playerStateData.find(
-        (p) => p.player === "player1"
-      );
+      const resultPlayer1Data = result.playersGameStateData["player1"];
+      const originalPlayer1Data = gameData.playersGameStateData["player1"];
 
-      expect(resultPlayer1Data?.gameStateData.length).toBe(1);
-      expect(originalPlayer1Data?.gameStateData.length).toBe(0);
+      expect(Object.keys(resultPlayer1Data).length).toBe(1);
+      expect(Object.keys(originalPlayer1Data).length).toBe(0);
     });
   });
 
   describe("syncGlobalTruthDataToPlayers", () => {
     it("should sync global truth data to all players, adding new keys and updating existing ones, while skipping missing global fields", () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.gameStateData = [
-        { key: "field1", value: "globalValue1" },
-        { key: "field2", value: "globalValue2" },
-      ];
-      gameData.playerStateData[0].gameStateData = [
-        { key: "field1", value: "oldValue1" },
-      ];
+      gameData.globalStateData.gameStateData = {
+        field1: "globalValue1",
+        field2: "globalValue2",
+      };
+      gameData.playersGameStateData["player1"] = {
+        field1: "oldValue1",
+      };
       // player2 has no existing data
 
       const result = syncGlobalTruthDataToPlayers(gameData, [
@@ -261,45 +234,29 @@ describe("game-state-updates", () => {
         "nonexistentField",
       ]);
 
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      const player2Data = result.playerStateData.find(
-        (p) => p.player === "player2"
-      );
+      const player1Data = result.playersGameStateData["player1"];
+      const player2Data = result.playersGameStateData["player2"];
 
       // Player 1: field1 should be updated, field2 should be added
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "field1")?.value
-      ).toBe("globalValue1");
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "field2")?.value
-      ).toBe("globalValue2");
+      expect(player1Data["field1"]).toBe("globalValue1");
+      expect(player1Data["field2"]).toBe("globalValue2");
 
       // Player 2: both should be added
-      expect(
-        player2Data?.gameStateData.find((d) => d.key === "field1")?.value
-      ).toBe("globalValue1");
-      expect(
-        player2Data?.gameStateData.find((d) => d.key === "field2")?.value
-      ).toBe("globalValue2");
+      expect(player2Data["field1"]).toBe("globalValue1");
+      expect(player2Data["field2"]).toBe("globalValue2");
 
       // nonexistentField should not be added (doesn't exist in global)
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "nonexistentField")
-      ).toBeUndefined();
-      expect(
-        player2Data?.gameStateData.find((d) => d.key === "nonexistentField")
-      ).toBeUndefined();
+      expect(player1Data["nonexistentField"]).toBeUndefined();
+      expect(player2Data["nonexistentField"]).toBeUndefined();
     });
 
     it("should handle multiple persistTruthFields at once", () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.gameStateData = [
-        { key: "truth1", value: "globalTrue1" },
-        { key: "truth2", value: "globalTrue2" },
-        { key: "truth3", value: "globalTrue3" },
-      ];
+      gameData.globalStateData.gameStateData = {
+        truth1: "globalTrue1",
+        truth2: "globalTrue2",
+        truth3: "globalTrue3",
+      };
 
       const result = syncGlobalTruthDataToPlayers(gameData, [
         "truth1",
@@ -307,111 +264,77 @@ describe("game-state-updates", () => {
         "truth3",
       ]);
 
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      const player2Data = result.playerStateData.find(
-        (p) => p.player === "player2"
-      );
+      const player1Data = result.playersGameStateData["player1"];
+      const player2Data = result.playersGameStateData["player2"];
 
-      expect(player1Data?.gameStateData).toHaveLength(3);
-      expect(player2Data?.gameStateData).toHaveLength(3);
+      expect(Object.keys(player1Data).length).toBe(3);
+      expect(Object.keys(player2Data).length).toBe(3);
 
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "truth1")?.value
-      ).toBe("globalTrue1");
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "truth2")?.value
-      ).toBe("globalTrue2");
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "truth3")?.value
-      ).toBe("globalTrue3");
+      expect(player1Data["truth1"]).toBe("globalTrue1");
+      expect(player1Data["truth2"]).toBe("globalTrue2");
+      expect(player1Data["truth3"]).toBe("globalTrue3");
     });
 
     it("should not mutate the original gameData object", () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.gameStateData = [
-        { key: "field1", value: "value1" },
-      ];
+      gameData.globalStateData.gameStateData = {
+        field1: "value1",
+      };
 
       const result = syncGlobalTruthDataToPlayers(gameData, ["field1"]);
 
-      const resultPlayer1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      const originalPlayer1Data = gameData.playerStateData.find(
-        (p) => p.player === "player1"
-      );
+      const resultPlayer1Data = result.playersGameStateData["player1"];
+      const originalPlayer1Data = gameData.playersGameStateData["player1"];
 
-      expect(resultPlayer1Data?.gameStateData.length).toBe(1);
-      expect(originalPlayer1Data?.gameStateData.length).toBe(0);
+      expect(Object.keys(resultPlayer1Data).length).toBe(1);
+      expect(Object.keys(originalPlayer1Data).length).toBe(0);
     });
   });
 
   describe("syncGlobalGameStateKeysToPlayers", () => {
     it("should sync all global keys to all players, only adding missing keys (not updating existing ones)", () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.gameStateData = [
-        { key: "global1", value: "globalValue1" },
-        { key: "global2", value: "globalValue2" },
-        { key: "global3", value: "globalValue3" },
-      ];
-      gameData.playerStateData[0].gameStateData = [
-        { key: "global1", value: "existingPlayerValue" },
-      ];
+      gameData.globalStateData.gameStateData = {
+        global1: "globalValue1",
+        global2: "globalValue2",
+        global3: "globalValue3",
+      };
+      gameData.playersGameStateData["player1"] = {
+        global1: "existingPlayerValue",
+      };
       // player2 has no existing data
 
       const result = syncGlobalGameStateKeysToPlayers(gameData);
 
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      const player2Data = result.playerStateData.find(
-        (p) => p.player === "player2"
-      );
+      const player1Data = result.playersGameStateData["player1"];
+      const player2Data = result.playersGameStateData["player2"];
 
       // Player 1: global1 should NOT be updated (keeps existing value), global2 and global3 should be added
-      expect(player1Data?.gameStateData).toHaveLength(3);
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "global1")?.value
-      ).toBe("existingPlayerValue");
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "global2")?.value
-      ).toBe("globalValue2");
-      expect(
-        player1Data?.gameStateData.find((d) => d.key === "global3")?.value
-      ).toBe("globalValue3");
+      expect(Object.keys(player1Data).length).toBe(3);
+      expect(player1Data["global1"]).toBe("existingPlayerValue");
+      expect(player1Data["global2"]).toBe("globalValue2");
+      expect(player1Data["global3"]).toBe("globalValue3");
 
       // Player 2: all should be added
-      expect(player2Data?.gameStateData).toHaveLength(3);
-      expect(
-        player2Data?.gameStateData.find((d) => d.key === "global1")?.value
-      ).toBe("globalValue1");
-      expect(
-        player2Data?.gameStateData.find((d) => d.key === "global2")?.value
-      ).toBe("globalValue2");
-      expect(
-        player2Data?.gameStateData.find((d) => d.key === "global3")?.value
-      ).toBe("globalValue3");
+      expect(Object.keys(player2Data).length).toBe(3);
+      expect(player2Data["global1"]).toBe("globalValue1");
+      expect(player2Data["global2"]).toBe("globalValue2");
+      expect(player2Data["global3"]).toBe("globalValue3");
     });
 
     it("should not mutate the original gameData object", () => {
       const gameData = createBaseGameData();
-      gameData.globalStateData.gameStateData = [
-        { key: "field1", value: "value1" },
-      ];
+      gameData.globalStateData.gameStateData = {
+        field1: "value1",
+      };
 
       const result = syncGlobalGameStateKeysToPlayers(gameData);
 
-      const resultPlayer1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      const originalPlayer1Data = gameData.playerStateData.find(
-        (p) => p.player === "player1"
-      );
+      const resultPlayer1Data = result.playersGameStateData["player1"];
+      const originalPlayer1Data = gameData.playersGameStateData["player1"];
 
-      expect(resultPlayer1Data?.gameStateData.length).toBe(1);
-      expect(originalPlayer1Data?.gameStateData.length).toBe(0);
+      expect(Object.keys(resultPlayer1Data).length).toBe(1);
+      expect(Object.keys(originalPlayer1Data).length).toBe(0);
     });
   });
 });

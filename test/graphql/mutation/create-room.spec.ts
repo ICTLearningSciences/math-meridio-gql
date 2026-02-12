@@ -65,19 +65,9 @@ describe("create and join new room", () => {
                 curStepId
                 roomOwnerId
                 discussionData
-                gameStateData {
-                  key
-                  value
-                }
+                gameStateData
               }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
+              playersGameStateData
             }
           }
         }`,
@@ -107,15 +97,11 @@ describe("create and join new room", () => {
           curStepId: "",
           roomOwnerId: player1Id,
           discussionData: {},
-          gameStateData: [],
+          gameStateData: {},
         },
-        playerStateData: [
-          {
-            player: player1Id,
-            animation: "",
-            gameStateData: [],
-          },
-        ],
+        playersGameStateData: {
+          [player1Id]: {},
+        },
       },
     });
   });
@@ -151,19 +137,9 @@ describe("create and join new room", () => {
               globalStateData {
                 curStageId
                 curStepId
-                gameStateData {
-                  key
-                  value
-                }
+                gameStateData
               }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
+              playersGameStateData
             }
             deletedRoom
           }

@@ -36,25 +36,15 @@ module.exports = {
           curStepId: "Step 1",
           roomOwnerId: player1Id,
           discussionData: {},
-          gameStateData: [
-            {
-              key: "Global variable 1",
-              value: "Global variable 1 value",
-            },
-          ],
-        },
-        playerStateData: [
-          {
-            player: player1Id,
-            animation: "",
-            gameStateData: [
-              {
-                key: "Player variable 1",
-                value: "Player variable 1 value",
-              },
-            ],
+          gameStateData: {
+            "Global variable 1": "Global variable 1 value",
           },
-        ],
+        },
+        playersGameStateData: {
+          [player1Id]: {
+            "Player variable 1": "Player variable 1 value",
+          },
+        },
       },
       deletedRoom: false,
     },
@@ -71,25 +61,15 @@ module.exports = {
           curStepId: "Step 1",
           roomOwnerId: player1Id,
           discussionData: {},
-          gameStateData: [
-            {
-              key: "Global variable 1",
-              value: "Global variable 1 value",
-            },
-          ],
-        },
-        playerStateData: [
-          {
-            player: player1Id,
-            animation: "",
-            gameStateData: [
-              {
-                key: "Player variable 1",
-                value: "Player variable 1 value",
-              },
-            ],
+          gameStateData: {
+            "Global variable 1": "Global variable 1 value",
           },
-        ],
+        },
+        playersGameStateData: {
+          [player1Id]: {
+            "Player variable 1": "Player variable 1 value",
+          },
+        },
       },
       deletedRoom: true,
     },
@@ -106,9 +86,9 @@ module.exports = {
           curStepId: "Step 1",
           roomOwnerId: player1Id,
           discussionData: {},
-          gameStateData: [],
+          gameStateData: {},
         },
-        playerStateData: [],
+        playersGameStateData: {},
       },
       deletedRoom: false,
     },

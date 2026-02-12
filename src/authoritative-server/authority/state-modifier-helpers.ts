@@ -31,14 +31,9 @@ export function addSystemMessageToChat(
     newMessage,
     gameData.globalStateData.discussionData || {}
   );
-  const gameStateDataAsRecord: Record<string, string> =
-    gameData.globalStateData.gameStateData.reduce((acc, data) => {
-      acc[data.key] = data.value;
-      return acc;
-    }, {} as Record<string, string>);
   const processedMessageWithGameStateData = replaceStoredDataInString(
     processMessageWithDiscussionData,
-    gameStateDataAsRecord
+    gameData.globalStateData.gameStateData || {}
   );
   gameData.chat.push({
     messageId: crypto.randomUUID(),
@@ -90,9 +85,9 @@ export function addUserMessageToChat(
     curStep.stepType === DiscussionStageStepType.REQUEST_USER_INPUT &&
     curStep.saveResponseVariableName
   ) {
-    gameData = updateDiscussionData(gameData, [
-      { key: curStep.saveResponseVariableName, value: newMessage },
-    ]);
+    gameData = updateDiscussionData(gameData, {
+      [curStep.saveResponseVariableName]: newMessage,
+    });
   }
   gameData.chat.push(
     buildUserMessage(newMessage, senderId, senderName, sessionId)

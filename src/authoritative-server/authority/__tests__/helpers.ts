@@ -56,24 +56,16 @@ export function createBaseGameData(): GameData {
       createMockPlayer("player2", "Player 2")._id,
     ],
     gameId: "basketball",
-    playerStateData: [
-      {
-        player: "player1",
-        animation: "",
-        gameStateData: [],
-      },
-      {
-        player: "player2",
-        animation: "",
-        gameStateData: [],
-      },
-    ],
+    playersGameStateData: {
+      player1: {},
+      player2: {},
+    },
     globalStateData: {
       curStageId: "stage1",
       roomOwnerId: "test-room-owner-id",
       discussionData: {},
       curStepId: "step1",
-      gameStateData: [],
+      gameStateData: {},
     },
   };
 }

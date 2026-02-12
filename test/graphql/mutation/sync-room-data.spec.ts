@@ -32,10 +32,7 @@ const syncRoomDataMutation = `
         globalStateData {
           roomOwnerId
         }
-        playerStateData {
-          player
-          animation
-        }
+        playersGameStateData
       }
     }
   }
@@ -103,16 +100,12 @@ describe("sync room data", () => {
         curStepId: "step1",
         roomOwnerId: userId1,
         discussionData: { name: "John Doe" },
-        gameStateData: [],
+        gameStateData: {},
       },
       persistTruthGlobalStateData: [],
-      playerStateData: [
-        {
-          player: userId1,
-          animation: "idle",
-          gameStateData: [],
-        },
-      ],
+      playersGameStateData: {
+        [userId1]: {},
+      },
     };
 
     const response = await request(app)
@@ -150,10 +143,10 @@ describe("sync room data", () => {
         curStageId: "stage1",
         curStepId: "step1",
         roomOwnerId: userId1,
-        gameStateData: [],
+        gameStateData: {},
       },
       persistTruthGlobalStateData: [],
-      playerStateData: [],
+      playersGameStateData: {},
     };
 
     const response = await request(app)
@@ -180,10 +173,10 @@ describe("sync room data", () => {
         curStageId: "stage1",
         curStepId: "step1",
         roomOwnerId: userId1,
-        gameStateData: [],
+        gameStateData: {},
       },
       persistTruthGlobalStateData: [],
-      playerStateData: [],
+      playersGameStateData: {},
     };
 
     const response = await request(app)
@@ -213,10 +206,10 @@ describe("sync room data", () => {
         curStageId: "stage1",
         curStepId: "step1",
         roomOwnerId: userId1,
-        gameStateData: [],
+        gameStateData: {},
       },
       persistTruthGlobalStateData: [],
-      playerStateData: [],
+      playersGameStateData: {},
     };
 
     const response = await request(app)
@@ -259,10 +252,10 @@ describe("sync room data", () => {
         curStageId: "stage2",
         curStepId: "step2",
         roomOwnerId: userId1,
-        gameStateData: [],
+        gameStateData: {},
       },
       persistTruthGlobalStateData: [],
-      playerStateData: [],
+      playersGameStateData: {},
     };
 
     await request(app)

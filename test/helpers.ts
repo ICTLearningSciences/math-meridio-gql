@@ -134,10 +134,10 @@ export function createRoom(
         curStepId: "",
         roomOwnerId: players[0] || "",
         discussionData: {},
-        gameStateData: [],
+        gameStateData: {},
       },
       persistTruthGlobalStateData: [],
-      playerStateData: [],
+      playersGameStateData: {},
     },
     deletedRoom: false,
   });

@@ -12,49 +12,13 @@ import mongoUnit from "mongo-unit";
 import request from "supertest";
 import mongoose from "mongoose";
 import { getToken, createUser, createClassroom } from "../../helpers";
-import { UserRole } from "../../../src/schemas/types/types";
+import {
+  createNewGameRoomMutation,
+  UserRole,
+} from "../../../src/schemas/types/types";
 import { EducationalRole } from "../../../src/schemas/models/Player";
 import RoomModel from "../../../src/schemas/models/Room";
 const { ObjectId } = mongoose.Types;
-
-const createNewRoomMutation = `
-  mutation CreateNewRoom($gameId: String!, $gameName: String!, $classId: String) {
-    createNewGameRoom(gameId: $gameId, gameName: $gameName, classId: $classId) {
-      _id
-      name
-      classId
-      gameData {
-        gameId
-        players {
-          _id
-        }
-        chat {
-          message
-        }
-        persistTruthGlobalStateData
-        playerStateData {
-          player
-          animation
-          gameStateData {
-            key
-            value
-          }
-        }
-        globalStateData {
-          curStageId
-          curStepId
-          roomOwnerId
-          discussionData
-          gameStateData {
-            key
-            value
-          }
-        }
-      }
-      deletedRoom
-    }
-  }
-`;
 
 describe("create new room", () => {
   let app: Express;
@@ -91,7 +55,7 @@ describe("create new room", () => {
       .post("/graphql")
       .set("Authorization", `Bearer ${accessToken}`)
       .send({
-        query: createNewRoomMutation,
+        query: createNewGameRoomMutation,
         variables: {
           gameId: "game123",
           gameName: "Math Challenge",
@@ -119,7 +83,7 @@ describe("create new room", () => {
       .post("/graphql")
       .set("Authorization", `Bearer ${accessToken}`)
       .send({
-        query: createNewRoomMutation,
+        query: createNewGameRoomMutation,
         variables: {
           gameId: "game123",
           gameName: "Math Challenge",
@@ -141,13 +105,13 @@ describe("create new room", () => {
       players: [],
       chat: [],
       persistTruthGlobalStateData: [],
-      playerStateData: [],
+      playersGameStateData: {},
       globalStateData: {
         curStageId: "",
         curStepId: "",
         roomOwnerId: userId,
         discussionData: {},
-        gameStateData: [],
+        gameStateData: {},
       },
     });
 
@@ -162,7 +126,7 @@ describe("create new room", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: createNewRoomMutation,
+        query: createNewGameRoomMutation,
         variables: {
           gameId: "game123",
           gameName: "Math Challenge",
@@ -181,7 +145,7 @@ describe("create new room", () => {
       .post("/graphql")
       .set("Authorization", `Bearer ${accessToken}`)
       .send({
-        query: createNewRoomMutation,
+        query: createNewGameRoomMutation,
         variables: {
           gameId: "game123",
           gameName: "Math Challenge",
@@ -199,7 +163,7 @@ describe("create new room", () => {
       .post("/graphql")
       .set("Authorization", `Bearer ${accessToken}`)
       .send({
-        query: createNewRoomMutation,
+        query: createNewGameRoomMutation,
         variables: {
           gameId: "testGame",
           gameName: "Test Game",

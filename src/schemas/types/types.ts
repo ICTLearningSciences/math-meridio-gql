@@ -21,3 +21,43 @@ export enum UserRole {
   USER = "USER",
   ADMIN = "ADMIN",
 }
+
+export const fullRoomData = `
+      _id
+      name
+      classId
+      gameData {
+        gameId
+        players {
+          _id
+        }
+        chat {
+          message
+        }
+        persistTruthGlobalStateData
+        playersGameStateData
+        globalStateData {
+          curStageId
+          curStepId
+          roomOwnerId
+          discussionData
+          gameStateData
+        }
+      }
+      deletedRoom`;
+
+export const createNewGameRoomMutation = `
+  mutation CreateNewGameRoom($gameId: String!, $classId: String) {
+    createNewGameRoom(gameId: $gameId, classId: $classId) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const sendMessageToGameRoomMutation = `
+  mutation SendMessageToGameRoom($roomId: ID!, $message: String!, $sessionId: String!) {
+    sendMessageToGameRoom(roomId: $roomId, message: $message, sessionId: $sessionId) {
+      ${fullRoomData}
+    }
+  }
+`;

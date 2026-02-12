@@ -42,30 +42,18 @@ export interface ChatMessage {
 
 export interface ChatMessageDocument extends Document, ChatMessage {}
 
-export interface GameStateData {
-  key: string;
-  value: any; // eslint-disable-line  @typescript-eslint/no-explicit-any
-}
-
-export interface GameStateDataDocument extends GameStateData, Document {}
+export type GameStateData = Record<string, any>;
+export type DiscussionData = Record<string, any>;
 
 export interface GlobalStateData {
   curStageId: string;
   curStepId: string;
   roomOwnerId: string;
-  discussionData: Record<string, any>;
-  gameStateData: GameStateData[];
+  discussionData: DiscussionData;
+  gameStateData: GameStateData;
 }
 
 export interface GlobalStateDataDocument extends GlobalStateData, Document {}
-
-export interface PlayerStateData {
-  player: string;
-  animation: string;
-  gameStateData: GameStateData[];
-}
-
-export interface PlayerStateDataDocument extends PlayerStateData, Document {}
 
 export interface GameData {
   gameId: string;
@@ -73,7 +61,7 @@ export interface GameData {
   chat: ChatMessage[];
   globalStateData: GlobalStateData;
   persistTruthGlobalStateData: string[];
-  playerStateData: PlayerStateData[];
+  playersGameStateData: Record<string, GameStateData>; // keyed by player ID
 }
 
 export interface GameDataDocument extends GameData, Document {}
@@ -116,33 +104,19 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
-
-export const GameStateSchema = new Schema<GameStateData>(
-  {
-    key: { type: String },
-    value: { type: Schema.Types.Mixed },
-  },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
-);
-
 export const GlobalStateSchema = new Schema<GlobalStateDataDocument>(
   {
     curStageId: { type: String },
     curStepId: { type: String },
     roomOwnerId: { type: String },
     discussionData: { type: Schema.Types.Mixed, default: {} },
-    gameStateData: [{ type: GameStateSchema }],
+    gameStateData: { type: Schema.Types.Mixed, default: {} },
   },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
-);
-
-export const PlayerStateSchema = new Schema<PlayerStateDataDocument>(
   {
-    player: { type: String },
-    animation: { type: String },
-    gameStateData: [{ type: GameStateSchema }],
-  },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
+    timestamps: true,
+    collation: { locale: "en", strength: 2 },
+    minimize: false, // Preserve empty objects in Mixed fields
+  }
 );
 
 export const GameSchema = new Schema<GameDataDocument>(
@@ -152,9 +126,13 @@ export const GameSchema = new Schema<GameDataDocument>(
     chat: [{ type: ChatMessageSchema }],
     globalStateData: { type: GlobalStateSchema },
     persistTruthGlobalStateData: [{ type: String }],
-    playerStateData: [{ type: PlayerStateSchema }],
+    playersGameStateData: { type: Schema.Types.Mixed, default: {} },
   },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
+  {
+    timestamps: true,
+    collation: { locale: "en", strength: 2 },
+    minimize: false, // Preserve empty objects in Mixed fields
+  }
 );
 
 export const RoomSchema = new Schema<RoomDocument, RoomModel>(
@@ -197,14 +175,6 @@ export const ChatMessageType = new GraphQLObjectType({
   }),
 });
 
-export const GameStateDataType = new GraphQLObjectType({
-  name: "GameStateDataType",
-  fields: () => ({
-    key: { type: GraphQLString },
-    value: { type: GraphQLScalarType },
-  }),
-});
-
 export const GlobalStateDataType = new GraphQLObjectType({
   name: "GlobalStateDataType",
   fields: () => ({
@@ -212,16 +182,7 @@ export const GlobalStateDataType = new GraphQLObjectType({
     curStepId: { type: GraphQLString },
     roomOwnerId: { type: GraphQLString },
     discussionData: { type: GraphQLScalarType },
-    gameStateData: { type: new GraphQLList(GameStateDataType) },
-  }),
-});
-
-export const PlayerStateDataType = new GraphQLObjectType({
-  name: "PlayerStateDataType",
-  fields: () => ({
-    player: { type: GraphQLString },
-    animation: { type: GraphQLString },
-    gameStateData: { type: new GraphQLList(GameStateDataType) },
+    gameStateData: { type: GraphQLScalarType },
   }),
 });
 
@@ -238,7 +199,7 @@ export const GameDataType = new GraphQLObjectType({
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
     globalStateData: { type: GlobalStateDataType },
-    playerStateData: { type: new GraphQLList(PlayerStateDataType) },
+    playersGameStateData: { type: GraphQLScalarType }, // keyed by player ID
   }),
 });
 
@@ -255,14 +216,6 @@ export const RoomType = new GraphQLObjectType({
   }),
 });
 
-export const GameStateDataInputType = new GraphQLInputObjectType({
-  name: "GameStateDataInputType",
-  fields: () => ({
-    key: { type: GraphQLString },
-    value: { type: GraphQLScalarType },
-  }),
-});
-
 export const GlobalStateDataInputType = new GraphQLInputObjectType({
   name: "GlobalStateDataInputType",
   fields: () => ({
@@ -270,16 +223,7 @@ export const GlobalStateDataInputType = new GraphQLInputObjectType({
     curStepId: { type: GraphQLString },
     roomOwnerId: { type: GraphQLString },
     discussionData: { type: GraphQLScalarType },
-    gameStateData: { type: new GraphQLList(GameStateDataInputType) },
-  }),
-});
-
-export const PlayerStateDataInputType = new GraphQLInputObjectType({
-  name: "PlayerStateDataInputType",
-  fields: () => ({
-    player: { type: GraphQLString },
-    animation: { type: GraphQLString },
-    gameStateData: { type: new GraphQLList(GameStateDataInputType) },
+    gameStateData: { type: GraphQLScalarType }, // Changed from List to Record (JSON scalar)
   }),
 });
 
@@ -307,7 +251,7 @@ export const GameDataInputType = new GraphQLInputObjectType({
     chat: { type: new GraphQLList(ChatMessageInputType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
     globalStateData: { type: GlobalStateDataInputType },
-    playerStateData: { type: new GraphQLList(PlayerStateDataInputType) },
+    playersGameStateData: { type: GraphQLScalarType }, // keyed by player ID
   }),
 });
 

@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GameData, GameStateData } from "../../schemas/models/Room";
+import { GameData } from "../../schemas/models/Room";
 import {
   Checking,
   ConditionalActivityStep,
@@ -18,6 +18,7 @@ import {
 } from "../../schemas/models/DiscussionStage/types";
 import { getFirstStepId, replaceStoredDataInString } from "./helpers/helpers";
 import { evaluateCondition, getGameDataCopy } from "./state-modifier-helpers";
+import { GameStateData } from "../../schemas/models/Room";
 
 /**
  * Updates the global game state data with the new data
@@ -25,38 +26,32 @@ import { evaluateCondition, getGameDataCopy } from "./state-modifier-helpers";
 export function updateGlobalStateData(
   _gameData: GameData,
   persistTruthFields: string[],
-  newData: GameStateData[]
+  newData: GameStateData
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
-  for (const newGameData of newData) {
-    const existingGameDataItem = gameData.globalStateData.gameStateData.find(
-      (gameDataKeyValue) => gameDataKeyValue.key === newGameData.key
-    );
+  for (const [key, value] of Object.entries(newData)) {
+    const existingGameDataItem = gameData.globalStateData.gameStateData[key];
     if (
       existingGameDataItem &&
-      existingGameDataItem.value === "true" &&
-      persistTruthFields.includes(newGameData.key)
+      existingGameDataItem === "true" &&
+      persistTruthFields.includes(key)
     ) {
       continue;
     }
-    if (existingGameDataItem) {
-      existingGameDataItem.value = newGameData.value;
-    } else {
-      gameData.globalStateData.gameStateData.push(newGameData);
-    }
+    gameData.globalStateData.gameStateData[key] = value;
   }
   return gameData;
 }
 
 export function updateDiscussionData(
   _gameData: GameData,
-  newData: GameStateData[]
+  newData: GameStateData
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
   const collectedDiscussionData: CollectedDiscussionData =
     gameData.globalStateData.discussionData || {};
-  for (const data of newData) {
-    collectedDiscussionData[data.key] = data.value;
+  for (const [key, value] of Object.entries(newData)) {
+    collectedDiscussionData[key] = value;
   }
   gameData.globalStateData.discussionData = collectedDiscussionData;
   return gameData;
@@ -69,31 +64,26 @@ export function updatePlayerStateData(
   _gameData: GameData,
   persistTruthFields: string[],
   playerId: string,
-  _newPlayerGameStateData: GameStateData[]
+  newPlayerGameStateData: GameStateData
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
-  for (const newPlayerGameStateData of _newPlayerGameStateData) {
-    const existingPlayerDataItem = gameData.playerStateData.find(
-      (playerData) => playerData.player === playerId
-    );
-    if (!existingPlayerDataItem) {
+  for (const [key, value] of Object.entries(newPlayerGameStateData)) {
+    const existingPlayerGameStateData = gameData.playersGameStateData[playerId];
+    if (!existingPlayerGameStateData) {
       throw new Error(`Player data not found for player ${playerId}`);
     }
-    const existingPlayerGameStateData =
-      existingPlayerDataItem.gameStateData.find(
-        (gameStateData) => gameStateData.key === newPlayerGameStateData.key
-      );
+    const existingPlayerGameDataItem = existingPlayerGameStateData[key];
     if (
-      existingPlayerGameStateData &&
-      existingPlayerGameStateData.value === "true" &&
-      persistTruthFields.includes(newPlayerGameStateData.key)
+      existingPlayerGameDataItem &&
+      existingPlayerGameDataItem.value === "true" &&
+      persistTruthFields.includes(key)
     ) {
       continue;
     }
-    if (existingPlayerGameStateData) {
-      existingPlayerGameStateData.value = newPlayerGameStateData.value;
+    if (existingPlayerGameDataItem) {
+      existingPlayerGameDataItem.value = value;
     } else {
-      existingPlayerDataItem.gameStateData.push(newPlayerGameStateData);
+      existingPlayerGameStateData[key] = value;
     }
   }
   return gameData;
@@ -111,23 +101,19 @@ export function syncGlobalTruthDataToPlayers(
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
   for (const persistTruthFieldKey of persistTruthFields) {
-    const globalTruthData = gameData.globalStateData.gameStateData.find(
-      (gameDataKeyValue) => gameDataKeyValue.key === persistTruthFieldKey
-    );
+    const globalTruthData =
+      gameData.globalStateData.gameStateData[persistTruthFieldKey];
     if (!globalTruthData) {
       continue;
     }
-    for (const playerData of gameData.playerStateData) {
-      const existingPlayerGameStateData = playerData.gameStateData.find(
-        (gameStateData) => gameStateData.key === persistTruthFieldKey
-      );
+    for (const [playerId, playerData] of Object.entries(
+      gameData.playersGameStateData
+    )) {
+      const existingPlayerGameStateData = playerData[persistTruthFieldKey];
       if (existingPlayerGameStateData) {
         existingPlayerGameStateData.value = globalTruthData.value;
       } else {
-        playerData.gameStateData.push({
-          key: persistTruthFieldKey,
-          value: globalTruthData.value,
-        });
+        playerData[persistTruthFieldKey] = globalTruthData.value;
       }
     }
   }
@@ -141,18 +127,17 @@ export function syncGlobalGameStateKeysToPlayers(
   _gameData: GameData
 ): GameData {
   const gameData: GameData = getGameDataCopy(_gameData);
-  for (const globalGameStateData of gameData.globalStateData.gameStateData) {
-    for (const playerData of gameData.playerStateData) {
-      const existingPlayerGameStateData = playerData.gameStateData.find(
-        (gameStateData) => gameStateData.key === globalGameStateData.key
-      );
+  for (const [key, value] of Object.entries(
+    gameData.globalStateData.gameStateData
+  )) {
+    for (const [playerId, playerData] of Object.entries(
+      gameData.playersGameStateData
+    )) {
+      const existingPlayerGameStateData = playerData[key];
       if (existingPlayerGameStateData) {
         continue;
       } else {
-        playerData.gameStateData.push({
-          key: globalGameStateData.key,
-          value: globalGameStateData.value,
-        });
+        playerData[key] = value;
       }
     }
   }

@@ -12,7 +12,13 @@ import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { player1Id } from "../../fixtures/mongodb/data";
 import RoomModel from "../../../src/schemas/models/Room";
-import { PromptRoles, UserRole } from "../../../src/schemas/types/types";
+import {
+  createNewGameRoomMutation,
+  fullRoomData,
+  PromptRoles,
+  sendMessageToGameRoomMutation,
+  UserRole,
+} from "../../../src/schemas/types/types";
 import { getToken } from "../../helpers";
 import { EducationalRole } from "../../../src/schemas/models/Player";
 import {
@@ -24,56 +30,6 @@ import sinon from "sinon";
 import * as llmRequest from "../../../src/authoritative-server/llm-request/llm-request";
 import { AiServicesResponseTypes } from "../../../src/authoritative-server/llm-request/ai-services/ai-service-types";
 import { SenderType } from "../../../src/authoritative-server/llm-request/types";
-
-const fullRoomData = `
-      _id
-      name
-      classId
-      gameData {
-        gameId
-        players {
-          _id
-        }
-        chat {
-          message
-        }
-        persistTruthGlobalStateData
-        playerStateData {
-          player
-          animation
-          gameStateData {
-            key
-            value
-          }
-        }
-        globalStateData {
-          curStageId
-          curStepId
-          roomOwnerId
-          discussionData
-          gameStateData {
-            key
-            value
-          }
-        }
-      }
-      deletedRoom`;
-
-const createNewGameRoomMutation = `
-  mutation CreateNewGameRoom($gameId: String!, $classId: String) {
-    createNewGameRoom(gameId: $gameId, classId: $classId) {
-      ${fullRoomData}
-    }
-  }
-`;
-
-export const sendMessageToGameRoomMutation = `
-  mutation SendMessageToGameRoom($roomId: ID!, $message: String!, $sessionId: String!) {
-    sendMessageToGameRoom(roomId: $roomId, message: $message, sessionId: $sessionId) {
-      ${fullRoomData}
-    }
-  }
-`;
 
 describe("full room lifecycle", () => {
   let app: Express;
@@ -183,6 +139,7 @@ describe("full room lifecycle", () => {
           sessionId: "session1",
         },
       });
+    console.log(JSON.stringify(sendMessageForPrompt.body, null, 2));
     expect(sendMessageForPrompt.status).to.equal(200);
     expect(sendMessageForPrompt.body.data.sendMessageToGameRoom).to.exist;
 
@@ -208,10 +165,8 @@ describe("full room lifecycle", () => {
     // ENSURE that prompt_response gets added to the global state data.
     const globalGameStateData =
       roomAfterPrompt?.gameData.globalStateData.gameStateData;
-    const promptResponse = globalGameStateData?.find(
-      (data) => data.key === "prompt_response"
-    );
-    expect(promptResponse?.value).to.equal("Mocked analysis of the prompt");
+    const promptResponse = globalGameStateData?.["prompt_response"];
+    expect(promptResponse).to.equal("Mocked analysis of the prompt");
 
     // ENSURE that the prompt_response gets sent as a system message
     expect(roomAfterPrompt?.gameData.chat[7].message).to.equal(

@@ -19,7 +19,6 @@ import {
   RoomPhase,
   RoomModel as RoomModelType,
 } from "../../../schemas/models/Room";
-import { ObjectId } from "mongoose";
 
 export function replaceStoredDataInString(
   str: string,
@@ -144,17 +143,6 @@ export function receivedExpectedData(
     console.error(error);
     return false;
   }
-}
-
-export function convertCollectedDataToGSData(
-  data: CollectedDiscussionData
-): GameStateData[] {
-  return Object.entries(data).map(([key, value]) => {
-    return {
-      key,
-      value,
-    };
-  });
 }
 
 export function chatLogToString(chatLog: ChatMessage[]) {

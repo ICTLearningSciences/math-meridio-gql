@@ -63,19 +63,9 @@ describe("fetch rooms", () => {
               globalStateData {
                 curStageId
                 curStepId
-                gameStateData {
-                  key
-                  value
-                }
+                gameStateData
               }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
+              playersGameStateData
             }
             deletedRoom
           }
@@ -103,25 +93,15 @@ describe("fetch rooms", () => {
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            gameStateData: [
-              {
-                key: "Global variable 1",
-                value: "Global variable 1 value",
-              },
-            ],
-          },
-          playerStateData: [
-            {
-              player: player1Id,
-              animation: "",
-              gameStateData: [
-                {
-                  key: "Player variable 1",
-                  value: "Player variable 1 value",
-                },
-              ],
+            gameStateData: {
+              "Global variable 1": "Global variable 1 value",
             },
-          ],
+          },
+          playersGameStateData: {
+            [player1Id]: {
+              "Player variable 1": "Player variable 1 value",
+            },
+          },
         },
         deletedRoom: false,
       },
@@ -136,7 +116,7 @@ describe("fetch rooms", () => {
             curStepId: "Step 1",
             gameStateData: [],
           },
-          playerStateData: [],
+          playersGameStateData: {},
           players: [],
         },
         name: "Basketball Room 3",
@@ -176,19 +156,9 @@ describe("fetch rooms", () => {
               globalStateData {
                 curStageId
                 curStepId
-                gameStateData {
-                  key
-                  value
-                }
+                gameStateData
               }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
+              playersGameStateData
             }
             deletedRoom
           }
@@ -215,25 +185,15 @@ describe("fetch rooms", () => {
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            gameStateData: [
-              {
-                key: "Global variable 1",
-                value: "Global variable 1 value",
-              },
-            ],
-          },
-          playerStateData: [
-            {
-              player: player1Id,
-              animation: "",
-              gameStateData: [
-                {
-                  key: "Player variable 1",
-                  value: "Player variable 1 value",
-                },
-              ],
+            gameStateData: {
+              "Global variable 1": "Global variable 1 value",
             },
-          ],
+          },
+          playersGameStateData: {
+            [player1Id]: {
+              "Player variable 1": "Player variable 1 value",
+            },
+          },
         },
         deletedRoom: false,
       },
@@ -246,9 +206,9 @@ describe("fetch rooms", () => {
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            gameStateData: [],
+            gameStateData: {},
           },
-          playerStateData: [],
+          playersGameStateData: {},
           players: [],
         },
         name: "Basketball Room 3",
@@ -288,19 +248,9 @@ describe("fetch rooms", () => {
               globalStateData {
                 curStageId
                 curStepId
-                gameStateData {
-                  key
-                  value
-                }
+                gameStateData
               }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
+              playersGameStateData
             }
             deletedRoom
           }

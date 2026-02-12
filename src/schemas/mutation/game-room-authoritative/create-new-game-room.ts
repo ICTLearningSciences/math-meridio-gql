@@ -43,13 +43,13 @@ export function initializeGameRoom(
       players: [],
       chat: [],
       persistTruthGlobalStateData: game.persistTruthGlobalStateData,
-      playerStateData: [],
+      playersGameStateData: {},
       globalStateData: {
         curStageId: firstStage.stage.clientId,
         curStepId: firstStepId,
         roomOwnerId: userId,
         discussionData: {},
-        gameStateData: [],
+        gameStateData: {},
       },
     },
     deletedRoom: false,
@@ -116,8 +116,16 @@ export const createNewGameRoom = {
       context.userId,
       args.sessionId
     );
-
-    return await RoomModel.create(newRoom);
+    console.log(
+      "newRoom.gameData before creation",
+      JSON.stringify(newRoom.gameData, null, 2)
+    );
+    const roomCreated = await RoomModel.create(newRoom);
+    console.log(
+      "newRoom.gameData after creation",
+      JSON.stringify(roomCreated.gameData, null, 2)
+    );
+    return roomCreated;
   },
 };
 

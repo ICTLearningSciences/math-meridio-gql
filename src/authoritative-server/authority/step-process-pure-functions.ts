@@ -7,7 +7,6 @@ The full terms of this copyright and license should always be found in the root 
 
 import { CancelToken } from "axios";
 import {
-  convertCollectedDataToGSData,
   getSimulationViewedKey,
   receivedExpectedData,
   recursivelyConvertExpectedDataToAiPromptString,
@@ -149,6 +148,8 @@ export async function processPromptStep(
   }
 
   const requestFunction = async () => {
+    console.log("llmRequest");
+    console.log(JSON.stringify(llmRequest, null, 2));
     const _response = await executePrompt(llmRequest);
     const response = _response.answer;
 
@@ -169,7 +170,8 @@ export async function processPromptStep(
         }
       }
       const resData: Record<string, any> = JSON.parse(response);
-
+      console.log("resData");
+      console.log(JSON.stringify(resData, null, 2));
       // Add new JSON data to the discussion data
       gameData.globalStateData.discussionData = {
         ...collectedDiscussionData,
@@ -177,19 +179,17 @@ export async function processPromptStep(
       };
 
       // Add new JSON data to the global state data
-      gameData = updateGlobalStateData(
-        gameData,
-        persistTruthFields,
-        Object.entries(resData).map(([key, value]) => ({ key, value }))
-      );
+      gameData = updateGlobalStateData(gameData, persistTruthFields, resData);
+      console.log("after updateGlobalStateData");
 
       // Add new JSON data to the player state data
       gameData = updatePlayerStateData(
         gameData,
         persistTruthFields,
         playerIdToUpdate,
-        convertCollectedDataToGSData(resData)
+        resData
       );
+      console.log("after updatePlayerStateData");
     } else {
       // Add the prompt text response to the chat log
       gameData = addSystemMessageToChat(
@@ -276,7 +276,7 @@ export function isRequestUserInputStepComplete(
 
   if (curStep.requireAllUserInputs) {
     // Require all user inputs, so we check that every player provided a response AFTER the user inputs system message.
-    const playerIds = gameData.playerStateData.map((player) => player.player);
+    const playerIds = Object.keys(gameData.playersGameStateData);
     const messagesAfterInputStepMessage = gameData.chat.slice(
       mostRecentSystemMessageIdx + 1
     );
@@ -321,19 +321,8 @@ export async function isSimulationStageComplete(
   const simulationViewedKey = getSimulationViewedKey(
     gameData.globalStateData.curStageId
   );
-  return gameData.playerStateData.some((player) =>
-    player.gameStateData.some((data) => {
-      if (data.key !== simulationViewedKey) {
-        return false;
-      }
-      if (typeof data.value === "boolean") {
-        return data.value;
-      } else if (typeof data.value === "string") {
-        return data.value === "true" || data.value === "True";
-      } else {
-        return false;
-      }
-    })
+  return Object.values(gameData.playersGameStateData).some(
+    (player) => player[simulationViewedKey] === "true"
   );
 }
 

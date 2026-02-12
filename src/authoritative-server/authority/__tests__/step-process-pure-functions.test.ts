@@ -41,9 +41,6 @@ jest.mock(
   "../../../../../src/classes/llm-request/authority/helpers/helpers.ts",
   () => ({
     replaceStoredDataInString: jest.fn((str: string) => str), // Default: no replacement
-    convertCollectedDataToGSData: jest.fn((data: CollectedDiscussionData) => [
-      { key: "test-key", value: JSON.stringify(data) },
-    ]),
     receivedExpectedData: jest.fn(() => true),
     recursivelyConvertExpectedDataToAiPromptString: jest.fn(
       () => "\nExpected JSON structure"
@@ -338,10 +335,6 @@ describe("step-process-pure-functions", () => {
     });
 
     it("should update player state data with JSON response data", async () => {
-      (helpers.convertCollectedDataToGSData as jest.Mock).mockReturnValue([
-        { key: "playerScore", value: "100" },
-      ]);
-
       const gameData = createBaseGameData();
       gameData.globalStateData.discussionData = {};
 
@@ -366,15 +359,9 @@ describe("step-process-pure-functions", () => {
         "session-1"
       );
 
-      expect(helpers.convertCollectedDataToGSData).toHaveBeenCalledWith({
-        score: 100,
-      });
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      expect(player1Data?.gameStateData).toContainEqual({
-        key: "playerScore",
-        value: "100",
+      const player1Data = result.playersGameStateData["player1"];
+      expect(player1Data).toEqual({
+        playerScore: "100",
       });
     });
 
@@ -526,10 +513,9 @@ describe("step-process-pure-functions", () => {
       const gameData = createBaseGameData();
       gameData.globalStateData.discussionData = {};
       // Pre-populate player with a truth field
-      gameData.playerStateData[0].gameStateData.push({
-        key: "hasCompletedIntro",
-        value: "true",
-      });
+      gameData.playersGameStateData["player1"] = {
+        hasCompletedIntro: "true",
+      };
 
       const step: PromptStageStep = createPromptStep("step-1", {
         promptText: "Update status",
@@ -551,14 +537,9 @@ describe("step-process-pure-functions", () => {
         "session-1"
       );
 
-      const player1Data = result.playerStateData.find(
-        (p) => p.player === "player1"
-      );
-      const truthField = player1Data?.gameStateData.find(
-        (d) => d.key === "hasCompletedIntro"
-      );
+      const player1Data = result.playersGameStateData["player1"];
       // Should remain 'true' because it's in persistTruthFields
-      expect(truthField?.value).toBe("true");
+      expect(player1Data["hasCompletedIntro"]).toBe("true");
     });
   });
 });

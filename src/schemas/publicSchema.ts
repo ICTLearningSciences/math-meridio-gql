@@ -10,11 +10,8 @@ import fetchRoom from "./query/fetch-room";
 import fetchRooms from "./query/fetch-rooms";
 import fetchRoomActions from "./query/fetch-room-actions";
 import createAndJoinRoom from "./mutation/room-create-and-join";
-import joinRoom from "./mutation/room-join";
-import leaveRoom from "./mutation/room-leave";
 import deleteRoom from "./mutation/room-delete";
 import renameRoom from "./mutation/room-rename";
-import updateRoom from "./mutation/room-update";
 import sendMessage from "./mutation/room-send-message";
 
 import fetchPlayer from "./query/fetch-player";
@@ -67,11 +64,8 @@ const PublicMutation = new GraphQLObjectType({
   name: "PublicMutation",
   fields: {
     createAndJoinRoom,
-    joinRoom,
-    leaveRoom,
     deleteRoom,
     renameRoom,
-    updateRoom,
     sendMessage,
     addOrUpdatePlayer,
     addOrUpdateDiscussionStage,

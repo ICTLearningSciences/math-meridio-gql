@@ -51,15 +51,11 @@ export const createAndJoinRoom = {
           curStepId: "",
           roomOwnerId: args.playerId,
           discussionData: {},
-          gameStateData: [],
+          gameStateData: {},
         },
-        playerStateData: [
-          {
-            player: args.playerId,
-            animation: "",
-            gameStateData: [],
-          },
-        ],
+        playersGameStateData: {
+          [args.playerId]: {},
+        },
         persistTruthGlobalStateData: args.persistTruthGlobalStateData,
       },
       deletedRoom: false,

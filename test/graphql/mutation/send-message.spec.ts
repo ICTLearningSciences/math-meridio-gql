@@ -42,19 +42,9 @@ export const sendMessageMutation = `
               globalStateData {
                 curStageId
                 curStepId
-                gameStateData {
-                  key
-                  value
-                }
+                gameStateData
               }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
+              playersGameStateData
             }
           }
         }
@@ -121,25 +111,15 @@ describe("send message", () => {
         globalStateData: {
           curStageId: "Stage 1",
           curStepId: "Step 1",
-          gameStateData: [
-            {
-              key: "Global variable 1",
-              value: "Global variable 1 value",
-            },
-          ],
-        },
-        playerStateData: [
-          {
-            player: player1Id,
-            animation: "",
-            gameStateData: [
-              {
-                key: "Player variable 1",
-                value: "Player variable 1 value",
-              },
-            ],
+          gameStateData: {
+            "Global variable 1": "Global variable 1 value",
           },
-        ],
+        },
+        playersGameStateData: {
+          [player1Id]: {
+            "Player variable 1": "Player variable 1 value",
+          },
+        },
       },
     });
   });

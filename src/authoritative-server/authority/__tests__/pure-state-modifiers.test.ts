@@ -72,14 +72,14 @@ describe("pure-state-modifiers", () => {
         ],
         players: [],
         gameId: "basketball",
-        playerStateData: [],
+        playersGameStateData: {},
         persistTruthGlobalStateData: [],
         globalStateData: {
           curStageId: "stage1",
           roomOwnerId: "test-room-owner-id",
           curStepId: "step1",
           discussionData: {},
-          gameStateData: [],
+          gameStateData: {},
         },
       };
 
