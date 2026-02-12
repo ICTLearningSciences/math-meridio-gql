@@ -114,7 +114,7 @@ describe("fetch rooms", () => {
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            gameStateData: [],
+            gameStateData: {},
           },
           playersGameStateData: {},
           players: [],

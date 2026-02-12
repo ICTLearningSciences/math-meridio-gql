@@ -8,11 +8,8 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLObjectType, GraphQLSchema } from "graphql";
 import fetchRoom from "./query/fetch-room";
 import fetchRooms from "./query/fetch-rooms";
-import fetchRoomActions from "./query/fetch-room-actions";
-import createAndJoinRoom from "./mutation/room-create-and-join";
 import deleteRoom from "./mutation/room-delete";
 import renameRoom from "./mutation/room-rename";
-import sendMessage from "./mutation/room-send-message";
 
 import fetchPlayer from "./query/fetch-player";
 import fetchPlayers from "./query/fetch-players";
@@ -37,20 +34,16 @@ import blockStudentFromClass from "./mutation/block-student-from-class";
 import unblockStudentFromClass from "./mutation/unblock-student-from-class";
 import adjustClassroomArchiveStatus from "./mutation/adjust-classroom-archive-status";
 import updateClassNameDescription from "./mutation/update-class-name-description";
-import submitProcessedActions from "./mutation/submit-processed-actions";
-import submitRoomAction from "./mutation/submit-room-action";
-import syncRoomData from "./mutation/sync-room-data";
 import createNewGameRoom from "./mutation/game-room-authoritative/create-new-game-room";
-import roomHeartBeat from "./mutation/room-heart-beat";
 import fetchRoomHeartbeats from "./query/fetch-room-heartbeats";
 import testLlmCall from "./mutation/llm/test-llm-call";
+import roomHeartBeat from "./mutation/room-heart-beat";
 import sendMessageToGameRoom from "./mutation/game-room-authoritative/send-message-to-game-room";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
     fetchRoom,
     fetchRooms,
-    fetchRoomActions,
     fetchPlayer,
     fetchPlayers,
     fetchDiscussionStages,
@@ -63,10 +56,8 @@ const PublicRootQuery = new GraphQLObjectType({
 const PublicMutation = new GraphQLObjectType({
   name: "PublicMutation",
   fields: {
-    createAndJoinRoom,
     deleteRoom,
     renameRoom,
-    sendMessage,
     addOrUpdatePlayer,
     addOrUpdateDiscussionStage,
     loginGoogle,
@@ -81,9 +72,6 @@ const PublicMutation = new GraphQLObjectType({
     unblockStudentFromClass,
     adjustClassroomArchiveStatus,
     updateClassNameDescription,
-    submitProcessedActions,
-    submitRoomAction,
-    syncRoomData,
     createNewGameRoom,
     roomHeartBeat,
     testLlmCall,

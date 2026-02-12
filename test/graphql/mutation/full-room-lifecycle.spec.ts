@@ -47,7 +47,7 @@ describe("full room lifecycle", () => {
     syncLlmRequestStub.restore();
   });
 
-  it.only(`single user room lifecycle`, async () => {
+  it(`single user room lifecycle`, async () => {
     // 1: create new room, should automatically add the requesting user to the room and initialize the game room and process the first steps until the first request user input step.
     const userToken = await getToken(
       player1Id,
@@ -139,7 +139,6 @@ describe("full room lifecycle", () => {
           sessionId: "session1",
         },
       });
-    console.log(JSON.stringify(sendMessageForPrompt.body, null, 2));
     expect(sendMessageForPrompt.status).to.equal(200);
     expect(sendMessageForPrompt.body.data.sendMessageToGameRoom).to.exist;
 

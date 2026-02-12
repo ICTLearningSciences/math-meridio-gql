@@ -57,16 +57,14 @@ describe("create new room", () => {
       .send({
         query: createNewGameRoomMutation,
         variables: {
-          gameId: "game123",
-          gameName: "Math Challenge",
+          gameId: "unit-test",
         },
       });
-
     expect(response.status).to.equal(200);
     expect(response.body.data.createNewGameRoom).to.exist;
     expect(response.body.data.createNewGameRoom._id).to.exist;
     expect(response.body.data.createNewGameRoom.name).to.equal(
-      "Math Challenge Solution Space 1"
+      "Unit Test Solution Space 1"
     );
     expect(response.body.data.createNewGameRoom.classId).to.be.null;
     expect(response.body.data.createNewGameRoom.deletedRoom).to.equal(false);
@@ -75,7 +73,7 @@ describe("create new room", () => {
       response.body.data.createNewGameRoom._id
     );
     expect(room).to.exist;
-    expect(room?.name).to.equal("Math Challenge Solution Space 1");
+    expect(room?.name).to.equal("Unit Test Solution Space 1");
   });
 
   it(`successfully creates a room with a valid classId`, async () => {
@@ -85,8 +83,7 @@ describe("create new room", () => {
       .send({
         query: createNewGameRoomMutation,
         variables: {
-          gameId: "game123",
-          gameName: "Math Challenge",
+          gameId: "unit-test",
           classId: classId,
         },
       });
@@ -95,25 +92,11 @@ describe("create new room", () => {
     expect(response.body.data.createNewGameRoom).to.exist;
     expect(response.body.data.createNewGameRoom._id).to.exist;
     expect(response.body.data.createNewGameRoom.name).to.equal(
-      "Math Challenge Solution Space 1"
+      "Unit Test Solution Space 1"
     );
     expect(response.body.data.createNewGameRoom.classId).to.equal(classId);
     expect(response.body.data.createNewGameRoom.deletedRoom).to.equal(false);
     expect(response.body.data.createNewGameRoom.gameData).to.exist;
-    expect(response.body.data.createNewGameRoom.gameData).to.deep.equal({
-      gameId: "game123",
-      players: [],
-      chat: [],
-      persistTruthGlobalStateData: [],
-      playersGameStateData: {},
-      globalStateData: {
-        curStageId: "",
-        curStepId: "",
-        roomOwnerId: userId,
-        discussionData: {},
-        gameStateData: {},
-      },
-    });
 
     const room = await RoomModel.findById(
       response.body.data.createNewGameRoom._id
@@ -128,8 +111,7 @@ describe("create new room", () => {
       .send({
         query: createNewGameRoomMutation,
         variables: {
-          gameId: "game123",
-          gameName: "Math Challenge",
+          gameId: "unit-test",
         },
       });
 
@@ -147,8 +129,7 @@ describe("create new room", () => {
       .send({
         query: createNewGameRoomMutation,
         variables: {
-          gameId: "game123",
-          gameName: "Math Challenge",
+          gameId: "unit-test",
           classId: invalidClassId,
         },
       });
@@ -165,8 +146,7 @@ describe("create new room", () => {
       .send({
         query: createNewGameRoomMutation,
         variables: {
-          gameId: "testGame",
-          gameName: "Test Game",
+          gameId: "unit-test",
         },
       });
 

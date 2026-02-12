@@ -116,15 +116,7 @@ export const createNewGameRoom = {
       context.userId,
       args.sessionId
     );
-    console.log(
-      "newRoom.gameData before creation",
-      JSON.stringify(newRoom.gameData, null, 2)
-    );
     const roomCreated = await RoomModel.create(newRoom);
-    console.log(
-      "newRoom.gameData after creation",
-      JSON.stringify(roomCreated.gameData, null, 2)
-    );
     return roomCreated;
   },
 };

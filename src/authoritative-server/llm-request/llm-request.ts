@@ -41,8 +41,6 @@ export async function asyncLlmRequest(
       },
     }
   );
-  console.log("res from start request");
-  console.log(res);
   return res;
 }
 
@@ -64,8 +62,6 @@ export async function asyncLlmRequestStatus(
           },
         }
       );
-      console.log("res from status request");
-      console.log(res);
     } catch (e) {
       console.error(
         "Error during job status polling:",
