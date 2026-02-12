@@ -10,13 +10,16 @@ import RoomModel, { Room, RoomType } from "../../models/Room";
 import PlayerModel from "../../models/Player";
 import { getCurStageAndStep } from "../../../authoritative-server/authority/user-action-pure-functions";
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
-import { DiscussionStageStepType } from "../../models/DiscussionStage/types";
+import {
+  DiscussionStageStepType,
+  RequestUserInputStageStep,
+} from "../../models/DiscussionStage/types";
 import {
   isRequestUserInputStepComplete,
   processStepsUntilNextRequestUserInputStep,
 } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { AiServiceNames } from "../../../authoritative-server/llm-request/types";
-import { addUserMessageToChat } from "authoritative-server/authority/state-modifier-helpers";
+import { buildUserMessage } from "authoritative-server/authority/state-modifier-helpers";
 
 export const sendMessageToGameRoom = {
   type: RoomType,
@@ -46,25 +49,39 @@ export const sendMessageToGameRoom = {
     }
     const _discussionStages = await DiscussionStageModel.find();
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
-    const room = _room.toObject();
+    let room = _room.toObject();
     const stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
 
-    // TODO: $push message and new discussion data
-    room.gameData = addUserMessageToChat(
-      room.gameData,
-      stageAndStep.curStep,
-      args.message,
-      context.userId,
-      player.name,
-      args.sessionId
-    );
+    const shouldUpdateDiscussionData =
+      stageAndStep.curStep.stepType ===
+        DiscussionStageStepType.REQUEST_USER_INPUT &&
+      stageAndStep.curStep.saveResponseVariableName;
 
-    // Quickly save message to the room so observers can see the message.
-    await RoomModel.findOneAndUpdate(
+    const updatedRoom = await RoomModel.findOneAndUpdate(
       { _id: args.roomId },
-      { $set: { gameData: room.gameData } },
+      {
+        $push: {
+          "gameData.chat": buildUserMessage(
+            args.message,
+            context.userId,
+            player.name,
+            args.sessionId
+          ),
+        },
+        ...(shouldUpdateDiscussionData
+          ? {
+              $set: {
+                [`gameData.globalStateData.discussionData.${
+                  (stageAndStep.curStep as RequestUserInputStageStep)
+                    .saveResponseVariableName
+                }`]: args.message,
+              },
+            }
+          : {}),
+      },
       { new: true }
     );
+    room = updatedRoom.toObject();
 
     if (
       stageAndStep.curStep.stepType ===

@@ -5,12 +5,8 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import {
-  AbstractGameData,
-  MessageDisplayType,
-  SenderType,
-} from "../llm-request/types";
-import { GameData } from "../../schemas/models/Room";
+import { MessageDisplayType, SenderType } from "../llm-request/types";
+import { ChatMessage, GameData } from "../../schemas/models/Room";
 
 import * as crypto from "node:crypto"; // Use 'node:crypto' for ESM or require('crypto') for CommonJS
 import { replaceStoredDataInString } from "./helpers/helpers";
@@ -18,10 +14,7 @@ import {
   DiscussionStageStep,
   DiscussionStageStepType,
 } from "schemas/models/DiscussionStage/types";
-import {
-  updateDiscussionData,
-  updateGlobalStateData,
-} from "./pure-state-modifiers";
+import { updateDiscussionData } from "./pure-state-modifiers";
 
 export function getGameDataCopy(gameData: GameData): GameData {
   return JSON.parse(JSON.stringify(gameData));
@@ -62,6 +55,26 @@ export function addSystemMessageToChat(
   return gameData;
 }
 
+export function buildUserMessage(
+  newMessage: string,
+  senderId: string,
+  senderName: string,
+  sessionId: string
+): ChatMessage {
+  return {
+    messageId: crypto.randomUUID(),
+    sender: SenderType.PLAYER,
+    senderId: senderId,
+    senderName: senderName,
+    fromStepId: "",
+    disableUserInput: false,
+    mcqChoices: [],
+    message: newMessage,
+    sessionId: sessionId || "",
+    displayType: MessageDisplayType.TEXT,
+  };
+}
+
 export function addUserMessageToChat(
   _gameData: GameData,
   curStep: DiscussionStageStep,
@@ -81,18 +94,9 @@ export function addUserMessageToChat(
       { key: curStep.saveResponseVariableName, value: newMessage },
     ]);
   }
-  gameData.chat.push({
-    messageId: crypto.randomUUID(),
-    sender: SenderType.PLAYER,
-    senderId: senderId,
-    senderName: senderName,
-    fromStepId: "",
-    disableUserInput: false,
-    mcqChoices: [],
-    message: newMessage,
-    sessionId: sessionId || "",
-    displayType: MessageDisplayType.TEXT,
-  });
+  gameData.chat.push(
+    buildUserMessage(newMessage, senderId, senderName, sessionId)
+  );
   return gameData;
 }
 

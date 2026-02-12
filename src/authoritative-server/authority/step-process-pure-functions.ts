@@ -19,7 +19,6 @@ import {
 import {
   CollectedDiscussionData,
   DiscussionStage,
-  DiscussionStageStep,
   DiscussionStageStepType,
   PromptStageStep,
   RequestUserInputStageStep,
@@ -44,10 +43,7 @@ import {
 } from "./state-modifier-helpers";
 import { getCurStageAndStep } from "./user-action-pure-functions";
 import { GameData } from "../../schemas/models/Room";
-import {
-  AiServicesResponseTypes,
-  extractServiceStepResponse,
-} from "../llm-request/ai-services/ai-service-types";
+import { AiServicesResponseTypes } from "../llm-request/ai-services/ai-service-types";
 import { syncLlmRequest } from "../llm-request/llm-request";
 import { getGameById } from "authoritative-server/games/game-helpers";
 

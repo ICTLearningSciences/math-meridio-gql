@@ -13,13 +13,11 @@ import {
   SenderType,
 } from "../../llm-request/types";
 import {
-  startRequestUserInputStep,
   processNewSystemMessageStep,
   processConditionalStep,
   processPromptStep,
 } from "../step-process-pure-functions";
 import {
-  RequestUserInputStageStep,
   SystemMessageStageStep,
   PromptStageStep,
   CollectedDiscussionData,
@@ -27,7 +25,6 @@ import {
 import {
   createBaseGameData,
   createPromptStep,
-  createRequestUserInputStep,
   createSystemMessageStep,
 } from "./helpers";
 import { PromptRoles, TargetAiModelServiceType } from "../../llm-request/types";

@@ -14,7 +14,7 @@ import {
   pluginPagination,
 } from "../Paginatation";
 import { Class } from "./Class";
-import { Player, PlayerDocument } from "../Player";
+import { PlayerDocument } from "../Player";
 
 export enum ClassMembershipStatus {
   MEMBER = "Member",

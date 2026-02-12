@@ -109,11 +109,11 @@ function convertExpectedDataIntoSchema(
     required: [],
   };
   for (const expectedField of expectedData) {
-    schema.properties![expectedField.name] = {
+    schema.properties[expectedField.name] = {
       type: expectedField.type,
     };
     if (expectedField.isRequired) {
-      (schema.required! as string[]).push(expectedField.name);
+      (schema.required as string[]).push(expectedField.name);
     }
   }
   return schema;

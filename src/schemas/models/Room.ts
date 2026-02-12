@@ -23,7 +23,6 @@ import {
 import PlayerModel, { PlayerType } from "./Player";
 import GraphQLScalarType from "../types/anything-scalar-type";
 import { Class } from "./classes/Class";
-import { DiscussionStageStepType } from "./DiscussionStage/types";
 
 /** mongoose */
 
