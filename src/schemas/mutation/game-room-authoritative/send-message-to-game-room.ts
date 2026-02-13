@@ -12,6 +12,7 @@ import { getCurStageAndStep } from "../../../authoritative-server/authority/user
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
 import {
   DiscussionStageStepType,
+  isDiscussionStage,
   RequestUserInputStageStep,
 } from "../../models/DiscussionStage/types";
 import {
@@ -88,6 +89,7 @@ export const sendMessageToGameRoom = {
     room = updatedRoom.toObject();
 
     if (
+      isDiscussionStage(stageAndStep.curStage) &&
       stageAndStep.curStep.stepType ===
         DiscussionStageStepType.REQUEST_USER_INPUT &&
       room.phase !== RoomPhase.PROCESSING

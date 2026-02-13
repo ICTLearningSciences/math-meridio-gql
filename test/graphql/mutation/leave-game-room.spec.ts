@@ -11,32 +11,35 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import mongoose from "mongoose";
+import PlayerModel from "../../../src/schemas/models/Player";
 import { getToken, createUser, createClassroom } from "../../helpers";
-import { fullRoomData, UserRole } from "../../../src/schemas/types/types";
+import {
+  createNewGameRoomMutation,
+  fullRoomData,
+  UserRole,
+} from "../../../src/schemas/types/types";
 import {
   EducationalRole,
+  Player,
   PlayerDocument,
 } from "../../../src/schemas/models/Player";
 import RoomModel from "../../../src/schemas/models/Room";
 import { initializeGameRoom } from "../../../src/schemas/mutation/game-room-authoritative/create-new-game-room";
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
+import { addPlayerToRoom } from "../../../src/authoritative-server/authority/step-process-pure-functions";
 const { ObjectId } = mongoose.Types;
 
-const joinGameRoomMutation = `
-  mutation JoinGameRoom($roomId: String!) {
-    joinGameRoom(roomId: $roomId) {
-       ${fullRoomData}
+const leaveGameRoomMutation = `
+  mutation LeaveGameRoom($roomId: String!) {
+    leaveGameRoom(roomId: $roomId) {
+      ${fullRoomData}
     }
   }
 `;
-
-describe("join a game room", () => {
+describe("leave a game room", () => {
   let app: Express;
-
-  let instructorUserId: string;
-  let instructorAccessToken: string;
-  let studentAccessToken: string;
   let studentUserId: string;
+  let studentAccessToken: string;
   let roomId: string;
 
   beforeEach(async () => {
@@ -44,21 +47,10 @@ describe("join a game room", () => {
     app = await createApp();
     await appStart();
 
-    instructorUserId = new ObjectId().toString();
     studentUserId = new ObjectId().toString();
     roomId = new ObjectId().toString();
 
     await createUser(studentUserId, UserRole.USER, EducationalRole.STUDENT);
-    await createUser(
-      instructorUserId,
-      UserRole.USER,
-      EducationalRole.INSTRUCTOR
-    );
-    instructorAccessToken = await getToken(
-      instructorUserId,
-      UserRole.USER,
-      EducationalRole.INSTRUCTOR
-    );
     studentAccessToken = await getToken(
       studentUserId,
       UserRole.USER,
@@ -71,44 +63,30 @@ describe("join a game room", () => {
     await mongoUnit.drop();
   });
 
-  it(`student can join a game room`, async () => {
+  it(`student can leave a game room`, async () => {
     const discussionStages = await DiscussionStageModel.find();
     const newGameRoom = await RoomModel.create(
       initializeGameRoom(studentUserId, "unit-test", "", discussionStages, 0)
     );
-    roomId = newGameRoom._id;
+    const player = await PlayerModel.findById(studentUserId);
+    const roomWithStudent = await addPlayerToRoom(newGameRoom, player);
+    roomId = roomWithStudent._id;
     const response = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${studentAccessToken}`)
       .send({
-        query: joinGameRoomMutation,
+        query: leaveGameRoomMutation,
         variables: {
           roomId: roomId,
         },
       });
+    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
-    expect(response.body.data.joinGameRoom).to.have.property("_id");
+    expect(response.body.data.leaveGameRoom).to.have.property("_id");
     expect(
-      response.body.data.joinGameRoom.gameData.players.map(
+      response.body.data.leaveGameRoom.gameData.players.map(
         (player: PlayerDocument) => player._id
       )
-    ).to.include(studentUserId);
-  });
-
-  it(`fails if no access token`, async () => {
-    const response = await request(app)
-      .post("/graphql")
-      .send({
-        query: joinGameRoomMutation,
-        variables: {
-          roomId: roomId,
-        },
-      });
-
-    expect(response.status).to.equal(200);
-    expect(response.body).to.have.deep.nested.property(
-      "errors[0].message",
-      "Error: User Not Found"
-    );
+    ).to.not.include(studentUserId);
   });
 });

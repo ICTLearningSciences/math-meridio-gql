@@ -10,6 +10,8 @@ import { DiscussionStage } from "schemas/models/DiscussionStage/types";
 import { ConcertTicketSalesStateHandler } from "./concert-ticket-game";
 import { UnitTestGame } from "./unit-test-game";
 
+export const WAIT_FOR_SIMULATION_STAGE_CLIENT_ID = "wait-for-simulation";
+
 export function getGameById(
   gameId: string,
   discussionStages: DiscussionStage[]

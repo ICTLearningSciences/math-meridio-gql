@@ -14,16 +14,19 @@ import {
   replaceStoredDataInString,
   chatLogToString,
   isJsonString,
+  acquireProcessingLock,
 } from "./helpers/helpers";
 import {
   CollectedDiscussionData,
   DiscussionStage,
+  DiscussionStageStep,
   DiscussionStageStepType,
   PromptStageStep,
   RequestUserInputStageStep,
   SystemMessageStageStep,
 } from "../../schemas/models/DiscussionStage/types";
 import {
+  AiServiceNames,
   GenericLlmRequest,
   JsonResponseData,
   PromptOutputTypes,
@@ -46,7 +49,10 @@ import {
 } from "../../schemas/models/Room";
 import { AiServicesResponseTypes } from "../llm-request/ai-services/ai-service-types";
 import { syncLlmRequest } from "../llm-request/llm-request";
-import { getGameById } from "../../authoritative-server/games/game-helpers";
+import {
+  getGameById,
+  WAIT_FOR_SIMULATION_STAGE_CLIENT_ID,
+} from "../../authoritative-server/games/game-helpers";
 import RoomModel from "../../schemas/models/Room";
 import { PlayerDocument } from "schemas/models/Player";
 
@@ -594,7 +600,9 @@ export async function processStepsUntilNextRequestUserInputStep(
       sessionId
     );
   } while (
-    stepAndStage.curStep.stepType !== DiscussionStageStepType.REQUEST_USER_INPUT
+    stepAndStage.curStep.stepType !==
+      DiscussionStageStepType.REQUEST_USER_INPUT &&
+    stepAndStage.curStage.clientId !== WAIT_FOR_SIMULATION_STAGE_CLIENT_ID
   );
   return latestRoom;
 }
