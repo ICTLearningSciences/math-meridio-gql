@@ -52,7 +52,6 @@ export interface ClassMembershipModel extends Model<ClassMembership> {
   ): Promise<PaginatedResolveResult<ClassMembership>>;
 }
 
-ClassMembershipSchema.index({ _id: -1 });
 pluginPagination(ClassMembershipSchema);
 
 export default mongoose.model<ClassMembership, ClassMembershipModel>(

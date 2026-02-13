@@ -40,7 +40,6 @@ export const RoomHeartBeatSchema = new Schema<
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-RoomHeartBeatSchema.index({ _id: -1 });
 pluginPagination(RoomHeartBeatSchema);
 
 export const RoomHeartBeatType = new GraphQLObjectType({

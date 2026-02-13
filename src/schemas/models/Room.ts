@@ -152,7 +152,6 @@ export const RoomSchema = new Schema<RoomDocument, RoomModel>(
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-RoomSchema.index({ _id: -1 });
 pluginPagination(RoomSchema);
 
 export default mongoose.model<RoomDocument, RoomModel>("Room", RoomSchema);

@@ -102,7 +102,6 @@ export interface PlayerModel extends Model<PlayerDocument> {
   ): Promise<PaginatedResolveResult<PlayerDocument>>;
 }
 
-PlayerSchema.index({ _id: -1 });
 pluginPagination(PlayerSchema);
 
 export default mongoose.model<PlayerDocument, PlayerModel>(

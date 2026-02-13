@@ -49,9 +49,9 @@ describe("full room lifecycle", () => {
   });
 
   afterEach(async () => {
+    syncLlmRequestStub.reset();
     await appStop();
     await mongoUnit.drop();
-    syncLlmRequestStub.restore();
   });
 
   it(`single user room lifecycle`, async () => {
@@ -161,7 +161,6 @@ describe("full room lifecycle", () => {
     expect(roomAfterPromptMessage?.gameData.chat[6].senderId).to.equal(
       player1Id
     );
-
     // Send another ping to the process endpoint to process the complete prompt step and continue processing the steps up to the next request user input step (which will be the conditional stage).
     // Set up the LLM request mock, this will be called when the prompt step is processed.
     syncLlmRequestStub.onFirstCall().resolves({
@@ -781,5 +780,152 @@ describe("full room lifecycle", () => {
       REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
     );
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
+  });
+
+  it("process locking handles fast requests", async () => {
+    syncLlmRequestStub.onFirstCall().callsFake(() => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            answer: JSON.stringify({
+              prompt_response: "Mocked analysis of the prompt",
+            }),
+          } as AiServicesResponseTypes);
+        }, 1000); // 1 second
+      });
+    });
+
+    // 1: Setup room to position of request user input --> prompt step
+    const userToken = await getToken(
+      player1Id,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const createNewGameRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test",
+        },
+      });
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
+
+    const sendMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: createNewGameRoomResponse.body.data.createNewGameRoom._id,
+          message: "Test message",
+          sessionId: "session1",
+        },
+      });
+    expect(sendMessageResponse.status).to.equal(200);
+    expect(sendMessageResponse.body.data.sendMessageToGameRoom).to.exist;
+
+    const processedFirstRequestUserInputStepResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: createNewGameRoomResponse.body.data.createNewGameRoom._id,
+          sessionId: "session1",
+        },
+      });
+    expect(processedFirstRequestUserInputStepResponse.status).to.equal(200);
+    expect(
+      processedFirstRequestUserInputStepResponse.body.data.pingGameRoomProcess
+    ).to.exist;
+
+    // ENSURE we are at request user input --> prompt step
+    const roomAfterProcessedFirstRequestUserInputStep =
+      await RoomModel.findById(
+        createNewGameRoomResponse.body.data.createNewGameRoom._id
+      );
+    expect(
+      roomAfterProcessedFirstRequestUserInputStep?.gameData.globalStateData
+        .curStageId
+    ).to.equal(PROMPT_DISCUSSION_CLIENT_ID);
+    expect(
+      roomAfterProcessedFirstRequestUserInputStep?.gameData.globalStateData
+        .curStepId
+    ).to.equal("2");
+
+    // Send message to the room for the prompt step
+    const sendMessageForPromptResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: createNewGameRoomResponse.body.data.createNewGameRoom._id,
+          message: "Test message",
+          sessionId: "session1",
+        },
+      });
+    expect(sendMessageForPromptResponse.status).to.equal(200);
+    expect(sendMessageForPromptResponse.body.data.sendMessageToGameRoom).to
+      .exist;
+
+    // ENSURE we are still at prompt step
+    const roomAfterProcessedPromptStep = await RoomModel.findById(
+      createNewGameRoomResponse.body.data.createNewGameRoom._id
+    );
+    expect(
+      roomAfterProcessedPromptStep?.gameData.globalStateData.curStageId
+    ).to.equal(PROMPT_DISCUSSION_CLIENT_ID);
+    expect(
+      roomAfterProcessedPromptStep?.gameData.globalStateData.curStepId
+    ).to.equal("2");
+
+    // Now send 3 pings in parallel to the process endpoint, and make sure things are still stabilized after
+    const pingGameRoomProcessResponses = await Promise.all([
+      request(app)
+        .post("/graphql")
+        .set("Authorization", `Bearer ${userToken}`)
+        .send({
+          query: pingGameRoomProcessMutation,
+          variables: {
+            roomId: createNewGameRoomResponse.body.data.createNewGameRoom._id,
+            sessionId: "session1",
+          },
+        }),
+      request(app)
+        .post("/graphql")
+        .set("Authorization", `Bearer ${userToken}`)
+        .send({
+          query: pingGameRoomProcessMutation,
+          variables: {
+            roomId: createNewGameRoomResponse.body.data.createNewGameRoom._id,
+            sessionId: "session1",
+          },
+        }),
+      request(app)
+        .post("/graphql")
+        .set("Authorization", `Bearer ${userToken}`)
+        .send({
+          query: pingGameRoomProcessMutation,
+          variables: {
+            roomId: createNewGameRoomResponse.body.data.createNewGameRoom._id,
+            sessionId: "session1",
+          },
+        }),
+    ]);
+    expect(
+      pingGameRoomProcessResponses.every((response) => response.status === 200)
+    ).to.be.true;
+
+    const roomAfterPings = await RoomModel.findById(
+      createNewGameRoomResponse.body.data.createNewGameRoom._id
+    );
+    expect(roomAfterPings?.gameData.globalStateData.curStageId).to.equal(
+      CONDITIONAL_DISCUSSION_CLIENT_ID
+    );
+    expect(roomAfterPings?.gameData.globalStateData.curStepId).to.equal("2");
   });
 });

@@ -65,7 +65,6 @@ export interface ClassModel extends Model<Class> {
   ): Promise<PaginatedResolveResult<Class>>;
 }
 
-ClassSchema.index({ _id: -1 });
 pluginPagination(ClassSchema);
 
 export default mongoose.model<Class, ClassModel>("Class", ClassSchema);
