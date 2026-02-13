@@ -7,52 +7,44 @@ The full terms of this copyright and license should always be found in the root 
 
 import createApp, { appStart, appStop } from "../../../src/app";
 import { expect } from "chai";
-import e, { Express } from "express";
+import { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import mongoose from "mongoose";
-import PlayerModel from "../../../src/schemas/models/Player";
-import { getToken, createUser, createClassroom } from "../../helpers";
-import {
-  createNewGameRoomMutation,
-  fullRoomData,
-  UserRole,
-} from "../../../src/schemas/types/types";
-import {
-  EducationalRole,
-  Player,
-  PlayerDocument,
-} from "../../../src/schemas/models/Player";
+import { getToken, createUser, createRoom } from "../../helpers";
+import { fullRoomData, UserRole } from "../../../src/schemas/types/types";
+import { EducationalRole } from "../../../src/schemas/models/Player";
 import RoomModel from "../../../src/schemas/models/Room";
-import { initializeGameRoom } from "../../../src/schemas/mutation/game-room-authoritative/create-new-game-room";
-import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
-import { addPlayerToRoom } from "../../../src/authoritative-server/authority/step-process-pure-functions";
 const { ObjectId } = mongoose.Types;
 
-const leaveGameRoomMutation = `
-  mutation LeaveGameRoom($roomId: String!) {
-    leaveGameRoom(roomId: $roomId) {
+const updatePlayerGameStateDataMutation = `
+  mutation UpdatePlayerGameStateData($roomId: String!, $playerId: String!, $newPlayerGameStateData: JSON!) {
+    updatePlayerGameStateData(roomId: $roomId, playerId: $playerId, newPlayerGameStateData: $newPlayerGameStateData) {
       ${fullRoomData}
     }
   }
 `;
-describe("leave a game room", () => {
+
+describe("update player game state data", () => {
   let app: Express;
-  let studentUserId: string;
-  let studentAccessToken: string;
+
+  let userId: string;
   let roomId: string;
+  let accessToken: string;
 
   beforeEach(async () => {
     await mongoUnit.load(require("test/fixtures/mongodb/data-default.js"));
     app = await createApp();
     await appStart();
 
-    studentUserId = new ObjectId().toString();
+    userId = new ObjectId().toString();
     roomId = new ObjectId().toString();
 
-    await createUser(studentUserId, UserRole.USER, EducationalRole.STUDENT);
-    studentAccessToken = await getToken(
-      studentUserId,
+    await createUser(userId, UserRole.USER, EducationalRole.STUDENT);
+    await createRoom(roomId, undefined, [userId]);
+
+    accessToken = await getToken(
+      userId,
       UserRole.USER,
       EducationalRole.STUDENT
     );
@@ -63,29 +55,47 @@ describe("leave a game room", () => {
     await mongoUnit.drop();
   });
 
-  it(`student can leave a game room`, async () => {
-    const discussionStages = await DiscussionStageModel.find();
-    const newGameRoom = await RoomModel.create(
-      initializeGameRoom(studentUserId, "unit-test", "", discussionStages, 0)
-    );
-    const player = await PlayerModel.findById(studentUserId);
-    const roomWithStudent = await addPlayerToRoom(newGameRoom, player);
-    roomId = roomWithStudent._id;
+  it(`updates player game state data when authenticated`, async () => {
     const response = await request(app)
       .post("/graphql")
-      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .set("Authorization", `Bearer ${accessToken}`)
       .send({
-        query: leaveGameRoomMutation,
+        query: updatePlayerGameStateDataMutation,
         variables: {
           roomId: roomId,
+          playerId: userId,
+          newPlayerGameStateData: {
+            test: "test",
+          },
         },
       });
+
     expect(response.status).to.equal(200);
-    expect(response.body.data.leaveGameRoom).to.have.property("_id");
+    const roomAfterUpdate = await RoomModel.findOne({ _id: roomId });
+    expect(roomAfterUpdate).to.exist;
     expect(
-      response.body.data.leaveGameRoom.gameData.players.map(
-        (player: PlayerDocument) => player._id
-      )
-    ).to.not.include(studentUserId);
+      roomAfterUpdate?.gameData.playersGameStateData[userId].test
+    ).to.equal("test");
+  });
+
+  it(`fails when user is not authenticated`, async () => {
+    const response = await request(app)
+      .post("/graphql")
+      .send({
+        query: updatePlayerGameStateDataMutation,
+        variables: {
+          roomId: roomId,
+          playerId: userId,
+          newPlayerGameStateData: {
+            test: "test",
+          },
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body).to.have.deep.nested.property(
+      "errors[0].message",
+      "Error: User Not Found"
+    );
   });
 });

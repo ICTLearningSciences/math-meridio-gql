@@ -11,7 +11,6 @@ import fetchRooms from "./query/fetch-rooms";
 import deleteRoom from "./mutation/room-delete";
 import renameRoom from "./mutation/room-rename";
 import joinGameRoom from "./mutation/join-game-room";
-import viewGameRoomSimulation from "./mutation/view-game-room-simulation";
 import leaveGameRoom from "./mutation/leave-game-room";
 import fetchPlayer from "./query/fetch-player";
 import fetchPlayers from "./query/fetch-players";
@@ -42,6 +41,8 @@ import testLlmCall from "./mutation/llm/test-llm-call";
 import roomHeartBeat from "./mutation/room-heart-beat";
 import sendMessageToGameRoom from "./mutation/game-room-authoritative/send-message-to-game-room";
 import pingGameRoomProcess from "./mutation/ping-game-room-process";
+import updatePlayerGameStateData from "./mutation/update-player-game-state-data";
+import viewGameRoomSimulation from "./mutation/view-game-room-simulation";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -80,9 +81,10 @@ const PublicMutation = new GraphQLObjectType({
     testLlmCall,
     sendMessageToGameRoom,
     joinGameRoom,
-    viewGameRoomSimulation,
+    updatePlayerGameStateData,
     leaveGameRoom,
     pingGameRoomProcess,
+    viewGameRoomSimulation,
   },
 });
 

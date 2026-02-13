@@ -6,22 +6,15 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import { GraphQLString, GraphQLObjectType, GraphQLID } from "graphql";
-import RoomModel, { Room, RoomPhase, RoomType } from "../../models/Room";
+import RoomModel, { Room, RoomType } from "../../models/Room";
 import PlayerModel from "../../models/Player";
 import { getCurStageAndStep } from "../../../authoritative-server/authority/user-action-pure-functions";
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
 import {
   DiscussionStageStepType,
-  isDiscussionStage,
   RequestUserInputStageStep,
 } from "../../models/DiscussionStage/types";
-import {
-  isRequestUserInputStepComplete,
-  processStepsUntilNextRequestUserInputStep,
-} from "../../../authoritative-server/authority/step-process-pure-functions";
-import { AiServiceNames } from "../../../authoritative-server/llm-request/types";
 import { buildUserMessage } from "authoritative-server/authority/state-modifier-helpers";
-import { acquireProcessingLock } from "../../../authoritative-server/authority/helpers/helpers";
 
 export const sendMessageToGameRoom = {
   type: RoomType,

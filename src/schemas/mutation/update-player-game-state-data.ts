@@ -4,21 +4,25 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-import { GraphQLObjectType, GraphQLString } from "graphql";
-import { Room, RoomType } from "../models/Room";
+import { GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
+import { GameStateData, Room, RoomType } from "../models/Room";
 import RoomModel from "../../schemas/models/Room";
 import PlayerModel from "../../schemas/models/Player";
-import { getSimulationViewedKey } from "../../authoritative-server/authority/helpers/helpers";
+import GraphQLJson from "graphql-type-json";
 
-export const viewGameRoomSimulation = {
+export const updatePlayerGameStateData = {
   type: RoomType,
   args: {
     roomId: { type: GraphQLString },
+    playerId: { type: GraphQLString },
+    newPlayerGameStateData: { type: new GraphQLNonNull(GraphQLJson) },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
       roomId: string;
+      playerId: string;
+      newPlayerGameStateData: GameStateData;
     },
     context: {
       userId: string;
@@ -26,7 +30,7 @@ export const viewGameRoomSimulation = {
   ): Promise<Room> => {
     try {
       const userId = context.userId;
-      const { roomId } = args;
+      const { roomId, playerId, newPlayerGameStateData } = args;
 
       const player = await PlayerModel.findOne({ _id: userId });
       if (!player) {
@@ -37,16 +41,20 @@ export const viewGameRoomSimulation = {
       if (!room) {
         throw new Error("Room not found");
       }
-      const simulationViewedKey = getSimulationViewedKey(
-        room.gameData.globalStateData.curStageId
-      );
+
+      const setUpdateFields: GameStateData = {};
+      for (const [key, value] of Object.entries(newPlayerGameStateData)) {
+        setUpdateFields[`gameData.playersGameStateData.${playerId}.${key}`] =
+          value;
+      }
+
+      if (Object.keys(setUpdateFields).length === 0) {
+        return room;
+      }
       return await RoomModel.findOneAndUpdate(
         { _id: roomId },
         {
-          $set: {
-            [`gameData.playersGameStateData.${userId}.${simulationViewedKey}`]:
-              "true",
-          },
+          $set: setUpdateFields,
         },
         { new: true }
       );
@@ -56,4 +64,4 @@ export const viewGameRoomSimulation = {
   },
 };
 
-export default viewGameRoomSimulation;
+export default updatePlayerGameStateData;
