@@ -9,6 +9,7 @@ import { BasketballStateHandler } from "./basketball-game";
 import { DiscussionStage } from "schemas/models/DiscussionStage/types";
 import { ConcertTicketSalesStateHandler } from "./concert-ticket-game";
 import { UnitTestGame } from "./unit-test-game";
+import { UnitTestMultipleUsersGame } from "./unit-test-multiple-users-game";
 
 export const WAIT_FOR_SIMULATION_STAGE_CLIENT_ID = "wait-for-simulation";
 
@@ -23,6 +24,8 @@ export function getGameById(
       return new ConcertTicketSalesStateHandler(discussionStages);
     case "unit-test":
       return new UnitTestGame(discussionStages);
+    case "unit-test-multiple-users":
+      return new UnitTestMultipleUsersGame(discussionStages);
     default:
       throw new Error(`Game not found: ${gameId}`);
   }

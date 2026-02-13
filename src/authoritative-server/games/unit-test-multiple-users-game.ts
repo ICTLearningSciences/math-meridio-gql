@@ -15,8 +15,7 @@ import {
 export const REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID =
   "test-require-all-user-inputs-discussion-client-id";
 
-
-export class UnitTestGame extends AbstractGameData {
+export class UnitTestMultipleUsersGame extends AbstractGameData {
   id = "unit-test-multiple-users";
   name = "Unit Test Multiple Users";
   stageList: CurrentStage<IStage>[] = [];

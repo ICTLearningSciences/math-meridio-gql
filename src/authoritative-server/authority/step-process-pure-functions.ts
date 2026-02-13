@@ -483,6 +483,8 @@ export function isRequestUserInputStepComplete(
   let mostRecentSystemMessageIdx = -1;
   let mostRecentUserMessageIdx = -1;
 
+  console.log("gameData.chat", JSON.stringify(gameData.chat, null, 2));
+
   for (let i = 0; i < gameData.chat.length; i++) {
     if (gameData.chat[i].fromStepId === curStep.stepId) {
       mostRecentSystemMessageIdx = i;
@@ -503,12 +505,14 @@ export function isRequestUserInputStepComplete(
 
   // If no system message was found, then the step is not complete.
   if (mostRecentSystemMessageIdx === -1) {
+    console.log("no system message found, step is not complete");
     return false;
   }
 
   if (curStep.requireAllUserInputs) {
     // Require all user inputs, so we check that every player provided a response AFTER the user inputs system message.
-    const playerIds = Object.keys(gameData.playersGameStateData);
+    console.log("requiring all user inputs");
+    const playerIds = gameData.players;
     const messagesAfterInputStepMessage = gameData.chat.slice(
       mostRecentSystemMessageIdx + 1
     );
@@ -520,6 +524,7 @@ export function isRequestUserInputStepComplete(
       userMessagesAfterInputStepMessage.some((msg) => msg.senderId === playerId)
     );
   } else {
+    console.log("not requiring all user inputs");
     // Do not require all user inputs, so we check that the users message came after the most recent system message.
     return mostRecentUserMessageIdx > mostRecentSystemMessageIdx;
   }

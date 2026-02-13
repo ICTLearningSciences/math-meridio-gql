@@ -11,10 +11,15 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { player1Id } from "../../fixtures/mongodb/data";
+import { createUser } from "../../helpers";
+import mongoose from "mongoose";
+const { ObjectId } = mongoose.Types;
 import RoomModel, { Room } from "../../../src/schemas/models/Room";
 import {
   createNewGameRoomMutation,
   fullRoomData,
+  joinGameRoomMutation,
+  leaveGameRoomMutation,
   pingGameRoomProcessMutation,
   PromptRoles,
   sendMessageToGameRoomMutation,
@@ -27,6 +32,7 @@ import {
   PROMPT_DISCUSSION_CLIENT_ID,
   REQUEST_USER_INPUT_DISCUSSION_CLIENT_ID,
 } from "../../../src/authoritative-server/games/unit-test-game";
+import { REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID } from "../../../src/authoritative-server/games/unit-test-multiple-users-game";
 import sinon from "sinon";
 import * as llmRequest from "../../../src/authoritative-server/llm-request/llm-request";
 import { AiServicesResponseTypes } from "../../../src/authoritative-server/llm-request/ai-services/ai-service-types";
@@ -353,60 +359,427 @@ describe("full room lifecycle", () => {
     expect(syncLlmRequestStub.called).to.be.true; // Should be false since we haven't hit a prompt step yet
   });
 
-  it.only("multiple user room with steps that requireAllUserInputs", async () => {
+  it("multiple user room with steps that requireAllUserInputs", async () => {
+    // 1: create 4 new students to track
+    const ownerStudentId = new ObjectId().toString();
+    const studentTwoId = new ObjectId().toString();
+    const leavingStudentId = new ObjectId().toString();
+    const lateStudentId = new ObjectId().toString();
 
-    // 1: create 4 new students to track. ownerStudent (one that creates the room), studentTwo, leavingStudent, lateStudent
+    await createUser(ownerStudentId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(studentTwoId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(leavingStudentId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(lateStudentId, UserRole.USER, EducationalRole.STUDENT);
+
+    const ownerStudentToken = await getToken(
+      ownerStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const studentTwoToken = await getToken(
+      studentTwoId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const leavingStudentToken = await getToken(
+      leavingStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const lateStudentToken = await getToken(
+      lateStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+
     // 2: create a room with createNewGameRoomMutation for gameId "unit-test-multiple-users"
+    const createNewGameRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test-multiple-users",
+        },
+      });
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
+    const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
+
     // 3: add studentTwo and leavingStudent to the room with joinGameRoomMutation's
-    
+    const joinStudentTwoResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: joinGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(joinStudentTwoResponse.status).to.equal(200);
+    expect(joinStudentTwoResponse.body.data.joinGameRoom).to.exist;
+
+    const joinLeavingStudentResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${leavingStudentToken}`)
+      .send({
+        query: joinGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(joinLeavingStudentResponse.status).to.equal(200);
+    expect(joinLeavingStudentResponse.body.data.joinGameRoom).to.exist;
+
     // ENSURE all three students are in the room.
+    let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.players).to.have.length(3);
+    expect(currentRoom?.gameData.players).to.include(ownerStudentId);
+    expect(currentRoom?.gameData.players).to.include(studentTwoId);
+    expect(currentRoom?.gameData.players).to.include(leavingStudentId);
+
     // ENSURE chat log only has up to the first request user input
-    // ENSURE is on first request user input stage and step: "test-require-all-user-inputs-discussion-client-id" and "2"
-    
+    expect(currentRoom?.gameData.chat).to.have.length(2);
+    expect(currentRoom?.gameData.chat[0].message).to.equal("Hello, everyone!");
+    expect(currentRoom?.gameData.chat[1].message).to.equal(
+      "What are your names?"
+    );
+
+    // ENSURE is on first request user input stage and step
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
     // 4: ping room process
+    const firstPingResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(firstPingResponse.status).to.equal(200);
 
-    // ENSURE still on first request user input stage and step: "test-require-all-user-inputs-discussion-client-id" and "2"
+    // ENSURE still on first request user input stage and step
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
-    // 5: ownerStudent send message + ping room process.
+    // 5: ownerStudent send message + ping room process
+    const ownerMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Owner's first input",
+          sessionId: "session1",
+        },
+      });
+    expect(ownerMessageResponse.status).to.equal(200);
+
+    const pingAfterOwnerMessage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterOwnerMessage.status).to.equal(200);
 
     // ENSURE message was added to the chat
-    // ENSURE on the same stage and step beacuse not all user inputs done: "test-require-all-user-inputs-discussion-client-id" and "2"
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.chat[2].message).to.equal(
+      "Owner's first input"
+    );
+    expect(currentRoom?.gameData.chat[2].senderId).to.equal(ownerStudentId);
 
-    // 6: studentTwo send message + ping room process.
+    // ENSURE on the same stage and step because not all user inputs done
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // 6: studentTwo send message + ping room process
+    const studentTwoMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Student Two's first input",
+          sessionId: "session2",
+        },
+      });
+    expect(studentTwoMessageResponse.status).to.equal(200);
+
+    const pingAfterStudentTwoMessage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session2",
+        },
+      });
+    expect(pingAfterStudentTwoMessage.status).to.equal(200);
 
     // ENSURE message was added to the chat
-    // ENSURE on the same stage and step beacuse not all user inputs done: "test-require-all-user-inputs-discussion-client-id" and "2"
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.chat[3].message).to.equal(
+      "Student Two's first input"
+    );
+    expect(currentRoom?.gameData.chat[3].senderId).to.equal(studentTwoId);
 
-    // 7: leavingStudent send message + ping room process.
+    // ENSURE on the same stage and step because not all user inputs done
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // 7: leavingStudent send message + ping room process
+    const leavingStudentMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${leavingStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Leaving Student's first input",
+          sessionId: "session3",
+        },
+      });
+    expect(leavingStudentMessageResponse.status).to.equal(200);
+
+    const pingAfterLeavingStudentMessage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${leavingStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session3",
+        },
+      });
+    expect(pingAfterLeavingStudentMessage.status).to.equal(200);
 
     // ENSURE now on stage and step: "test-require-all-user-inputs-discussion-client-id" and "4"
-    // ENSURE messages were sent up to this stage.
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
+
+    // ENSURE messages were sent up to this stage
+    expect(currentRoom?.gameData.chat[2].message).to.equal(
+      "Owner's first input"
+    );
+    expect(currentRoom?.gameData.chat[3].message).to.equal(
+      "Student Two's first input"
+    );
+    expect(currentRoom?.gameData.chat[4].message).to.equal(
+      "Leaving Student's first input"
+    );
 
     // 8: ownerStudent and studentTwo send message + process
+    const ownerSecondMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Owner's second input",
+          sessionId: "session1",
+        },
+      });
+    expect(ownerSecondMessageResponse.status).to.equal(200);
 
-    // ENSURE on same stage and step: "test-require-all-user-inputs-discussion-client-id" and "4"
+    const pingAfterOwnerSecondMessage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterOwnerSecondMessage.status).to.equal(200);
+
+    const studentTwoSecondMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Student Two's second input",
+          sessionId: "session2",
+        },
+      });
+    expect(studentTwoSecondMessageResponse.status).to.equal(200);
+
+    const pingAfterStudentTwoSecondMessage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session2",
+        },
+      });
+    expect(pingAfterStudentTwoSecondMessage.status).to.equal(200);
+
+    // ENSURE on same stage and step
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
 
     // 9: leavingStudent leaves room with leaveGameRoomMutation
+    const leaveRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${leavingStudentToken}`)
+      .send({
+        query: leaveGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(leaveRoomResponse.status).to.equal(200);
+    expect(leaveRoomResponse.body.data.leaveGameRoom).to.exist;
 
-    // ENSURE we have now moved on to the next request user input stage because we already have inputs from the other 2 students, so should move on: "test-require-all-user-inputs-discussion-client-id" and "2"
+    const pingForLeaveRoom = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingForLeaveRoom.status).to.equal(200);
+    // ENSURE we have now moved on to the next request user input stage
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.players).to.have.length(2);
+    expect(currentRoom?.gameData.players).to.not.include(leavingStudentId);
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
     // 10: sendMessage from ownerStudent
+    const ownerThirdMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Owner's third input",
+          sessionId: "session1",
+        },
+      });
+    expect(ownerThirdMessageResponse.status).to.equal(200);
+
     // 11: add lateStudent to room with joinGameRoomMutation
+    const joinLateStudentResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${lateStudentToken}`)
+      .send({
+        query: joinGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(joinLateStudentResponse.status).to.equal(200);
+    expect(joinLateStudentResponse.body.data.joinGameRoom).to.exist;
+
+    // ENSURE lateStudent is now in the room
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.players).to.have.length(3);
+    expect(currentRoom?.gameData.players).to.include(lateStudentId);
 
     // 12: sendMessage from studentTwo
-    
+    const studentTwoThirdMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Student Two's third input",
+          sessionId: "session2",
+        },
+      });
+    expect(studentTwoThirdMessageResponse.status).to.equal(200);
 
-    // ENSURE we are still on the same stage "test-require-all-user-inputs-discussion-client-id" and "2" because now we also need lateStudent's message
+    const pingAfterStudentTwoThirdMessage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session2",
+        },
+      });
+    expect(pingAfterStudentTwoThirdMessage.status).to.equal(200);
 
-    //13: sendMessage from lateStudent
+    // ENSURE we are still on the same stage because now we also need lateStudent's message
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
-    // ENSURE moved on to next step and stage: "test-require-all-user-inputs-discussion-client-id" and "4"
+    // 13: sendMessage from lateStudent
+    const lateStudentMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${lateStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Late Student's first input",
+          sessionId: "session4",
+        },
+      });
+    expect(lateStudentMessageResponse.status).to.equal(200);
 
+    const pingAfterLateStudentMessage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${lateStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session4",
+        },
+      });
+    expect(pingAfterLateStudentMessage.status).to.equal(200);
 
-    
-    
-    
-
-
+    // ENSURE moved on to next step and stage
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
   });
 });

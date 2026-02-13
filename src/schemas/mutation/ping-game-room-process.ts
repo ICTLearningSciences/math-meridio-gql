@@ -62,6 +62,17 @@ export const pingGameRoomProcess = {
     const isSimulationStageComplete =
       isSimulationStage && _isSimulationStageComplete(room.gameData);
     const roomIsProcessing = room.phase === RoomPhase.PROCESSING;
+
+    console.log("isDiscussionStage", isDiscussionStage);
+    console.log("isRequestUserInputStep", isRequestUserInputStep);
+    console.log(
+      "isRequestUserInputStepComplete",
+      isRequestUserInputStepComplete
+    );
+    console.log("isSimulationStage", isSimulationStage);
+    console.log("isSimulationStageComplete", isSimulationStageComplete);
+    console.log("roomIsProcessing", roomIsProcessing);
+
     if (
       ((isDiscussionStage &&
         isRequestUserInputStep &&
