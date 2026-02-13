@@ -40,6 +40,7 @@ import fetchRoomHeartbeats from "./query/fetch-room-heartbeats";
 import testLlmCall from "./mutation/llm/test-llm-call";
 import roomHeartBeat from "./mutation/room-heart-beat";
 import sendMessageToGameRoom from "./mutation/game-room-authoritative/send-message-to-game-room";
+import pingGameRoomProcess from "./mutation/ping-game-room-process";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -79,6 +80,7 @@ const PublicMutation = new GraphQLObjectType({
     sendMessageToGameRoom,
     joinGameRoom,
     leaveGameRoom,
+    pingGameRoomProcess,
   },
 });
 

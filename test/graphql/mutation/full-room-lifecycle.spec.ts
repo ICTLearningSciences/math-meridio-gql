@@ -11,10 +11,11 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { player1Id } from "../../fixtures/mongodb/data";
-import RoomModel from "../../../src/schemas/models/Room";
+import RoomModel, { Room } from "../../../src/schemas/models/Room";
 import {
   createNewGameRoomMutation,
   fullRoomData,
+  pingGameRoomProcessMutation,
   PromptRoles,
   sendMessageToGameRoomMutation,
   UserRole,
@@ -47,7 +48,7 @@ describe("full room lifecycle", () => {
     syncLlmRequestStub.restore();
   });
 
-  it(`single user room lifecycle`, async () => {
+  it.only(`single user room lifecycle`, async () => {
     // 1: create new room, should automatically add the requesting user to the room and initialize the game room and process the first steps until the first request user input step.
     const userToken = await getToken(
       player1Id,
@@ -63,7 +64,6 @@ describe("full room lifecycle", () => {
           gameId: "unit-test",
         },
       });
-    console.log(JSON.stringify(createNewGameRoomResponse.body, null, 2));
     expect(createNewGameRoomResponse.status).to.equal(200);
     expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
     const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
@@ -84,7 +84,7 @@ describe("full room lifecycle", () => {
     );
     expect(newRoom?.gameData.chat[1].message).to.equal("What is your name?");
 
-    // 3. Send a message to the room, should add the message to the chat log, check if we can progress to the next step, if true, then process till the next request user input step.
+    // 3. Send a message to the room, should add the message to the chat log
     const sendMessageToGameRoomResponse = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${userToken}`)
@@ -100,15 +100,27 @@ describe("full room lifecycle", () => {
     expect(sendMessageToGameRoomResponse.body.data.sendMessageToGameRoom).to
       .exist;
 
-    // Should have added the message to the chat log and progress to the next request user input step (from next stage)
-    const updatedRoom = await RoomModel.findById(newRoomId);
-    expect(updatedRoom?.gameData.chat).to.have.length(6);
+    // Should have added the message to the chat log
+    let updatedRoom = (await RoomModel.findById(newRoomId))?.toObject();
+    expect(updatedRoom?.gameData.chat).to.have.length(3);
     expect(updatedRoom?.gameData.chat[2].message).to.equal("Jonny Appleseed");
+
+    // Send a ping to the process endpoint to process the complete request user input step and continue processing the steps up to the next request user input step (which will be the prompt step).
+    const pingGameRoomProcessResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingGameRoomProcessResponse.status).to.equal(200);
+    updatedRoom = pingGameRoomProcessResponse.body.data.pingGameRoomProcess;
     expect(updatedRoom?.gameData.chat[3].message).to.equal(
       "Hello, Jonny Appleseed!"
     );
-
-    // Prompt Step: Send a message which will be passed to the prompt step.
     expect(updatedRoom?.gameData.globalStateData.curStageId).to.equal(
       PROMPT_DISCUSSION_CLIENT_ID
     );
@@ -120,14 +132,7 @@ describe("full room lifecycle", () => {
       "What is your prompt?"
     );
 
-    // Set up the LLM request mock, this will be called when the prompt step is processed.
-    syncLlmRequestStub.onFirstCall().resolves({
-      answer: JSON.stringify({
-        prompt_response: "Mocked analysis of the prompt",
-      }),
-    } as AiServicesResponseTypes);
-
-    // sending the message
+    // Send our message to the room for the request user input prompt step.
     const sendMessageForPrompt = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${userToken}`)
@@ -143,11 +148,32 @@ describe("full room lifecycle", () => {
     expect(sendMessageForPrompt.body.data.sendMessageToGameRoom).to.exist;
 
     // ENSURE users message is added to the chat log
-    const roomAfterPrompt = await RoomModel.findById(newRoomId);
-    expect(roomAfterPrompt?.gameData.chat[6].message).to.equal(
+    const roomAfterPromptMessage = await RoomModel.findById(newRoomId);
+    expect(roomAfterPromptMessage?.gameData.chat[6].message).to.equal(
       "My Prompt Input"
     );
-    expect(roomAfterPrompt?.gameData.chat[6].senderId).to.equal(player1Id);
+    expect(roomAfterPromptMessage?.gameData.chat[6].senderId).to.equal(
+      player1Id
+    );
+
+    // Send another ping to the process endpoint to process the complete prompt step and continue processing the steps up to the next request user input step (which will be the conditional stage).
+    // Set up the LLM request mock, this will be called when the prompt step is processed.
+    syncLlmRequestStub.onFirstCall().resolves({
+      answer: JSON.stringify({
+        prompt_response: "Mocked analysis of the prompt",
+      }),
+    } as AiServicesResponseTypes);
+
+    const pingGameRoomToProcessConditional = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
 
     // ENSURE promptText sent in request gets updated with {{user_input_prompt}}
     expect(
@@ -161,35 +187,41 @@ describe("full room lifecycle", () => {
       })
     ).to.be.true;
 
+    const roomAfterProcessingPrompt: Room | null = await RoomModel.findById(
+      newRoomId
+    );
+
     // ENSURE that prompt_response gets added to the global state data.
     const globalGameStateData =
-      roomAfterPrompt?.gameData.globalStateData.gameStateData;
+      roomAfterProcessingPrompt?.gameData.globalStateData.gameStateData;
     const promptResponse = globalGameStateData?.["prompt_response"];
     expect(promptResponse).to.equal("Mocked analysis of the prompt");
 
     // ENSURE that the prompt_response gets sent as a system message
-    expect(roomAfterPrompt?.gameData.chat[7].message).to.equal(
+    expect(roomAfterProcessingPrompt?.gameData.chat[7].message).to.equal(
       "Mocked analysis of the prompt"
     );
-    expect(roomAfterPrompt?.gameData.chat[7].sender).to.equal(
+    expect(roomAfterProcessingPrompt?.gameData.chat[7].sender).to.equal(
       SenderType.SYSTEM
     );
 
     // Conditional Stage:
     // ENSURE moved on to conditional stage request user input step
-    expect(roomAfterPrompt?.gameData.globalStateData.curStageId).to.equal(
-      CONDITIONAL_DISCUSSION_CLIENT_ID
-    );
-    expect(roomAfterPrompt?.gameData.globalStateData.curStepId).to.equal("2");
+    expect(
+      roomAfterProcessingPrompt?.gameData.globalStateData.curStageId
+    ).to.equal(CONDITIONAL_DISCUSSION_CLIENT_ID);
+    expect(
+      roomAfterProcessingPrompt?.gameData.globalStateData.curStepId
+    ).to.equal("2");
     // ENSURE conditional stage intro messages are sent up to the request user input step.
-    expect(roomAfterPrompt?.gameData.chat[8].message).to.equal(
+    expect(roomAfterProcessingPrompt?.gameData.chat[8].message).to.equal(
       "Welcome to the conditional discussion"
     );
-    expect(roomAfterPrompt?.gameData.chat[9].message).to.equal(
+    expect(roomAfterProcessingPrompt?.gameData.chat[9].message).to.equal(
       "Please enter number 1 or 2"
     );
 
-    // Send user message to the room, should add the message to the chat log and then jump to the proper step based on conditional input.
+    // Send user message to the room, should add the message to the chat log
     const sendMessageToConditional = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${userToken}`)
@@ -217,30 +249,45 @@ describe("full room lifecycle", () => {
     const userInputNumber = dicussionData.user_input_number;
     expect(userInputNumber).to.equal("1");
 
+    // Send another ping to the process endpoint to process the complete conditional step and continue processing the steps up to the next request user input step (which will be BACK to the request user input stage).
+
+    const pingGameRoomToProcessConditionalStage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    const roomAfterProcessingConditional: Room | null =
+      await RoomModel.findById(newRoomId);
+
     // ENSURE that we get the correct response message based on the input number.
-    expect(roomAfterConditional?.gameData.chat[11].message).to.equal(
+    expect(roomAfterProcessingConditional?.gameData.chat[11].message).to.equal(
       "You entered number 1"
     );
 
     // ENSURE final message is sent
-    expect(roomAfterConditional?.gameData.chat[12].message).to.equal(
+    expect(roomAfterProcessingConditional?.gameData.chat[12].message).to.equal(
       "Thank you for playing!"
     );
 
     // Now loops back to request user input stage. Test again to ensure that we can do re-runs:
-    expect(roomAfterConditional?.gameData.globalStateData.curStageId).to.equal(
-      REQUEST_USER_INPUT_DISCUSSION_CLIENT_ID
-    );
-    expect(roomAfterConditional?.gameData.globalStateData.curStepId).to.equal(
-      "2"
-    );
-    expect(roomAfterConditional?.gameData.chat[13].message).to.equal(
+    expect(
+      roomAfterProcessingConditional?.gameData.globalStateData.curStageId
+    ).to.equal(REQUEST_USER_INPUT_DISCUSSION_CLIENT_ID);
+    expect(
+      roomAfterProcessingConditional?.gameData.globalStateData.curStepId
+    ).to.equal("2");
+    expect(roomAfterProcessingConditional?.gameData.chat[13].message).to.equal(
       "Welcome to the request user input discussion"
     );
-    expect(roomAfterConditional?.gameData.chat[14].message).to.equal(
+    expect(roomAfterProcessingConditional?.gameData.chat[14].message).to.equal(
       "What is your name?"
     );
-    expect(roomAfterConditional?.gameData.chat.length).to.equal(15);
+    expect(roomAfterProcessingConditional?.gameData.chat.length).to.equal(15);
 
     const sendNameMessageAgain = await request(app)
       .post("/graphql")
@@ -263,27 +310,44 @@ describe("full room lifecycle", () => {
     expect(roomAfterNameMessage?.gameData.chat[15].senderId).to.equal(
       player1Id
     );
-    expect(roomAfterNameMessage?.gameData.chat[16].message).to.equal(
-      "Hello, Jane Doe!"
-    );
-    expect(roomAfterNameMessage?.gameData.chat[16].sender).to.equal(
-      SenderType.SYSTEM
-    );
+
+    const pingGameToProcessRequestUserInputStageAgain = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    const roomAfterProcessingRequestUserInputStageAgain: Room | null =
+      await RoomModel.findById(newRoomId);
+    expect(
+      roomAfterProcessingRequestUserInputStageAgain?.gameData.chat[16].message
+    ).to.equal("Hello, Jane Doe!");
+    expect(
+      roomAfterProcessingRequestUserInputStageAgain?.gameData.chat[16].sender
+    ).to.equal(SenderType.SYSTEM);
 
     // Then to the prompt stage again:
-    expect(roomAfterNameMessage?.gameData.globalStateData.curStageId).to.equal(
-      PROMPT_DISCUSSION_CLIENT_ID
-    );
-    expect(roomAfterNameMessage?.gameData.globalStateData.curStepId).to.equal(
-      "2"
-    );
-    expect(roomAfterNameMessage?.gameData.chat[17].message).to.equal(
-      "Welcome to the prompt discussion"
-    );
-    expect(roomAfterNameMessage?.gameData.chat[18].message).to.equal(
-      "What is your prompt?"
-    );
-    expect(roomAfterNameMessage?.gameData.chat.length).to.equal(19);
+    expect(
+      roomAfterProcessingRequestUserInputStageAgain?.gameData.globalStateData
+        .curStageId
+    ).to.equal(PROMPT_DISCUSSION_CLIENT_ID);
+    expect(
+      roomAfterProcessingRequestUserInputStageAgain?.gameData.globalStateData
+        .curStepId
+    ).to.equal("2");
+    expect(
+      roomAfterProcessingRequestUserInputStageAgain?.gameData.chat[17].message
+    ).to.equal("Welcome to the prompt discussion");
+    expect(
+      roomAfterProcessingRequestUserInputStageAgain?.gameData.chat[18].message
+    ).to.equal("What is your prompt?");
+    expect(
+      roomAfterProcessingRequestUserInputStageAgain?.gameData.chat.length
+    ).to.equal(19);
 
     // Verify the stub was called
     expect(syncLlmRequestStub.called).to.be.true; // Should be false since we haven't hit a prompt step yet

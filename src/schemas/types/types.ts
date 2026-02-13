@@ -61,3 +61,11 @@ export const sendMessageToGameRoomMutation = `
     }
   }
 `;
+
+export const pingGameRoomProcessMutation = `
+  mutation PingGameRoomProcess($roomId: String!, $sessionId: String!) {
+    pingGameRoomProcess(roomId: $roomId, sessionId: $sessionId) {
+      ${fullRoomData}
+    }
+  }
+`;

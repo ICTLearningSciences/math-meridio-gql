@@ -80,6 +80,10 @@ export const sendMessageToGameRoom = {
                   (stageAndStep.curStep as RequestUserInputStageStep)
                     .saveResponseVariableName
                 }`]: args.message,
+                [`gameData.playersGameStateData.${context.userId}.${
+                  (stageAndStep.curStep as RequestUserInputStageStep)
+                    .saveResponseVariableName
+                }`]: args.message,
               },
             }
           : {}),
@@ -88,70 +92,7 @@ export const sendMessageToGameRoom = {
     );
     room = updatedRoom.toObject();
 
-    if (
-      isDiscussionStage(stageAndStep.curStage) &&
-      stageAndStep.curStep.stepType ===
-        DiscussionStageStepType.REQUEST_USER_INPUT &&
-      room.phase !== RoomPhase.PROCESSING
-    ) {
-      // Try to acquire the processing lock
-      const lockResult = await acquireProcessingLock(
-        args.roomId,
-        room.versionNumber,
-        RoomModel
-      );
-
-      if (!lockResult.success) {
-        console.log(
-          `Failed to acquire processing lock: ${lockResult.reason}. Returning room with just new messages added.`
-        );
-        return lockResult.room || room;
-      }
-
-      // We have the processing lock CONFIRMED, we can now process the step.
-      room = lockResult.room;
-      console.log("we are in a request user input step");
-
-      // check if we are ready to move on from an input step and continue processing.
-      if (isRequestUserInputStepComplete(room.gameData, stageAndStep.curStep)) {
-        console.log(
-          "we are ready to move on from an input step and continue processing."
-        );
-        room = await processStepsUntilNextRequestUserInputStep(
-          room,
-          discussionStages,
-          {
-            serviceName: AiServiceNames.OPEN_AI,
-            model: "gpt-4o-mini",
-          },
-          context.userId,
-          args.sessionId
-        );
-        return await RoomModel.findOneAndUpdate(
-          { _id: args.roomId },
-          {
-            $set: {
-              gameData: room.gameData,
-              phase: RoomPhase.NO_ACTIVE_PROCESSING,
-            },
-            $inc: {
-              versionNumber: 1,
-            },
-          },
-          { new: true }
-        );
-      } else {
-        console.log(
-          "we are not ready to move on from an input step, no processing occured"
-        );
-        return room;
-      }
-    } else {
-      console.log(
-        "we are not in a request user input step, returning room with just new messages added, no processing needed."
-      );
-      return room;
-    }
+    return room;
   },
 };
 
