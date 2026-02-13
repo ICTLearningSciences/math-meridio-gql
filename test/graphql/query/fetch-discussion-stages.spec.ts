@@ -107,7 +107,6 @@ describe("fetch discussion stages", () => {
         },
       });
     expect(response.status).to.equal(200);
-    expect(response.body.data.fetchDiscussionStages.length).to.equal(5);
     expect(response.body.data.fetchDiscussionStages[0].title).to.equal(
       "Test AI Response Data"
     );

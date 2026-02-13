@@ -12,7 +12,11 @@ import mongoUnit from "mongo-unit";
 import request from "supertest";
 import mongoose from "mongoose";
 import { getToken, createUser, createClassroom } from "../../helpers";
-import { fullRoomData, UserRole } from "../../../src/schemas/types/types";
+import {
+  fullRoomData,
+  UserRole,
+  viewGameRoomSimulationMutation,
+} from "../../../src/schemas/types/types";
 import {
   EducationalRole,
   PlayerDocument,
@@ -22,14 +26,6 @@ import { initializeGameRoom } from "../../../src/schemas/mutation/game-room-auth
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 import { getSimulationViewedKey } from "../../../src/authoritative-server/authority/helpers/helpers";
 const { ObjectId } = mongoose.Types;
-
-const viewGameRoomSimulationMutation = `
-  mutation ViewGameRoomSimulation($roomId: String!) {
-    viewGameRoomSimulation(roomId: $roomId) {
-       ${fullRoomData}
-    }
-  }
-`;
 
 describe("view a game room simulation", () => {
   let app: Express;

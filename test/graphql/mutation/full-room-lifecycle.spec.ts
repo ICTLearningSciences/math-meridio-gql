@@ -24,6 +24,7 @@ import {
   PromptRoles,
   sendMessageToGameRoomMutation,
   UserRole,
+  viewGameRoomSimulationMutation,
 } from "../../../src/schemas/types/types";
 import { getToken } from "../../helpers";
 import { EducationalRole } from "../../../src/schemas/models/Player";
@@ -33,10 +34,13 @@ import {
   REQUEST_USER_INPUT_DISCUSSION_CLIENT_ID,
 } from "../../../src/authoritative-server/games/unit-test-game";
 import { REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID } from "../../../src/authoritative-server/games/unit-test-multiple-users-game";
+import { TEST_SIMULATION_DISCUSSION_CLIENT_ID } from "../../../src/authoritative-server/games/unit-test-simulation-game";
+import { getSimulationViewedKey } from "../../../src/authoritative-server/authority/helpers/helpers";
 import sinon from "sinon";
 import * as llmRequest from "../../../src/authoritative-server/llm-request/llm-request";
 import { AiServicesResponseTypes } from "../../../src/authoritative-server/llm-request/ai-services/ai-service-types";
 import { SenderType } from "../../../src/authoritative-server/llm-request/types";
+import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../../src/authoritative-server/games/game-helpers";
 
 describe("full room lifecycle", () => {
   let app: Express;
@@ -927,5 +931,131 @@ describe("full room lifecycle", () => {
       CONDITIONAL_DISCUSSION_CLIENT_ID
     );
     expect(roomAfterPings?.gameData.globalStateData.curStepId).to.equal("2");
+  });
+
+  it("simulation room lifecycle", async () => {
+    const studentUserId = new ObjectId().toString();
+    await createUser(studentUserId, UserRole.USER, EducationalRole.STUDENT);
+    const studentAccessToken = await getToken(
+      studentUserId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+
+    // 1. Create room for unit-test-simulation game
+    const createRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test-simulation",
+        },
+      });
+    expect(createRoomResponse.status).to.equal(200);
+    expect(createRoomResponse.body.data.createNewGameRoom).to.exist;
+    const roomId = createRoomResponse.body.data.createNewGameRoom._id;
+
+    // 2. Join the room.
+    const joinRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .send({
+        query: joinGameRoomMutation,
+        variables: {
+          roomId: roomId,
+        },
+      });
+    expect(joinRoomResponse.status).to.equal(200);
+    expect(joinRoomResponse.body.data.joinGameRoom).to.exist;
+
+    // ENSURE room is in TEST_SIMULATION_DISCUSSION_CLIENT_ID stage and step "1"
+    let currentRoom = await RoomModel.findById(roomId);
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      TEST_SIMULATION_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+
+    // 3. send user message + call room process
+    const sendMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: roomId,
+          message: "User input for simulation",
+          sessionId: "session1",
+        },
+      });
+    expect(sendMessageResponse.status).to.equal(200);
+
+    const pingResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: roomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingResponse.status).to.equal(200);
+
+    // ENSURE user message got added to room
+    currentRoom = await RoomModel.findById(roomId);
+    expect(currentRoom?.gameData.chat).to.have.length(2);
+    const userMessage = currentRoom?.gameData.chat[1];
+    expect(userMessage).to.exist;
+    expect(userMessage?.senderId).to.equal(studentUserId);
+
+    // ENSURE room is in stage "wait-for-simulation" stage and step "wait-for-simulation"
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      "wait-for-simulation"
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal(
+      "wait-for-simulation"
+    );
+
+    // 4. call viewGameRoomSimulationMutation for user in room + call room process
+    const viewSimulationResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .send({
+        query: viewGameRoomSimulationMutation,
+        variables: {
+          roomId: roomId,
+        },
+      });
+    expect(viewSimulationResponse.status).to.equal(200);
+
+    const pingAfterSimulationResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentAccessToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: roomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterSimulationResponse.status).to.equal(200);
+
+    // ENSURE getSimulationViewedKey in the playersGameStateData exists and is set to "true"
+    currentRoom = await RoomModel.findById(roomId);
+    const simulationViewedKey = getSimulationViewedKey(
+      WAIT_FOR_SIMULATION_STAGE_CLIENT_ID
+    );
+    expect(
+      currentRoom?.gameData.playersGameStateData[studentUserId][
+        simulationViewedKey
+      ]
+    ).to.equal("true");
+
+    // ENSURE we are now back to stage TEST_SIMULATION_DISCUSSION_CLIENT_ID and step "1"
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      TEST_SIMULATION_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
   });
 });

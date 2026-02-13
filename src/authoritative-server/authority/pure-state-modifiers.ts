@@ -197,40 +197,47 @@ export async function updateRoomStageAndOrStep(
 export async function updateRoomWithNextStep(
   room: Room,
   curStage: CurrentStage<IStage>,
-  curStep: DiscussionStageStep
+  curStep?: DiscussionStageStep
 ): Promise<Room> {
   const collectedDiscussionData: CollectedDiscussionData =
     room.gameData.globalStateData.discussionData || {};
-  if (curStep.lastStep) {
-    const nextStage = curStage.getNextStage(collectedDiscussionData);
-    const nextStepId = getFirstStepId(nextStage);
-    return await updateRoomStageAndOrStep(room, nextStage.clientId, nextStepId);
-  }
-
-  // getNextStep
-
-  // Handle conditional step
-  if (curStep.stepType === DiscussionStageStepType.CONDITIONAL) {
-    const nextStep = getNextStepFromConditionalStage(
-      curStep as ConditionalActivityStep,
-      room.gameData
-    );
-    if (nextStep) {
-      return await updateRoomStageAndOrStep(room, undefined, nextStep);
-    }
-  }
-
-  if (curStep.jumpToStepId) {
-    return await updateRoomStageAndOrStep(
-      room,
-      undefined,
-      curStep.jumpToStepId
-    );
-  }
 
   // find next step in the flow
-
   if (isDiscussionStage(curStage.stage)) {
+    if (!curStep) {
+      throw new Error("No step found for discussion stage");
+    }
+    if (curStep.lastStep) {
+      const nextStage = curStage.getNextStage(collectedDiscussionData);
+      const nextStepId = getFirstStepId(nextStage);
+      return await updateRoomStageAndOrStep(
+        room,
+        nextStage.clientId,
+        nextStepId
+      );
+    }
+
+    // getNextStep
+
+    // Handle conditional step
+    if (curStep.stepType === DiscussionStageStepType.CONDITIONAL) {
+      const nextStep = getNextStepFromConditionalStage(
+        curStep as ConditionalActivityStep,
+        room.gameData
+      );
+      if (nextStep) {
+        return await updateRoomStageAndOrStep(room, undefined, nextStep);
+      }
+    }
+
+    if (curStep.jumpToStepId) {
+      return await updateRoomStageAndOrStep(
+        room,
+        undefined,
+        curStep.jumpToStepId
+      );
+    }
+
     const currentFlowList = curStage.stage.flowsList.find((flow) =>
       flow.steps.find((step) => step.stepId === curStep.stepId)
     );
@@ -261,6 +268,10 @@ export async function updateRoomWithNextStep(
   } else {
     // Is a simulation stage, just need to get the next stage id
     const nextStage = curStage.getNextStage(collectedDiscussionData);
-    return await updateRoomStageAndOrStep(room, nextStage.clientId, undefined);
+    let nextStepId = nextStage.clientId;
+    if (isDiscussionStage(nextStage)) {
+      nextStepId = getFirstStepId(nextStage);
+    }
+    return await updateRoomStageAndOrStep(room, nextStage.clientId, nextStepId);
   }
 }

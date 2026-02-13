@@ -12,7 +12,11 @@ import PlayerModel from "../../models/Player";
 import { addPlayerToRoom } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { getGameById } from "../../../authoritative-server/games/game-helpers";
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
-import { DiscussionStage } from "../../models/DiscussionStage/types";
+import {
+  DiscussionStage,
+  DiscussionStageStepType,
+  isDiscussionStage,
+} from "../../models/DiscussionStage/types";
 import { getFirstStepId } from "../../../authoritative-server/authority/helpers/helpers";
 import {
   processCurStep,
@@ -20,6 +24,7 @@ import {
 } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { AiServiceNames } from "../../../authoritative-server/llm-request/types";
 import mongoose from "mongoose";
+import { getCurStageAndStep } from "authoritative-server/authority/user-action-pure-functions";
 /**
  * Initializes the new game room with the first stage and step.
  */
@@ -107,28 +112,30 @@ export const createNewGameRoom = {
       args.sessionId
     );
 
-    console.log(
-      "room with first step processed: ",
-      JSON.stringify(roomWithFirstStepProcessed, null, 2)
+    const curStageAndStep = getCurStageAndStep(
+      roomWithFirstStepProcessed.gameData,
+      discussionStages
     );
-
-    // Now process all other steps until we reach a request user input step.
-    const roomWithProcessedSteps: Room =
-      await processStepsUntilNextRequestUserInputStep(
-        roomWithFirstStepProcessed,
-        discussionStages,
-        {
-          serviceName: AiServiceNames.OPEN_AI,
-          model: "gpt-4o-mini",
-        },
-        context.userId,
-        args.sessionId
-      );
-    console.log(
-      "room with processed steps: ",
-      JSON.stringify(roomWithProcessedSteps, null, 2)
-    );
-    return roomWithProcessedSteps;
+    if (
+      isDiscussionStage(curStageAndStep.curStage) &&
+      curStageAndStep.curStep?.stepType !==
+        DiscussionStageStepType.REQUEST_USER_INPUT
+    ) {
+      // Now process all other steps until we reach a request user input step.
+      const roomWithProcessedSteps: Room =
+        await processStepsUntilNextRequestUserInputStep(
+          roomWithFirstStepProcessed,
+          discussionStages,
+          {
+            serviceName: AiServiceNames.OPEN_AI,
+            model: "gpt-4o-mini",
+          },
+          context.userId,
+          args.sessionId
+        );
+      return roomWithProcessedSteps;
+    }
+    return roomWithFirstStepProcessed;
   },
 };
 

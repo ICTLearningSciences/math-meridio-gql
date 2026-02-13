@@ -49,8 +49,9 @@ export const pingGameRoomProcess = {
 
     const isDiscussionStage = _isDiscussionStage(stageAndStep.curStage);
     const isRequestUserInputStep =
-      stageAndStep.curStep.stepType ===
-      DiscussionStageStepType.REQUEST_USER_INPUT;
+      isDiscussionStage &&
+      stageAndStep.curStep?.stepType ===
+        DiscussionStageStepType.REQUEST_USER_INPUT;
     const isRequestUserInputStepComplete =
       isRequestUserInputStep &&
       _isRequestUserInputStepComplete(

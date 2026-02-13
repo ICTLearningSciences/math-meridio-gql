@@ -21,6 +21,7 @@ import {
   DiscussionStage,
   DiscussionStageStep,
   DiscussionStageStepType,
+  isDiscussionStage,
   PromptStageStep,
   RequestUserInputStageStep,
   SystemMessageStageStep,
@@ -420,7 +421,13 @@ export async function processCurStep(
   sessionId: string
 ): Promise<Room> {
   let gameData = getGameDataCopy(room.gameData);
-  const { curStep } = getCurStageAndStep(gameData, discussionStages);
+  const { curStage, curStep } = getCurStageAndStep(gameData, discussionStages);
+  if (!isDiscussionStage(curStage)) {
+    console.log(
+      "Cannot process step for simulation stage, returning original room"
+    );
+    return room;
+  }
   switch (curStep.stepType) {
     case DiscussionStageStepType.REQUEST_USER_INPUT:
       const roomModificationActions: AtomicRoomModiticationAction =
@@ -483,8 +490,6 @@ export function isRequestUserInputStepComplete(
   let mostRecentSystemMessageIdx = -1;
   let mostRecentUserMessageIdx = -1;
 
-  console.log("gameData.chat", JSON.stringify(gameData.chat, null, 2));
-
   for (let i = 0; i < gameData.chat.length; i++) {
     if (gameData.chat[i].fromStepId === curStep.stepId) {
       mostRecentSystemMessageIdx = i;
@@ -530,29 +535,7 @@ export function isRequestUserInputStepComplete(
   }
 }
 
-export async function isDiscussionStageStepComplete(
-  _gameData: GameData,
-  discussionStages: DiscussionStage[]
-): Promise<boolean> {
-  const gameData = getGameDataCopy(_gameData);
-  const { curStep } = getCurStageAndStep(gameData, discussionStages);
-  switch (curStep.stepType) {
-    case DiscussionStageStepType.REQUEST_USER_INPUT:
-      return isRequestUserInputStepComplete(gameData, curStep);
-    case DiscussionStageStepType.SYSTEM_MESSAGE:
-      return true;
-    case DiscussionStageStepType.CONDITIONAL:
-      return true;
-    case DiscussionStageStepType.PROMPT:
-      return true;
-    default:
-      throw new Error(`Unknown step type: ${curStep}`);
-  }
-}
-
-export async function isSimulationStageComplete(
-  _gameData: GameData
-): Promise<boolean> {
+export function isSimulationStageComplete(_gameData: GameData): boolean {
   const gameData = getGameDataCopy(_gameData);
   // Check that atleast 1 player has viewed the simulation for this stage.
   const simulationViewedKey = getSimulationViewedKey(
@@ -589,23 +572,20 @@ export async function processStepsUntilNextRequestUserInputStep(
       stepAndStage.curStep
     );
     stepAndStage = getCurStageAndStep(latestRoom.gameData, discussionStages);
-    console.log(
-      `current stage: ${JSON.stringify(stepAndStage.curStage.title)} : ${
-        stepAndStage.curStage.clientId
-      }`
-    );
-    console.log(
-      `processing ${stepAndStage.curStep.stepType} step: ${stepAndStage.curStep.stepId}`
-    );
-    latestRoom = await processCurStep(
-      latestRoom,
-      discussionStages,
-      targetAiServiceModel,
-      playerIdToUpdate,
-      sessionId
-    );
+    if (isDiscussionStage(stepAndStage.curStage)) {
+      console.log(
+        `processing ${stepAndStage.curStep.stepType} step: ${stepAndStage.curStep.stepId}`
+      );
+      latestRoom = await processCurStep(
+        latestRoom,
+        discussionStages,
+        targetAiServiceModel,
+        playerIdToUpdate,
+        sessionId
+      );
+    }
   } while (
-    stepAndStage.curStep.stepType !==
+    stepAndStage.curStep?.stepType !==
       DiscussionStageStepType.REQUEST_USER_INPUT &&
     stepAndStage.curStage.clientId !== WAIT_FOR_SIMULATION_STAGE_CLIENT_ID
   );

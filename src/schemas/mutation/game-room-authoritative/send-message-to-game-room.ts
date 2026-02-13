@@ -12,6 +12,7 @@ import { getCurStageAndStep } from "../../../authoritative-server/authority/user
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
 import {
   DiscussionStageStepType,
+  isDiscussionStage,
   RequestUserInputStageStep,
 } from "../../models/DiscussionStage/types";
 import { buildUserMessage } from "authoritative-server/authority/state-modifier-helpers";
@@ -48,7 +49,8 @@ export const sendMessageToGameRoom = {
     const stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
 
     const shouldUpdateDiscussionData =
-      stageAndStep.curStep.stepType ===
+      isDiscussionStage(stageAndStep.curStage) &&
+      stageAndStep.curStep?.stepType ===
         DiscussionStageStepType.REQUEST_USER_INPUT &&
       stageAndStep.curStep.saveResponseVariableName;
 

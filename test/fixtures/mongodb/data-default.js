@@ -383,5 +383,31 @@ module.exports = {
         },
       ],
     },
+
+    {
+      _id: new ObjectId("5ffdf1231ee2b62320a49e30"),
+      clientId: "test-simulation-discussion-client-id",
+      title: "Test Simulation Discussion",
+      stageType: "discussion",
+      description: "",
+      flowsList: [
+        {
+          clientId: new ObjectId("5ffdf2221ee2c22322b49e5f"),
+          name: "Test Request User Input Flow",
+          steps: [
+            {
+              stepId: "1",
+              stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
+              message: "Ready for the simulation?",
+              saveResponseVariableName: "input_name",
+              disableFreeInput: false,
+              predefinedResponses: [],
+              requireAllUserInputs: true,
+              lastStep: true,
+            },
+          ],
+        },
+      ],
+    },
   ],
 };

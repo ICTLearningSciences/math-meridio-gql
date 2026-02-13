@@ -85,3 +85,11 @@ export const leaveGameRoomMutation = `
     }
   }
 `;
+
+export const viewGameRoomSimulationMutation = `
+  mutation ViewGameRoomSimulation($roomId: String!) {
+    viewGameRoomSimulation(roomId: $roomId) {
+       ${fullRoomData}
+    }
+  }
+`;
