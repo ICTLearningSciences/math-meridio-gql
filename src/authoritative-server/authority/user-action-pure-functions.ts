@@ -9,28 +9,7 @@ import {
   DiscussionStage,
   DiscussionStageStep,
 } from "../../schemas/models/DiscussionStage/types";
-import { PlayerDocument } from "../../schemas/models/Player";
-import { getGameDataCopy } from "./state-modifier-helpers";
 import { GameData } from "../../schemas/models/Room";
-
-export function addPlayerToRoom(
-  _gameData: GameData,
-  playerToAdd: PlayerDocument
-) {
-  const gameData = getGameDataCopy(_gameData);
-  const alreadyInRoom = gameData.players.find((p) => p === playerToAdd._id);
-  if (alreadyInRoom) {
-    console.log("Player already in room");
-    return gameData;
-  }
-
-  gameData.players.push(playerToAdd._id);
-
-  gameData.playersGameStateData[playerToAdd._id] =
-    gameData.globalStateData.gameStateData || {};
-
-  return gameData;
-}
 
 export function getCurStageAndStep(
   gameData: GameData,

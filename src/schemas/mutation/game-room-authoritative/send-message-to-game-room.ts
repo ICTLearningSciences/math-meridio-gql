@@ -20,7 +20,7 @@ import {
 } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { AiServiceNames } from "../../../authoritative-server/llm-request/types";
 import { buildUserMessage } from "authoritative-server/authority/state-modifier-helpers";
-import { verifyProcessingLock } from "../../../authoritative-server/authority/helpers/helpers";
+import { acquireProcessingLock } from "../../../authoritative-server/authority/helpers/helpers";
 
 export const sendMessageToGameRoom = {
   type: RoomType,
@@ -93,7 +93,7 @@ export const sendMessageToGameRoom = {
       room.phase !== RoomPhase.PROCESSING
     ) {
       // Try to acquire the processing lock
-      const lockResult = await verifyProcessingLock(
+      const lockResult = await acquireProcessingLock(
         args.roomId,
         room.versionNumber,
         RoomModel

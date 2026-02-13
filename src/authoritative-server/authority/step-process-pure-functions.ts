@@ -48,12 +48,14 @@ import { AiServicesResponseTypes } from "../llm-request/ai-services/ai-service-t
 import { syncLlmRequest } from "../llm-request/llm-request";
 import { getGameById } from "../../authoritative-server/games/game-helpers";
 import RoomModel from "../../schemas/models/Room";
+import { PlayerDocument } from "schemas/models/Player";
 
 export enum RoomModificationEnum {
   ADD_MESSAGE = "ADD_MESSAGE",
   ADD_TO_PLAYER_STATE_DATA = "ADD_TO_PLAYER_STATE_DATA",
   ADD_TO_GLOBAL_STATE_DATA = "ADD_TO_GLOBAL_STATE_DATA",
   ADD_TO_DISCUSSION_DATA = "ADD_TO_DISCUSSION_DATA",
+  ADD_PLAYER_TO_ROOM = "ADD_PLAYER_TO_ROOM",
   NO_OP = "NO_OP",
 }
 
@@ -89,6 +91,13 @@ export interface UpdateDiscussionDataRoomAtomicAction
   extends Omit<AtomicRoomModiticationAction, "actionType"> {
   actionType: RoomModificationEnum.ADD_TO_DISCUSSION_DATA;
   newData: DiscussionData;
+}
+
+export interface AddPlayerToRoomAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.ADD_PLAYER_TO_ROOM;
+  playerId: string;
+  playerStateData: GameStateData;
 }
 
 export async function applyAtomicRoomModificationActions(
@@ -372,6 +381,29 @@ export async function processPromptStep(
   await requestFunction();
 
   return atomicRoomModificationActions;
+}
+
+export async function addPlayerToRoom(
+  room: Room,
+  player: PlayerDocument
+): Promise<Room> {
+  if (room.gameData.players.includes(player._id)) {
+    console.log("Player already in room");
+    return room;
+  }
+  const updatedRoom = await RoomModel.findByIdAndUpdate(
+    room._id,
+    {
+      $push: { "gameData.players": player._id },
+      $set: {
+        "gameData.playersGameStateData": {
+          [player._id]: room.gameData.globalStateData.gameStateData || {},
+        },
+      },
+    },
+    { new: true }
+  );
+  return updatedRoom.toObject();
 }
 
 export async function processCurStep(

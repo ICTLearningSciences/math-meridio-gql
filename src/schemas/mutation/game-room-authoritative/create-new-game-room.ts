@@ -9,12 +9,13 @@ import { GraphQLString, GraphQLObjectType } from "graphql";
 import ClassModel from "../../models/classes/Class";
 import RoomModel, { Room, RoomPhase, RoomType } from "../../models/Room";
 import PlayerModel from "../../models/Player";
-import { addPlayerToRoom } from "../../../authoritative-server/authority/user-action-pure-functions";
+import { addPlayerToRoom } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { getGameById } from "../../../authoritative-server/games/game-helpers";
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
 import { DiscussionStage } from "../../models/DiscussionStage/types";
 import { getFirstStepId } from "../../../authoritative-server/authority/helpers/helpers";
 import {
+  AtomicRoomModiticationAction,
   processCurStep,
   processStepsUntilNextRequestUserInputStep,
 } from "../../../authoritative-server/authority/step-process-pure-functions";
@@ -92,13 +93,12 @@ export const createNewGameRoom = {
       discussionStages,
       rooms.length
     );
-    _newRoom.gameData = addPlayerToRoom(_newRoom.gameData, player);
     const newRoom: Room = await (await RoomModel.create(_newRoom)).toObject();
-    console.log("created new room: ", JSON.stringify(newRoom, null, 2));
+    const roomWithPlayerAdded: Room = await addPlayerToRoom(newRoom, player);
 
     // Process the first step.
     const roomWithFirstStepProcessed: Room = await processCurStep(
-      newRoom,
+      roomWithPlayerAdded,
       discussionStages,
       {
         serviceName: AiServiceNames.OPEN_AI,

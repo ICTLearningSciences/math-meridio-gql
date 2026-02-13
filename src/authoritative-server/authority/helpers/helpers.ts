@@ -201,7 +201,7 @@ export interface ProcessingLockResult {
  * @param RoomModel - The Mongoose Room model
  * @returns ProcessingLockResult indicating success/failure and the latest room state
  */
-export async function verifyProcessingLock(
+export async function acquireProcessingLock(
   roomId: string,
   currentVersionNumber: number,
   RoomModel: RoomModelType
@@ -212,7 +212,7 @@ export async function verifyProcessingLock(
 
   while (attempt < MAX_RETRIES) {
     console.log(
-      `[verifyProcessingLock] Attempt ${
+      `[acquireProcessingLock] Attempt ${
         attempt + 1
       }/${MAX_RETRIES} for room ${roomId} with version ${versionNumber}`
     );
@@ -234,7 +234,7 @@ export async function verifyProcessingLock(
     // Success! We got the lock
     if (roomSetToProcessing) {
       console.log(
-        `[verifyProcessingLock] Successfully acquired lock for room ${roomId}`
+        `[acquireProcessingLock] Successfully acquired lock for room ${roomId}`
       );
       return {
         success: true,
@@ -244,7 +244,7 @@ export async function verifyProcessingLock(
 
     // Failed to get lock, fetch fresh room state to understand why
     console.log(
-      `[verifyProcessingLock] Failed to acquire lock for room ${roomId}, checking room state...`
+      `[acquireProcessingLock] Failed to acquire lock for room ${roomId}, checking room state...`
     );
 
     const freshRoom = await RoomModel.findOne({
@@ -255,7 +255,7 @@ export async function verifyProcessingLock(
     // Edge case: Room doesn't exist or was deleted
     if (!freshRoom) {
       console.log(
-        `[verifyProcessingLock] Room ${roomId} not found or was deleted`
+        `[acquireProcessingLock] Room ${roomId} not found or was deleted`
       );
       return {
         success: false,
@@ -267,7 +267,7 @@ export async function verifyProcessingLock(
     // Check if someone else already has the lock
     if (freshRoom.phase === RoomPhase.PROCESSING) {
       console.log(
-        `[verifyProcessingLock] Room ${roomId} is already being processed by another request`
+        `[acquireProcessingLock] Room ${roomId} is already being processed by another request`
       );
       return {
         success: false,
@@ -278,14 +278,16 @@ export async function verifyProcessingLock(
 
     // Room was updated for another reason (e.g., chat message), retry with new version
     console.log(
-      `[verifyProcessingLock] Room ${roomId} was updated (version ${freshRoom.versionNumber}), retrying...`
+      `[acquireProcessingLock] Room ${roomId} was updated (version ${freshRoom.versionNumber}), retrying...`
     );
     versionNumber = freshRoom.versionNumber;
     attempt++;
   }
 
   // Max retries exceeded, fetch final state and return
-  console.log(`[verifyProcessingLock] Max retries exceeded for room ${roomId}`);
+  console.log(
+    `[acquireProcessingLock] Max retries exceeded for room ${roomId}`
+  );
   const finalRoom = await RoomModel.findOne({
     _id: roomId,
     deletedRoom: false,
