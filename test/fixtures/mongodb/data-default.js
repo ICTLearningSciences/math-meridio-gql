@@ -197,7 +197,6 @@ module.exports = {
         },
       ],
     },
-
     {
       _id: new ObjectId("5ffdf1231ee2c22320b49e30"),
       clientId: "test-prompt-discussion-client-id",
@@ -257,7 +256,6 @@ module.exports = {
         },
       ],
     },
-
     {
       _id: new ObjectId("5ffdf1231ee2c22320b69e30"),
       clientId: "test-conditional-discussion-client-id",
@@ -331,5 +329,59 @@ module.exports = {
         },
       ],
     },
+
+    {
+      _id: new ObjectId("5ffdf1231ee2b62320b49e30"),
+      clientId: "test-require-all-user-inputs-discussion-client-id",
+      title: "Test Require All User Inputs Discussion",
+      stageType: "discussion",
+      description: "",
+      flowsList: [
+        {
+          clientId: new ObjectId("5ffdf2231ee2c22322b49e5f"),
+          name: "Test Request User Input Flow",
+          steps: [
+            {
+              stepId: "1",
+              stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
+              message: "Hello, everyone!",
+              lastStep: false,
+            },
+            {
+              stepId: "2",
+              stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
+              message: "What are your names?",
+              saveResponseVariableName: "input_name",
+              disableFreeInput: false,
+              predefinedResponses: [],
+              requireAllUserInputs: true,
+              lastStep: false,
+            },
+            {
+              stepId: "3",
+              stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
+              message: "Nice to meet you all!",
+              lastStep: false,
+            },
+            {
+              stepId: "4",
+              stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
+              message: "Where did you grow up?",
+              saveResponseVariableName: "input_location",
+              disableFreeInput: false,
+              predefinedResponses: [],
+              requireAllUserInputs: true,
+              lastStep: false,
+            },
+            {
+              stepId: "5",
+              stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
+              message: "That's cool!",
+              lastStep: true,
+            },
+          ],
+        },
+      ],
+    },    
   ],
 };

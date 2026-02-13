@@ -69,3 +69,19 @@ export const pingGameRoomProcessMutation = `
     }
   }
 `;
+
+export const joinGameRoomMutation = `
+  mutation JoinGameRoom($roomId: String!) {
+    joinGameRoom(roomId: $roomId) {
+       ${fullRoomData}
+    }
+  }
+`;
+
+export const leaveGameRoomMutation = `
+  mutation LeaveGameRoom($roomId: String!) {
+    leaveGameRoom(roomId: $roomId) {
+      ${fullRoomData}
+    }
+  }
+`;

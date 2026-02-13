@@ -16,6 +16,7 @@ import { getToken, createUser, createClassroom } from "../../helpers";
 import {
   createNewGameRoomMutation,
   fullRoomData,
+  leaveGameRoomMutation,
   UserRole,
 } from "../../../src/schemas/types/types";
 import {
@@ -29,13 +30,6 @@ import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/Di
 import { addPlayerToRoom } from "../../../src/authoritative-server/authority/step-process-pure-functions";
 const { ObjectId } = mongoose.Types;
 
-const leaveGameRoomMutation = `
-  mutation LeaveGameRoom($roomId: String!) {
-    leaveGameRoom(roomId: $roomId) {
-      ${fullRoomData}
-    }
-  }
-`;
 describe("leave a game room", () => {
   let app: Express;
   let studentUserId: string;

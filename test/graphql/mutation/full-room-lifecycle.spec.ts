@@ -353,5 +353,60 @@ describe("full room lifecycle", () => {
     expect(syncLlmRequestStub.called).to.be.true; // Should be false since we haven't hit a prompt step yet
   });
 
-  it("multiple user room lifecycle");
+  it.only("multiple user room with steps that requireAllUserInputs", async () => {
+
+    // 1: create 4 new students to track. ownerStudent (one that creates the room), studentTwo, leavingStudent, lateStudent
+    // 2: create a room with createNewGameRoomMutation for gameId "unit-test-multiple-users"
+    // 3: add studentTwo and leavingStudent to the room with joinGameRoomMutation's
+    
+    // ENSURE all three students are in the room.
+    // ENSURE chat log only has up to the first request user input
+    // ENSURE is on first request user input stage and step: "test-require-all-user-inputs-discussion-client-id" and "2"
+    
+    // 4: ping room process
+
+    // ENSURE still on first request user input stage and step: "test-require-all-user-inputs-discussion-client-id" and "2"
+
+    // 5: ownerStudent send message + ping room process.
+
+    // ENSURE message was added to the chat
+    // ENSURE on the same stage and step beacuse not all user inputs done: "test-require-all-user-inputs-discussion-client-id" and "2"
+
+    // 6: studentTwo send message + ping room process.
+
+    // ENSURE message was added to the chat
+    // ENSURE on the same stage and step beacuse not all user inputs done: "test-require-all-user-inputs-discussion-client-id" and "2"
+
+    // 7: leavingStudent send message + ping room process.
+
+    // ENSURE now on stage and step: "test-require-all-user-inputs-discussion-client-id" and "4"
+    // ENSURE messages were sent up to this stage.
+
+    // 8: ownerStudent and studentTwo send message + process
+
+    // ENSURE on same stage and step: "test-require-all-user-inputs-discussion-client-id" and "4"
+
+    // 9: leavingStudent leaves room with leaveGameRoomMutation
+
+    // ENSURE we have now moved on to the next request user input stage because we already have inputs from the other 2 students, so should move on: "test-require-all-user-inputs-discussion-client-id" and "2"
+
+    // 10: sendMessage from ownerStudent
+    // 11: add lateStudent to room with joinGameRoomMutation
+
+    // 12: sendMessage from studentTwo
+    
+
+    // ENSURE we are still on the same stage "test-require-all-user-inputs-discussion-client-id" and "2" because now we also need lateStudent's message
+
+    //13: sendMessage from lateStudent
+
+    // ENSURE moved on to next step and stage: "test-require-all-user-inputs-discussion-client-id" and "4"
+
+
+    
+    
+    
+
+
+  });
 });

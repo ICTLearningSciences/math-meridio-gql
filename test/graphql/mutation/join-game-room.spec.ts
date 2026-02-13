@@ -12,7 +12,7 @@ import mongoUnit from "mongo-unit";
 import request from "supertest";
 import mongoose from "mongoose";
 import { getToken, createUser, createClassroom } from "../../helpers";
-import { fullRoomData, UserRole } from "../../../src/schemas/types/types";
+import { fullRoomData, joinGameRoomMutation, UserRole } from "../../../src/schemas/types/types";
 import {
   EducationalRole,
   PlayerDocument,
@@ -21,14 +21,6 @@ import RoomModel from "../../../src/schemas/models/Room";
 import { initializeGameRoom } from "../../../src/schemas/mutation/game-room-authoritative/create-new-game-room";
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 const { ObjectId } = mongoose.Types;
-
-const joinGameRoomMutation = `
-  mutation JoinGameRoom($roomId: String!) {
-    joinGameRoom(roomId: $roomId) {
-       ${fullRoomData}
-    }
-  }
-`;
 
 describe("join a game room", () => {
   let app: Express;
