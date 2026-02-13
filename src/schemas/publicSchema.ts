@@ -11,6 +11,7 @@ import fetchRooms from "./query/fetch-rooms";
 import deleteRoom from "./mutation/room-delete";
 import renameRoom from "./mutation/room-rename";
 import joinGameRoom from "./mutation/join-game-room";
+import viewGameRoomSimulation from "./mutation/view-game-room-simulation";
 import leaveGameRoom from "./mutation/leave-game-room";
 import fetchPlayer from "./query/fetch-player";
 import fetchPlayers from "./query/fetch-players";
@@ -79,6 +80,7 @@ const PublicMutation = new GraphQLObjectType({
     testLlmCall,
     sendMessageToGameRoom,
     joinGameRoom,
+    viewGameRoomSimulation,
     leaveGameRoom,
     pingGameRoomProcess,
   },
