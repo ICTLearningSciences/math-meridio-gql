@@ -43,6 +43,7 @@ import sendMessageToGameRoom from "./mutation/game-room-authoritative/send-messa
 import pingGameRoomProcess from "./mutation/ping-game-room-process";
 import updatePlayerGameStateData from "./mutation/update-player-game-state-data";
 import viewGameRoomSimulation from "./mutation/view-game-room-simulation";
+import fetchGamesList from "./query/fetch-games-list";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -54,6 +55,7 @@ const PublicRootQuery = new GraphQLObjectType({
     fetchInstructorDataHydration,
     fetchStudentDataHydration,
     fetchRoomHeartbeats,
+    fetchGamesList,
   },
 });
 

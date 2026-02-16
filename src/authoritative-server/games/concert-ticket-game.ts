@@ -57,8 +57,11 @@ export class ConcertTicketSalesStateHandler extends AbstractGameData {
     BEST_STRATEGY_FOUND_KEY,
   ];
 
-  constructor(discussionStages: DiscussionStage[]) {
+  constructor(discussionStages: DiscussionStage[], skipStages?: boolean) {
     super();
+    if (skipStages) {
+      return;
+    }
     const introDiscussionStage = discussionStages.find(
       (s) => s.clientId === introductionDiscussionStage
     );

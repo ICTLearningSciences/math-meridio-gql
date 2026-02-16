@@ -40,8 +40,11 @@ export class BasketballStateHandler extends AbstractGameData {
     "best_strategy_found",
   ];
 
-  constructor(discussionStages: DiscussionStage[]) {
+  constructor(discussionStages: DiscussionStage[], skipStages?: boolean) {
     super();
+    if (skipStages) {
+      return;
+    }
     const introDiscussionStage = discussionStages.find(
       (s) => s.clientId === introductionDiscussionStage
     );
