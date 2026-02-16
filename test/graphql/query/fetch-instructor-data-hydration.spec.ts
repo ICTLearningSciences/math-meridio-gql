@@ -47,6 +47,10 @@ const fetchInstructorDataHydrationQuery = `
             userId
             status
         }
+        gameList {
+            id
+            name
+        }
     }
   }
 `;
@@ -154,7 +158,7 @@ describe("fetch instructor data hydration", () => {
       .send({
         query: fetchInstructorDataHydrationQuery,
       });
-
+    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchInstructorDataHydration).to.exist;
 
@@ -196,6 +200,17 @@ describe("fetch instructor data hydration", () => {
     expect(
       response.body.data.fetchInstructorDataHydration.classMemberships
     ).to.have.lengthOf(3);
+
+    // Check gameList
+    expect(
+      response.body.data.fetchInstructorDataHydration.gameList
+    ).to.have.lengthOf(2);
+    const gameIds =
+      response.body.data.fetchInstructorDataHydration.gameList.map(
+        (g: any) => g.id
+      );
+    expect(gameIds).to.include("basketball");
+    expect(gameIds).to.include("concert-ticket-sales");
   });
 
   it(`includes archived classes in results`, async () => {

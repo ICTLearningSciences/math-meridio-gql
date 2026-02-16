@@ -10,7 +10,6 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
-import { player1Id } from "../../fixtures/mongodb/data";
 
 describe("fetch static games list", () => {
   let app: Express;

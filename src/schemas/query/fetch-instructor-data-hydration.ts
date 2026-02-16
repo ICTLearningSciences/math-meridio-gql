@@ -13,6 +13,9 @@ import ClassMembershipModel, {
 } from "../models/classes/ClassMembership";
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel, { Player } from "../models/Player";
+import { ConcertTicketSalesStateHandler } from "authoritative-server/games/concert-ticket-game";
+import { BasketballStateHandler } from "authoritative-server/games/basketball-game";
+import { GameType, StaticGame } from "./fetch-games-list";
 
 const InstructorDataHydrationType = new GraphQLObjectType({
   name: "InstructorDataHydration",
@@ -21,6 +24,7 @@ const InstructorDataHydrationType = new GraphQLObjectType({
     rooms: { type: new GraphQLList(RoomType) },
     students: { type: new GraphQLList(PlayerType) },
     classMemberships: { type: new GraphQLList(ClassMembershipType) },
+    gameList: { type: new GraphQLList(GameType) },
   }),
 });
 
@@ -29,6 +33,7 @@ interface InstructorDataHydration {
   rooms: Room[];
   students: Player[];
   classMemberships: ClassMembership[];
+  gameList: StaticGame[];
 }
 
 export default {
@@ -73,11 +78,22 @@ export default {
         _id: { $in: studentIds },
       });
 
+      const basketBallGame = new BasketballStateHandler([], true);
+      const concertTicketSalesGame = new ConcertTicketSalesStateHandler(
+        [],
+        true
+      );
+      const games = [basketBallGame, concertTicketSalesGame];
+      const gameList = games.map((game) => ({
+        id: game.id,
+        name: game.name,
+      }));
       return {
         classes,
         rooms,
         students,
         classMemberships,
+        gameList,
       };
     } catch (error) {
       throw new Error(error);

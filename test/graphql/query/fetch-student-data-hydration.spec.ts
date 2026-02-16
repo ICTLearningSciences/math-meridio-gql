@@ -47,6 +47,10 @@ const fetchStudentDataHydrationQuery = `
             userId
             status
         }
+        gameList {
+            id
+            name
+        }
     }
   }
 `;
@@ -211,6 +215,16 @@ describe("fetch student data hydration", () => {
     );
     expect(class1Memberships).to.have.lengthOf(2); // student1, student2
     expect(class2Memberships).to.have.lengthOf(3); // student1, student2 (blocked), student3
+
+    // Check gameList
+    expect(
+      response.body.data.fetchStudentDataHydration.gameList
+    ).to.have.lengthOf(2);
+    const gameIds = response.body.data.fetchStudentDataHydration.gameList.map(
+      (g: any) => g.id
+    );
+    expect(gameIds).to.include("basketball");
+    expect(gameIds).to.include("concert-ticket-sales");
   });
 
   it(`excludes classes where student is not a MEMBER`, async () => {
