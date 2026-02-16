@@ -13,8 +13,8 @@ import ClassMembershipModel, {
 } from "../models/classes/ClassMembership";
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel, { Player } from "../models/Player";
-import { ConcertTicketSalesStateHandler } from "authoritative-server/games/concert-ticket-game";
-import { BasketballStateHandler } from "authoritative-server/games/basketball-game";
+import { ConcertTicketSalesStateHandler } from "../../authoritative-server/games/concert-ticket-game";
+import { BasketballStateHandler } from "../../authoritative-server/games/basketball-game";
 import { GameType, StaticGame } from "./fetch-games-list";
 
 const InstructorDataHydrationType = new GraphQLObjectType({

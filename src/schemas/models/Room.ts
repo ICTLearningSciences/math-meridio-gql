@@ -14,6 +14,7 @@ import {
   GraphQLID,
   GraphQLInputObjectType,
   GraphQLInt,
+  GraphQLNonNull,
 } from "graphql";
 import {
   PaginatedResolveResult,
@@ -186,6 +187,25 @@ export const GlobalStateDataType = new GraphQLObjectType({
   }),
 });
 
+// gamePhases:
+// WAITING_FOR_SINGLE_PLAYERS_INPUT
+//  - no extra data
+// WAITING_FOR_ALL_PLAYERS_INPUT_FREE_FOR_ALL
+//  - list of players we are waiting for a response from
+// WAITING_FOR_ALL_PLAYERS_IN_ORDER
+//  - next player we need a response from
+// PROCESSING_REQUEST
+//  - no extra data
+
+export const CurGameStateType = new GraphQLObjectType({
+  name: "CurGameStateType",
+  fields: () => ({
+    curState: { type: GraphQLNonNull(GraphQLString) },
+    freeForAllPlayersResponseLeft: { type: GraphQLList(GraphQLString) },
+    orderedResponseNextPlayer: { type: GraphQLString },
+  }),
+});
+
 export const GameDataType = new GraphQLObjectType({
   name: "GameDataType",
   fields: () => ({
@@ -196,6 +216,7 @@ export const GameDataType = new GraphQLObjectType({
         return PlayerModel.find({ _id: { $in: game.players } });
       },
     },
+    curGameState: { type: CurGameStateType },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
     globalStateData: { type: GlobalStateDataType },

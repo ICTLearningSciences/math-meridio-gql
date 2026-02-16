@@ -6,9 +6,9 @@ The full terms of this copyright and license should always be found in the root 
 */
 import { GraphQLObjectType, GraphQLString } from "graphql";
 import { Room, RoomType } from "../models/Room";
-import RoomModel from "schemas/models/Room";
-import PlayerModel from "schemas/models/Player";
-import { addPlayerToRoom } from "authoritative-server/authority/step-process-pure-functions";
+import RoomModel from "../models/Room";
+import PlayerModel from "../models/Player";
+import { addPlayerToRoom } from "../../authoritative-server/authority/step-process-pure-functions";
 
 export const joinGameRoom = {
   type: RoomType,

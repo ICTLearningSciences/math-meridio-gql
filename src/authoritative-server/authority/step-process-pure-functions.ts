@@ -55,7 +55,7 @@ import {
   WAIT_FOR_SIMULATION_STAGE_CLIENT_ID,
 } from "../../authoritative-server/games/game-helpers";
 import RoomModel from "../../schemas/models/Room";
-import { PlayerDocument } from "schemas/models/Player";
+import { PlayerDocument } from "../../schemas/models/Player";
 
 export enum RoomModificationEnum {
   ADD_MESSAGE = "ADD_MESSAGE",

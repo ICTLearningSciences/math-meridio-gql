@@ -14,8 +14,8 @@ import ClassMembershipModel, {
 } from "../models/classes/ClassMembership";
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel, { Player } from "../models/Player";
-import { BasketballStateHandler } from "authoritative-server/games/basketball-game";
-import { ConcertTicketSalesStateHandler } from "authoritative-server/games/concert-ticket-game";
+import { BasketballStateHandler } from "../../authoritative-server/games/basketball-game";
+import { ConcertTicketSalesStateHandler } from "../../authoritative-server/games/concert-ticket-game";
 import { StaticGame } from "./fetch-games-list";
 import { GameType } from "./fetch-games-list";
 

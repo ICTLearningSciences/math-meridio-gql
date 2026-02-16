@@ -24,7 +24,7 @@ import {
 } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { AiServiceNames } from "../../../authoritative-server/llm-request/types";
 import mongoose from "mongoose";
-import { getCurStageAndStep } from "authoritative-server/authority/user-action-pure-functions";
+import { getCurStageAndStep } from "../../../authoritative-server/authority/user-action-pure-functions";
 /**
  * Initializes the new game room with the first stage and step.
  */

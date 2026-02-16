@@ -21,7 +21,7 @@ import { processStepsUntilNextRequestUserInputStep } from "../../authoritative-s
 import { AiServiceNames } from "../../authoritative-server/llm-request/types";
 import DiscussionStageModel from "../../schemas/models/DiscussionStage/DiscussionStage";
 import { getCurStageAndStep } from "../../authoritative-server/authority/user-action-pure-functions";
-import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "authoritative-server/games/game-helpers";
+import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../authoritative-server/games/game-helpers";
 
 export const pingGameRoomProcess = {
   type: RoomType,

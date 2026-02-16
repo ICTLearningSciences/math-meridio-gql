@@ -12,8 +12,8 @@ import {
   GraphQLObjectType,
 } from "graphql";
 import RoomModel, { Room, RoomType } from "../models/Room";
-import { BasketballStateHandler } from "authoritative-server/games/basketball-game";
-import { ConcertTicketSalesStateHandler } from "authoritative-server/games/concert-ticket-game";
+import { BasketballStateHandler } from "../../authoritative-server/games/basketball-game";
+import { ConcertTicketSalesStateHandler } from "../../authoritative-server/games/concert-ticket-game";
 
 export const GameType = new GraphQLObjectType({
   name: "GameType",

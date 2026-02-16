@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { getGameById } from "authoritative-server/games/game-helpers";
+import { getGameById } from "../../authoritative-server/games/game-helpers";
 import {
   CurrentStage,
   DiscussionStage,
@@ -15,7 +15,7 @@ import {
   IStage,
 } from "../../schemas/models/DiscussionStage/types";
 import { GameData } from "../../schemas/models/Room";
-import { SimulationStage } from "authoritative-server/llm-request/types";
+import { SimulationStage } from "../../authoritative-server/llm-request/types";
 
 export function getCurStageAndStep(
   gameData: GameData,
