@@ -15,6 +15,7 @@ import {
   IStage,
   CollectedDiscussionData,
   CurrentStage,
+  DiscussionStage,
 } from "../../schemas/models/DiscussionStage/types";
 import { getFirstStepId, replaceStoredDataInString } from "./helpers/helpers";
 import { evaluateCondition, getGameDataCopy } from "./state-modifier-helpers";
@@ -103,6 +104,7 @@ export function syncGlobalGameStateKeysToPlayers(
  * Conditionals can only jump to steps within the same stage.
  */
 export function getNextStepFromConditionalStage(
+  curStage: CurrentStage<IStage>,
   step: ConditionalActivityStep,
   gameData: GameData
 ): string {
@@ -164,7 +166,26 @@ export function getNextStepFromConditionalStage(
       }
     }
   }
-  throw new Error("Failed to find next step id for ");
+  // No conditions met, get next ordered step
+  const flowList = (curStage.stage as DiscussionStage).flowsList.find((flow) =>
+    flow.steps.find((s) => s.stepId === step.stepId)
+  );
+  if (!flowList) {
+    throw new Error(
+      `Failed to find flow list in conditional step for stage: ${curStage.stage.clientId}`
+    );
+  }
+  const curStepIdx = flowList.steps.findIndex((s) => s.stepId === step.stepId);
+  if (curStepIdx === -1) {
+    throw new Error(
+      `Failed to find current step index in conditional step to go to next step: ${curStage.stage.clientId}`
+    );
+  }
+  const nextStepIdx = curStepIdx + 1;
+  if (nextStepIdx >= flowList.steps.length) {
+    throw new Error(`Conditional step is last in flow, no next step to go to`);
+  }
+  return flowList.steps[nextStepIdx].stepId;
 }
 
 export async function updateRoomStageAndOrStep(
@@ -222,6 +243,7 @@ export async function updateRoomWithNextStep(
     // Handle conditional step
     if (curStep.stepType === DiscussionStageStepType.CONDITIONAL) {
       const nextStep = getNextStepFromConditionalStage(
+        curStage,
         curStep as ConditionalActivityStep,
         room.gameData
       );
