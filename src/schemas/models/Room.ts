@@ -12,6 +12,9 @@ import {
   GraphQLObjectType,
   GraphQLList,
   GraphQLID,
+  GraphQLInputObjectType,
+  GraphQLInt,
+  GraphQLNonNull,
 } from "graphql";
 import {
   PaginatedResolveResult,
@@ -21,11 +24,12 @@ import {
 } from "./Paginatation";
 import PlayerModel, { PlayerType } from "./Player";
 import GraphQLScalarType from "../types/anything-scalar-type";
+import { Class } from "./classes/Class";
 
 /** mongoose */
 
-export interface ChatMessage extends Document {
-  id: string;
+export interface ChatMessage {
+  messageId: string;
   message: string;
   sender: string;
   senderId: string;
@@ -34,51 +38,62 @@ export interface ChatMessage extends Document {
   disableUserInput: boolean;
   mcqChoices: string[];
   sessionId: string;
+  fromStepId?: string;
 }
 
-export interface GameStateData extends Document {
-  key: string;
-  value: any; // eslint-disable-line  @typescript-eslint/no-explicit-any
-}
+export interface ChatMessageDocument extends Document, ChatMessage {}
 
-export interface GlobalStateData extends Document {
+export type GameStateData = Record<string, any>;
+export type DiscussionData = Record<string, any>;
+
+export interface GlobalStateData {
   curStageId: string;
   curStepId: string;
   roomOwnerId: string;
-  gameStateData: GameStateData[];
+  discussionData: DiscussionData;
+  gameStateData: GameStateData;
 }
 
-export interface PlayerStateData extends Document {
-  player: string;
-  animation: string;
-  gameStateData: GameStateData[];
-}
+export interface GlobalStateDataDocument extends GlobalStateData, Document {}
 
-export interface GameData extends Document {
+export interface GameData {
   gameId: string;
   players: string[];
   chat: ChatMessage[];
   globalStateData: GlobalStateData;
   persistTruthGlobalStateData: string[];
-  playerStateData: PlayerStateData[];
+  playersGameStateData: Record<string, GameStateData>; // keyed by player ID
 }
 
-export interface Room extends Document {
+export interface GameDataDocument extends GameData, Document {}
+
+export enum RoomPhase {
+  PROCESSING = "PROCESSING",
+  NO_ACTIVE_PROCESSING = "NO_ACTIVE_PROCESSING",
+}
+
+export interface Room {
+  _id: string;
+  classId?: Class["_id"];
   name: string;
   gameData: GameData;
+  phase: RoomPhase;
+  versionNumber: number;
   deletedRoom: boolean;
 }
 
-export interface RoomModel extends Model<Room> {
+export interface RoomDocument extends Omit<Room, "_id">, Document {}
+
+export interface RoomModel extends Model<RoomDocument> {
   paginate(
-    query?: PaginateQuery<Room>,
+    query?: PaginateQuery<RoomDocument>,
     options?: PaginateOptions
-  ): Promise<PaginatedResolveResult<Room>>;
+  ): Promise<PaginatedResolveResult<RoomDocument>>;
 }
 
 export const ChatMessageSchema = new Schema<ChatMessage>(
   {
-    id: { type: String },
+    messageId: { type: String },
     message: { type: String },
     sender: { type: String },
     senderId: { type: String },
@@ -87,69 +102,68 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
     displayType: { type: String },
     disableUserInput: { type: Boolean },
     mcqChoices: [{ type: String }],
+    fromStepId: { type: String },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
-
-export const GameStateSchema = new Schema<GameStateData>(
-  {
-    key: { type: String },
-    value: { type: Schema.Types.Mixed },
-  },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
-);
-
-export const GlobalStateSchema = new Schema<GlobalStateData>(
+export const GlobalStateSchema = new Schema<GlobalStateDataDocument>(
   {
     curStageId: { type: String },
     curStepId: { type: String },
     roomOwnerId: { type: String },
-    gameStateData: [{ type: GameStateSchema }],
+    discussionData: { type: Schema.Types.Mixed, default: {} },
+    gameStateData: { type: Schema.Types.Mixed, default: {} },
   },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
-);
-
-export const PlayerStateSchema = new Schema<PlayerStateData>(
   {
-    player: { type: String },
-    animation: { type: String },
-    gameStateData: [{ type: GameStateSchema }],
-  },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
+    timestamps: true,
+    collation: { locale: "en", strength: 2 },
+    minimize: false, // Preserve empty objects in Mixed fields
+  }
 );
 
-export const GameSchema = new Schema<GameData>(
+export const GameSchema = new Schema<GameDataDocument>(
   {
     gameId: { type: String },
     players: [{ type: String }],
     chat: [{ type: ChatMessageSchema }],
     globalStateData: { type: GlobalStateSchema },
     persistTruthGlobalStateData: [{ type: String }],
-    playerStateData: [{ type: PlayerStateSchema }],
+    playersGameStateData: { type: Schema.Types.Mixed, default: {} },
   },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
+  {
+    timestamps: true,
+    collation: { locale: "en", strength: 2 },
+    minimize: false, // Preserve empty objects in Mixed fields
+  }
 );
 
-export const RoomSchema = new Schema<Room, RoomModel>(
+export const RoomSchema = new Schema<RoomDocument, RoomModel>(
   {
+    classId: { type: Schema.Types.ObjectId, ref: "Class" },
     name: { type: String },
     gameData: { type: GameSchema },
+    phase: {
+      type: String,
+      enum: RoomPhase,
+      default: RoomPhase.NO_ACTIVE_PROCESSING,
+    },
     deletedRoom: { type: Boolean },
+    versionNumber: { type: Number, default: 1 },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-RoomSchema.index({ _id: -1 });
 pluginPagination(RoomSchema);
 
-export default mongoose.model<Room, RoomModel>("Room", RoomSchema);
+export default mongoose.model<RoomDocument, RoomModel>("Room", RoomSchema);
 
 /** gql */
 
 export const ChatMessageType = new GraphQLObjectType({
   name: "ChatMessageType",
   fields: () => ({
-    id: { type: GraphQLString },
+    _id: { type: GraphQLID },
+    messageId: { type: GraphQLString },
     message: { type: GraphQLString },
     sender: { type: GraphQLString },
     senderId: { type: GraphQLString },
@@ -158,14 +172,7 @@ export const ChatMessageType = new GraphQLObjectType({
     disableUserInput: { type: GraphQLBoolean },
     mcqChoices: { type: new GraphQLList(GraphQLString) },
     sessionId: { type: GraphQLString },
-  }),
-});
-
-export const GameStateDataType = new GraphQLObjectType({
-  name: "GameStateDataType",
-  fields: () => ({
-    key: { type: GraphQLString },
-    value: { type: GraphQLScalarType },
+    fromStepId: { type: GraphQLString },
   }),
 });
 
@@ -175,16 +182,27 @@ export const GlobalStateDataType = new GraphQLObjectType({
     curStageId: { type: GraphQLString },
     curStepId: { type: GraphQLString },
     roomOwnerId: { type: GraphQLString },
-    gameStateData: { type: new GraphQLList(GameStateDataType) },
+    discussionData: { type: GraphQLScalarType },
+    gameStateData: { type: GraphQLScalarType },
   }),
 });
 
-export const PlayerStateDataType = new GraphQLObjectType({
-  name: "PlayerStateDataType",
+// gamePhases:
+// WAITING_FOR_SINGLE_PLAYERS_INPUT
+//  - no extra data
+// WAITING_FOR_ALL_PLAYERS_INPUT_FREE_FOR_ALL
+//  - list of players we are waiting for a response from
+// WAITING_FOR_ALL_PLAYERS_IN_ORDER
+//  - next player we need a response from
+// PROCESSING_REQUEST
+//  - no extra data
+
+export const CurGameStateType = new GraphQLObjectType({
+  name: "CurGameStateType",
   fields: () => ({
-    player: { type: GraphQLString },
-    animation: { type: GraphQLString },
-    gameStateData: { type: new GraphQLList(GameStateDataType) },
+    curState: { type: GraphQLNonNull(GraphQLString) },
+    freeForAllPlayersResponseLeft: { type: GraphQLList(GraphQLString) },
+    orderedResponseNextPlayer: { type: GraphQLString },
   }),
 });
 
@@ -194,14 +212,15 @@ export const GameDataType = new GraphQLObjectType({
     gameId: { type: GraphQLString },
     players: {
       type: new GraphQLList(PlayerType),
-      resolve: function (game: GameData) {
-        return PlayerModel.find({ clientId: { $in: game.players } });
+      resolve: function (game: GameDataDocument) {
+        return PlayerModel.find({ _id: { $in: game.players } });
       },
     },
+    curGameState: { type: CurGameStateType },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
     globalStateData: { type: GlobalStateDataType },
-    playerStateData: { type: new GraphQLList(PlayerStateDataType) },
+    playersGameStateData: { type: GraphQLScalarType }, // keyed by player ID
   }),
 });
 
@@ -209,8 +228,61 @@ export const RoomType = new GraphQLObjectType({
   name: "RoomType",
   fields: () => ({
     _id: { type: GraphQLID },
+    classId: { type: GraphQLID },
     name: { type: GraphQLString },
     gameData: { type: GameDataType },
+    phase: { type: GraphQLString },
     deletedRoom: { type: GraphQLBoolean },
+    versionNumber: { type: GraphQLInt },
+  }),
+});
+
+export const GlobalStateDataInputType = new GraphQLInputObjectType({
+  name: "GlobalStateDataInputType",
+  fields: () => ({
+    curStageId: { type: GraphQLString },
+    curStepId: { type: GraphQLString },
+    roomOwnerId: { type: GraphQLString },
+    discussionData: { type: GraphQLScalarType },
+    gameStateData: { type: GraphQLScalarType }, // Changed from List to Record (JSON scalar)
+  }),
+});
+
+export const ChatMessageInputType = new GraphQLInputObjectType({
+  name: "ChatMessageInput",
+  fields: () => ({
+    messageId: { type: GraphQLString },
+    message: { type: GraphQLString },
+    sender: { type: GraphQLString },
+    senderId: { type: GraphQLString },
+    senderName: { type: GraphQLString },
+    fromStepId: { type: GraphQLString },
+    sessionId: { type: GraphQLString },
+    displayType: { type: GraphQLString },
+    disableUserInput: { type: GraphQLBoolean },
+    mcqChoices: { type: new GraphQLList(GraphQLString) },
+  }),
+});
+
+export const GameDataInputType = new GraphQLInputObjectType({
+  name: "GameDataInputType",
+  fields: () => ({
+    gameId: { type: GraphQLString },
+    players: { type: new GraphQLList(GraphQLString) },
+    chat: { type: new GraphQLList(ChatMessageInputType) },
+    persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
+    globalStateData: { type: GlobalStateDataInputType },
+    playersGameStateData: { type: GraphQLScalarType }, // keyed by player ID
+  }),
+});
+
+export const RoomDataInputType = new GraphQLInputObjectType({
+  name: "RoomDataInputType",
+  fields: () => ({
+    classId: { type: GraphQLString },
+    name: { type: GraphQLString },
+    gameData: { type: GameDataInputType },
+    deletedRoom: { type: GraphQLBoolean },
+    versionNumber: { type: GraphQLInt },
   }),
 });

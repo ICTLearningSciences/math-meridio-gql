@@ -10,7 +10,37 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import { player1Id, player2Id } from "../../fixtures/mongodb/data";
 
+export const addOrUpdatePlayerMutation = `
+  mutation AddOrUpdatePlayer($playerId: String!, $playerFieldsToUpdate: PlayerInput!) {
+    addOrUpdatePlayer(playerId: $playerId, playerFieldsToUpdate: $playerFieldsToUpdate) {
+      _id
+      name
+      description
+      avatar {
+        id
+      }
+    }
+  }
+`;
+
+export const fetchPlayersQuery = `
+query {
+        fetchPlayers {
+          edges {
+            node {
+              _id
+              name
+              description
+              avatar {
+                id
+              }
+            }
+          }
+        }
+      }
+`;
 describe("update or create player", () => {
   let app: Express;
 
@@ -29,20 +59,10 @@ describe("update or create player", () => {
     const updateResponse = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation AddOrUpdatePlayer($player: PlayerInput!) {
-          addOrUpdatePlayer(player: $player) {
-            clientId
-            name
-            description
-            avatar {
-              id
-            }
-          }
-        }`,
+        query: addOrUpdatePlayerMutation,
         variables: {
-          player: {
-            clientId: "Player 1",
+          playerId: player1Id,
+          playerFieldsToUpdate: {
             name: "Jenny Appleseed",
             avatar: [{ id: "woman_apple_head" }],
             description: "I want an avatar with an apple for a head",
@@ -51,35 +71,20 @@ describe("update or create player", () => {
       });
     expect(updateResponse.status).to.equal(200);
     expect(updateResponse.body.data.addOrUpdatePlayer).to.eql({
-      clientId: "Player 1",
+      _id: player1Id,
       name: "Jenny Appleseed",
       avatar: [{ id: "woman_apple_head" }],
       description: "I want an avatar with an apple for a head",
     });
 
-    const fetchResponse = await request(app)
-      .post("/graphql")
-      .send({
-        query: `query {
-        fetchPlayers {
-          edges {
-            node {
-              clientId
-              name
-              description
-              avatar {
-                id
-              }
-            }
-          }
-        }
-      }`,
-      });
+    const fetchResponse = await request(app).post("/graphql").send({
+      query: fetchPlayersQuery,
+    });
     expect(fetchResponse.status).to.equal(200);
     expect(fetchResponse.body.data.fetchPlayers.edges).to.eql([
       {
         node: {
-          clientId: "Player 1",
+          _id: player1Id,
           name: "Jenny Appleseed",
           avatar: [{ id: "woman_apple_head" }],
           description: "I want an avatar with an apple for a head",
@@ -92,20 +97,10 @@ describe("update or create player", () => {
     const updateResponse = await request(app)
       .post("/graphql")
       .send({
-        query: `
-        mutation AddOrUpdatePlayer($player: PlayerInput!) {
-          addOrUpdatePlayer(player: $player) {
-            clientId
-            name
-            description
-            avatar {
-              id
-            }
-          }
-        }`,
+        query: addOrUpdatePlayerMutation,
         variables: {
-          player: {
-            clientId: "Player 2",
+          playerId: "5f748650f4b3f1b9f2f2f1f9",
+          playerFieldsToUpdate: {
             name: "Jenny Appleseed",
             avatar: [{ id: "woman_apple_head" }],
             description: "I want an avatar with an apple for a head",
@@ -114,35 +109,20 @@ describe("update or create player", () => {
       });
     expect(updateResponse.status).to.equal(200);
     expect(updateResponse.body.data.addOrUpdatePlayer).to.eql({
-      clientId: "Player 2",
+      _id: "5f748650f4b3f1b9f2f2f1f9",
       name: "Jenny Appleseed",
       avatar: [{ id: "woman_apple_head" }],
       description: "I want an avatar with an apple for a head",
     });
 
-    const fetchResponse = await request(app)
-      .post("/graphql")
-      .send({
-        query: `query {
-        fetchPlayers {
-          edges {
-            node {
-              clientId
-              name
-              description
-              avatar {
-                id
-              }
-            }
-          }
-        }
-      }`,
-      });
+    const fetchResponse = await request(app).post("/graphql").send({
+      query: fetchPlayersQuery,
+    });
     expect(fetchResponse.status).to.equal(200);
     expect(fetchResponse.body.data.fetchPlayers.edges).to.eql([
       {
         node: {
-          clientId: "Player 2",
+          _id: "5f748650f4b3f1b9f2f2f1f9",
           name: "Jenny Appleseed",
           description: "I want an avatar with an apple for a head",
           avatar: [{ id: "woman_apple_head" }],
@@ -150,7 +130,7 @@ describe("update or create player", () => {
       },
       {
         node: {
-          clientId: "Player 1",
+          _id: player1Id,
           name: "Jonny Appleseed",
           description: "I want an avatar with an apple for a head",
           avatar: [{ id: "man_apple_head" }],

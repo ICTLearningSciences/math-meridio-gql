@@ -36,8 +36,6 @@ describe("update discussion stage", () => {
   });
 
   it("fails if no authorization passed", async () => {
-    const stagesPre = await DiscussionStageModel.find();
-    expect(stagesPre.length).to.equal(1);
     const flowsListData: FlowItem[] = [
       {
         clientId: "67890",
@@ -67,6 +65,7 @@ describe("update discussion stage", () => {
               },
             ],
             lastStep: false,
+            requireAllUserInputs: false,
           },
           {
             stepId: "789",
@@ -111,8 +110,6 @@ describe("update discussion stage", () => {
   });
 
   it("fails if incorrect passed", async () => {
-    const stagesPre = await DiscussionStageModel.find();
-    expect(stagesPre.length).to.equal(1);
     const flowsListData: FlowItem[] = [
       {
         clientId: "67890",
@@ -142,6 +139,7 @@ describe("update discussion stage", () => {
               },
             ],
             lastStep: false,
+            requireAllUserInputs: false,
           },
           {
             stepId: "789",
@@ -188,7 +186,7 @@ describe("update discussion stage", () => {
 
   it("can create new discussion stage", async () => {
     const stagesPre = await DiscussionStageModel.find();
-    expect(stagesPre.length).to.equal(1);
+    const amountBefore = stagesPre.length;
     const flowsListData: FlowItem[] = [
       {
         clientId: "67890",
@@ -218,6 +216,7 @@ describe("update discussion stage", () => {
               },
             ],
             lastStep: false,
+            requireAllUserInputs: false,
           },
           {
             stepId: "789",
@@ -274,7 +273,7 @@ describe("update discussion stage", () => {
       discussionStage
     );
     const stagesPost = await DiscussionStageModel.find();
-    expect(stagesPost.length).to.equal(2);
+    expect(amountBefore + 1).to.equal(stagesPost.length);
     const savedStage = stagesPost.find(
       (a) => a.clientId === discussionStage.clientId
     );

@@ -10,6 +10,7 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import { nonExistentId, player1Id } from "../../fixtures/mongodb/data";
 
 describe("fetch player", () => {
   let app: Express;
@@ -32,7 +33,7 @@ describe("fetch player", () => {
         query: `
         query FetchPlayer($id: String!) {
           fetchPlayer(id: $id) {
-            clientId
+            _id
             name
             description
             avatar {
@@ -41,12 +42,12 @@ describe("fetch player", () => {
           }
         }`,
         variables: {
-          id: "Player 1",
+          id: player1Id,
         },
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchPlayer).to.eql({
-      clientId: "Player 1",
+      _id: player1Id,
       name: "Jonny Appleseed",
       description: "I want an avatar with an apple for a head",
       avatar: [{ id: "man_apple_head" }],
@@ -69,7 +70,7 @@ describe("fetch player", () => {
           }
         }`,
         variables: {
-          id: "Player 2",
+          id: nonExistentId,
         },
       });
     expect(response.status).to.equal(200);

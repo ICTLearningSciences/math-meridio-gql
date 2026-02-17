@@ -4,51 +4,54 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-
-import { GraphQLID, GraphQLString, GraphQLObjectType } from "graphql";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import { GraphQLObjectType, GraphQLString } from "graphql";
+import { Room, RoomType } from "../models/Room";
+import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
 
-export const joinRoom = {
+export const leaveGameRoom = {
   type: RoomType,
   args: {
-    playerId: { type: GraphQLString },
-    roomId: { type: GraphQLID },
+    roomId: { type: GraphQLString },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
-      playerId: string;
       roomId: string;
+    },
+    context: {
+      userId: string;
     }
   ): Promise<Room> => {
-    const room = await RoomModel.findOne({
-      _id: args.roomId,
+    const userId = context.userId;
+    const { roomId } = args;
+
+    const player = await PlayerModel.findOne({ _id: userId });
+    if (!player) {
+      throw new Error("User Not Found");
+    }
+
+    const _room = await RoomModel.findOne({
+      _id: roomId,
       deletedRoom: false,
     });
-    if (!room) throw new Error("Invalid room");
-    const player = await PlayerModel.findOne({ clientId: args.playerId });
-    if (!player) throw new Error("Invalid player");
-    if (room.gameData.players.includes(args.playerId))
-      throw new Error("Already in room");
-    return await RoomModel.findOneAndUpdate(
-      {
-        _id: args.roomId,
-        deletedRoom: false,
-      },
-      {
-        $push: {
-          "gameData.players": args.playerId,
-          "gameData.playerStateData": {
-            player: args.playerId,
-            animation: "",
-            gameStateData: room.gameData.globalStateData.gameStateData,
-          },
-        },
-      },
+    if (!_room) {
+      throw new Error("Room not found");
+    }
+
+    if (!_room.gameData.players.includes(player._id)) {
+      console.log("player not in room");
+      return _room;
+    }
+
+    const roomWithoutUser = await RoomModel.findOneAndUpdate(
+      { _id: _room._id },
+      { $pull: { "gameData.players": player._id.toString() } },
       { new: true }
     );
+
+    return roomWithoutUser;
   },
 };
 
-export default joinRoom;
+export default leaveGameRoom;

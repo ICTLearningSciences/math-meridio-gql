@@ -7,6 +7,11 @@ The full terms of this copyright and license should always be found in the root 
 
 export interface IStage {
   stageType: "discussion" | "simulation";
+  clientId: string;
+}
+
+export function isDiscussionStage(stage: IStage): stage is DiscussionStage {
+  return stage.stageType === "discussion";
 }
 
 export interface FlowItem {
@@ -29,11 +34,18 @@ export interface DiscussionStage extends IStage {
   flowsList: FlowItem[];
 }
 
+export type DiscussionStageStep =
+  | SystemMessageStageStep
+  | RequestUserInputStageStep
+  | PromptStageStep
+  | ConditionalActivityStep;
+
 export enum DiscussionStageStepType {
   SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
   REQUEST_USER_INPUT = "REQUEST_USER_INPUT",
   PROMPT = "PROMPT",
   CONDITIONAL = "CONDITIONAL",
+  NONE = "NONE",
 }
 
 export interface StageBuilderStep {
@@ -63,13 +75,7 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
   saveResponseVariableName: string;
   disableFreeInput: boolean;
   predefinedResponses: PredefinedResponse[];
-}
-
-//Prompt
-export enum JsonResponseDataType {
-  STRING = "string",
-  OBJECT = "object",
-  ARRAY = "array",
+  requireAllUserInputs: boolean;
 }
 
 export interface PromptStageStep extends StageBuilderStep {
@@ -112,3 +118,18 @@ export interface ConditionalActivityStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.CONDITIONAL;
   conditionals: LogicStepConditional[];
 }
+
+export type CollectedDiscussionData = Record<
+  string,
+  string | number | boolean | string[]
+>;
+
+export interface CurrentStage<T extends IStage> {
+  id: string;
+  stage: T;
+  action?: () => void;
+  beforeStart?: () => void;
+  getNextStage: (collectedData: CollectedDiscussionData) => IStage;
+}
+
+export type DiscussionCurrentStage = CurrentStage<DiscussionStage>;

@@ -10,6 +10,12 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import {
+  nonExistentId,
+  player1Id,
+  room1Id,
+  room3Id,
+} from "../../fixtures/mongodb/data";
 
 describe("fetch rooms", () => {
   let app: Express;
@@ -37,7 +43,7 @@ describe("fetch rooms", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -45,7 +51,7 @@ describe("fetch rooms", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId
@@ -57,19 +63,9 @@ describe("fetch rooms", () => {
               globalStateData {
                 curStageId
                 curStepId
-                gameStateData {
-                  key
-                  value
-                }
+                gameStateData
               }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
+              playersGameStateData
             }
             deletedRoom
           }
@@ -81,13 +77,13 @@ describe("fetch rooms", () => {
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRooms).to.eql([
       {
-        _id: "5f748650f4b3f1b9f1f1f1f1",
+        _id: room1Id,
         name: "Basketball Room 1",
         gameData: {
           gameId: "basketball",
           players: [
             {
-              clientId: "Player 1",
+              _id: player1Id,
               name: "Jonny Appleseed",
               description: "I want an avatar with an apple for a head",
               avatar: [{ id: "man_apple_head" }],
@@ -97,27 +93,33 @@ describe("fetch rooms", () => {
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            gameStateData: [
-              {
-                key: "Global variable 1",
-                value: "Global variable 1 value",
-              },
-            ],
-          },
-          playerStateData: [
-            {
-              player: "Player 1",
-              animation: "",
-              gameStateData: [
-                {
-                  key: "Player variable 1",
-                  value: "Player variable 1 value",
-                },
-              ],
+            gameStateData: {
+              "Global variable 1": "Global variable 1 value",
             },
-          ],
+          },
+          playersGameStateData: {
+            [player1Id]: {
+              "Player variable 1": "Player variable 1 value",
+            },
+          },
         },
         deletedRoom: false,
+      },
+      {
+        _id: room3Id,
+        deletedRoom: false,
+        gameData: {
+          chat: [],
+          gameId: "basketball",
+          globalStateData: {
+            curStageId: "Stage 1",
+            curStepId: "Step 1",
+            gameStateData: {},
+          },
+          playersGameStateData: {},
+          players: [],
+        },
+        name: "Basketball Room 3",
       },
     ]);
   });
@@ -134,7 +136,7 @@ describe("fetch rooms", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -142,7 +144,7 @@ describe("fetch rooms", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId
@@ -154,19 +156,9 @@ describe("fetch rooms", () => {
               globalStateData {
                 curStageId
                 curStepId
-                gameStateData {
-                  key
-                  value
-                }
+                gameStateData
               }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
+              playersGameStateData
             }
             deletedRoom
           }
@@ -177,13 +169,13 @@ describe("fetch rooms", () => {
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRooms).to.eql([
       {
-        _id: "5f748650f4b3f1b9f1f1f1f1",
+        _id: room1Id,
         name: "Basketball Room 1",
         gameData: {
           gameId: "basketball",
           players: [
             {
-              clientId: "Player 1",
+              _id: player1Id,
               name: "Jonny Appleseed",
               description: "I want an avatar with an apple for a head",
               avatar: [{ id: "man_apple_head" }],
@@ -193,27 +185,33 @@ describe("fetch rooms", () => {
           globalStateData: {
             curStageId: "Stage 1",
             curStepId: "Step 1",
-            gameStateData: [
-              {
-                key: "Global variable 1",
-                value: "Global variable 1 value",
-              },
-            ],
-          },
-          playerStateData: [
-            {
-              player: "Player 1",
-              animation: "",
-              gameStateData: [
-                {
-                  key: "Player variable 1",
-                  value: "Player variable 1 value",
-                },
-              ],
+            gameStateData: {
+              "Global variable 1": "Global variable 1 value",
             },
-          ],
+          },
+          playersGameStateData: {
+            [player1Id]: {
+              "Player variable 1": "Player variable 1 value",
+            },
+          },
         },
         deletedRoom: false,
+      },
+      {
+        _id: room3Id,
+        deletedRoom: false,
+        gameData: {
+          chat: [],
+          gameId: "basketball",
+          globalStateData: {
+            curStageId: "Stage 1",
+            curStepId: "Step 1",
+            gameStateData: {},
+          },
+          playersGameStateData: {},
+          players: [],
+        },
+        name: "Basketball Room 3",
       },
     ]);
   });
@@ -230,7 +228,7 @@ describe("fetch rooms", () => {
             gameData {
               gameId
               players {
-                clientId
+                _id
                 name
                 description
                 avatar {
@@ -238,7 +236,7 @@ describe("fetch rooms", () => {
                 }
               }
               chat {
-                id
+                messageId
                 message
                 sender
                 senderId
@@ -250,25 +248,15 @@ describe("fetch rooms", () => {
               globalStateData {
                 curStageId
                 curStepId
-                gameStateData {
-                  key
-                  value
-                }
+                gameStateData
               }
-              playerStateData {
-                player
-                animation
-                gameStateData {
-                  key
-                  value
-                }
-              }
+              playersGameStateData
             }
             deletedRoom
           }
         }`,
         variables: {
-          game: "asdf",
+          game: nonExistentId,
           deletedRoom: false,
         },
       });

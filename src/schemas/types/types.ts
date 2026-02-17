@@ -16,3 +16,80 @@ export enum PromptOutputDataType {
   JSON = "JSON",
   TEXT = "TEXT",
 }
+
+export enum UserRole {
+  USER = "USER",
+  ADMIN = "ADMIN",
+}
+
+export const fullRoomData = `
+      _id
+      name
+      classId
+      gameData {
+        gameId
+        players {
+          _id
+        }
+        chat {
+          message
+        }
+        persistTruthGlobalStateData
+        playersGameStateData
+        globalStateData {
+          curStageId
+          curStepId
+          roomOwnerId
+          discussionData
+          gameStateData
+        }
+      }
+      deletedRoom`;
+
+export const createNewGameRoomMutation = `
+  mutation CreateNewGameRoom($gameId: String!, $classId: String) {
+    createNewGameRoom(gameId: $gameId, classId: $classId) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const sendMessageToGameRoomMutation = `
+  mutation SendMessageToGameRoom($roomId: ID!, $message: String!, $sessionId: String!) {
+    sendMessageToGameRoom(roomId: $roomId, message: $message, sessionId: $sessionId) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const pingGameRoomProcessMutation = `
+  mutation PingGameRoomProcess($roomId: String!, $sessionId: String!) {
+    pingGameRoomProcess(roomId: $roomId, sessionId: $sessionId) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const joinGameRoomMutation = `
+  mutation JoinGameRoom($roomId: String!) {
+    joinGameRoom(roomId: $roomId) {
+       ${fullRoomData}
+    }
+  }
+`;
+
+export const leaveGameRoomMutation = `
+  mutation LeaveGameRoom($roomId: String!) {
+    leaveGameRoom(roomId: $roomId) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const viewGameRoomSimulationMutation = `
+  mutation ViewGameRoomSimulation($roomId: String!) {
+    viewGameRoomSimulation(roomId: $roomId) {
+       ${fullRoomData}
+    }
+  }
+`;

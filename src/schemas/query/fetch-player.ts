@@ -17,7 +17,7 @@ export const fetchPlayer = {
     _root: GraphQLObjectType,
     args: { id: string }
   ): Promise<Player> => {
-    return await PlayerModel.findOne({ clientId: args.id });
+    return await PlayerModel.findOne({ _id: args.id });
   },
 };
 

@@ -19,8 +19,19 @@ import {
   PaginateQuery,
   pluginPagination,
 } from "./Paginatation";
+import { UserRole } from "../types/types";
+import { DateType } from "../types/date";
 
 /** mongoose */
+
+export enum EducationalRole {
+  STUDENT = "STUDENT",
+  INSTRUCTOR = "INSTRUCTOR",
+}
+
+export enum LoginService {
+  GOOGLE = "GOOGLE",
+}
 
 export interface Avatar extends Document {
   type: string;
@@ -30,12 +41,20 @@ export interface Avatar extends Document {
   variants: string[];
 }
 
-export interface Player extends Document {
+export interface Player {
   clientId: string;
   name: string;
   description: string;
   avatar: Avatar[];
+  googleId: string;
+  email: string;
+  userRole: UserRole;
+  lastLoginAt: Date;
+  loginService: LoginService;
+  educationalRole: EducationalRole;
 }
+
+export interface PlayerDocument extends Document, Player {}
 
 export const AvatarSchema = new Schema<Avatar>(
   {
@@ -48,27 +67,47 @@ export const AvatarSchema = new Schema<Avatar>(
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-export const PlayerSchema = new Schema<Player, PlayerModel>(
+export const PlayerSchema = new Schema<PlayerDocument, PlayerModel>(
   {
-    clientId: { type: String, unique: true },
+    clientId: { type: String },
     name: { type: String },
     description: { type: String },
     avatar: { type: [AvatarSchema] },
+    googleId: { type: String, unique: true },
+    email: { type: String },
+    userRole: {
+      type: String,
+      enum: [UserRole.USER, UserRole.ADMIN],
+      default: UserRole.USER,
+    },
+    lastLoginAt: { type: Date },
+    loginService: {
+      type: String,
+      enum: [LoginService.GOOGLE],
+      default: LoginService.GOOGLE,
+    },
+    educationalRole: {
+      type: String,
+      enum: [EducationalRole.STUDENT, EducationalRole.INSTRUCTOR],
+      default: EducationalRole.STUDENT,
+    },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-export interface PlayerModel extends Model<Player> {
+export interface PlayerModel extends Model<PlayerDocument> {
   paginate(
-    query?: PaginateQuery<Player>,
+    query?: PaginateQuery<PlayerDocument>,
     options?: PaginateOptions
-  ): Promise<PaginatedResolveResult<Player>>;
+  ): Promise<PaginatedResolveResult<PlayerDocument>>;
 }
 
-PlayerSchema.index({ _id: -1 });
 pluginPagination(PlayerSchema);
 
-export default mongoose.model<Player, PlayerModel>("Player", PlayerSchema);
+export default mongoose.model<PlayerDocument, PlayerModel>(
+  "Player",
+  PlayerSchema
+);
 
 /** gql */
 
@@ -91,5 +130,23 @@ export const PlayerType = new GraphQLObjectType({
     name: { type: GraphQLString },
     description: { type: GraphQLString },
     avatar: { type: new GraphQLList(AvatarType) },
+    googleId: { type: GraphQLString },
+    email: { type: GraphQLString },
+    userRole: {
+      type: GraphQLString,
+      enum: [UserRole.USER, UserRole.ADMIN],
+      default: UserRole.USER,
+    },
+    lastLoginAt: { type: DateType },
+    loginService: {
+      type: GraphQLString,
+      enum: [LoginService.GOOGLE],
+      default: LoginService.GOOGLE,
+    },
+    educationalRole: {
+      type: GraphQLString,
+      enum: [EducationalRole.STUDENT, EducationalRole.INSTRUCTOR],
+      default: EducationalRole.STUDENT,
+    },
   }),
 });

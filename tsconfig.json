@@ -15,7 +15,8 @@
       "test/*": ["test/*"]
     },
     "typeRoots": ["node_modules/@types", "src/types"],
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules", "test"]

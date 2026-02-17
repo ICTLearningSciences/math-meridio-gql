@@ -10,6 +10,7 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
+import { room1Id, room2Id } from "../../fixtures/mongodb/data";
 
 describe("delete room", () => {
   let app: Express;
@@ -37,12 +38,12 @@ describe("delete room", () => {
           }
         }`,
         variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f1",
+          roomId: room1Id,
         },
       });
     expect(response1.status).to.equal(200);
     expect(response1.body.data.deleteRoom).to.eql({
-      _id: "5f748650f4b3f1b9f1f1f1f1",
+      _id: room1Id,
       deletedRoom: true,
     });
   });
@@ -60,7 +61,7 @@ describe("delete room", () => {
           }
         }`,
         variables: {
-          roomId: "5f748650f4b3f1b9f1f1f1f2",
+          roomId: room2Id,
         },
       });
 
@@ -81,7 +82,7 @@ describe("delete room", () => {
           }
         }`,
         variables: {
-          roomId: "5f748650f4b3f1b9f2f3f4f5",
+          roomId: room2Id,
         },
       });
 

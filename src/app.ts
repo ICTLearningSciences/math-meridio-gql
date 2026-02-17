@@ -16,6 +16,38 @@ dotenv.config();
 //START MIDDLEWARE
 import mongoose from "mongoose";
 import privateSchema from "./schemas/privateSchema";
+import { UserRole } from "./schemas/types/types";
+import { getDataFromRequest } from "./helpers";
+import { EducationalRole } from "./schemas/models/Player";
+
+const CORS_ORIGIN = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",")
+  : ["https://dev.meridiomath.org", "http://localhost:3000"];
+
+const corsOptions = {
+  credentials: true,
+  origin: function (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: string) => void
+  ) {
+    if (!origin) {
+      callback(null, "");
+    } else {
+      let allowOrigin = false;
+      for (const co of CORS_ORIGIN) {
+        if (origin === co || origin.endsWith(co)) {
+          allowOrigin = true;
+          break;
+        }
+      }
+      if (allowOrigin) {
+        callback(null, origin);
+      } else {
+        callback(new Error(`${origin} not allowed by CORS`));
+      }
+    }
+  },
+};
 
 // eslint-disable-next-line   @typescript-eslint/no-explicit-any
 const authorization = (req: any, res: any, next: any) => {
@@ -76,7 +108,7 @@ export function createApp(): Express {
   const app = express();
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(express.json());
-  app.use(cors());
+  app.use(cors(corsOptions));
   app.use(
     "/graphqlPrivate",
     authorization,
@@ -91,6 +123,12 @@ export function createApp(): Express {
   app.use(
     "/graphql",
     graphqlHTTP(async (req: Request, res) => {
+      const jwtData = await getDataFromRequest(req);
+      const userRole = jwtData ? (jwtData.userRole as UserRole) : UserRole.USER;
+      const userEducationalRole = jwtData
+        ? (jwtData.userEducationalRole as EducationalRole)
+        : EducationalRole.STUDENT;
+      const userId = jwtData ? jwtData.userId : undefined;
       return {
         schema: publicSchema,
         graphiql: true,
@@ -98,6 +136,9 @@ export function createApp(): Express {
           req: req,
           res: res,
           subdomain: getSubdomainFromRequest(req),
+          userRole: userRole,
+          userEducationalRole: userEducationalRole,
+          userId: userId,
         },
       };
     })

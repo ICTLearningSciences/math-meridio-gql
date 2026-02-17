@@ -5,44 +5,37 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLID, GraphQLString, GraphQLObjectType } from "graphql";
-import RoomModel, { Room, RoomType } from "../models/Room";
-import PlayerModel from "../models/Player";
+import { GraphQLID, GraphQLObjectType } from "graphql";
+import RoomHeartBeatModel, {
+  RoomHeartBeat,
+  RoomHeartBeatType,
+} from "../models/RoomHeartBeat";
 
-export const leaveRoom = {
-  type: RoomType,
+export const roomHeartBeat = {
+  type: RoomHeartBeatType,
   args: {
-    playerId: { type: GraphQLString },
     roomId: { type: GraphQLID },
   },
   resolve: async (
     _root: GraphQLObjectType,
-    args: {
-      playerId: string;
-      roomId: string;
-    }
-  ): Promise<Room> => {
-    const room = await RoomModel.findOne({ _id: args.roomId });
-    if (!room) throw new Error("Invalid room");
-    const player = await PlayerModel.findOne({ clientId: args.playerId });
-    if (!player) throw new Error("Invalid player");
-    if (!room.gameData.players.includes(args.playerId))
-      throw new Error("Not in room");
-    return await RoomModel.findOneAndUpdate(
+    args: { roomId: string },
+    context: { userId: string }
+  ): Promise<RoomHeartBeat> => {
+    if (!context.userId) throw new Error("Unauthorized");
+    const roomHeartBeat = await RoomHeartBeatModel.findOneAndUpdate(
       {
-        _id: args.roomId,
+        roomId: args.roomId,
+        userId: context.userId,
       },
       {
-        $pull: {
-          "gameData.players": args.playerId,
-          "gameData.playerStateData": {
-            player: args.playerId,
-          },
+        $set: {
+          lastHeartBeatAt: new Date(),
         },
       },
-      { new: true }
+      { new: true, upsert: true }
     );
+    return roomHeartBeat;
   },
 };
 
-export default leaveRoom;
+export default roomHeartBeat;
