@@ -6,7 +6,13 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import mongoose, { Schema, Document, Model } from "mongoose";
-import { GraphQLString, GraphQLObjectType, GraphQLID } from "graphql";
+import {
+  GraphQLString,
+  GraphQLObjectType,
+  GraphQLID,
+  GraphQLInt,
+  GraphQLInputObjectType,
+} from "graphql";
 import {
   PaginatedResolveResult,
   PaginateOptions,
@@ -26,6 +32,7 @@ export enum ClassMembershipStatus {
 export interface ClassMembership extends Document {
   classId: Class["_id"];
   userId: PlayerDocument["_id"];
+  groupId: number;
   status: ClassMembershipStatus;
 }
 
@@ -36,6 +43,7 @@ export const ClassMembershipSchema = new Schema<
   {
     classId: { type: Schema.Types.ObjectId, ref: "Class" },
     userId: { type: Schema.Types.ObjectId, ref: "Player" },
+    groupId: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ClassMembershipStatus,
@@ -65,6 +73,17 @@ export const ClassMembershipType = new GraphQLObjectType({
   fields: () => ({
     classId: { type: GraphQLID },
     userId: { type: GraphQLID },
+    groupId: { type: GraphQLInt },
+    status: { type: GraphQLString, enum: ClassMembershipStatus },
+  }),
+});
+
+export const ClassMembershipInputType = new GraphQLInputObjectType({
+  name: "ClassMembershipInputType",
+  fields: () => ({
+    classId: { type: GraphQLID },
+    userId: { type: GraphQLID },
+    groupId: { type: GraphQLInt },
     status: { type: GraphQLString, enum: ClassMembershipStatus },
   }),
 });
