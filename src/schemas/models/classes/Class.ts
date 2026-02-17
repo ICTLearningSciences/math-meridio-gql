@@ -33,6 +33,7 @@ export interface Class extends Document {
   teacherId: string; // ref User
   inviteCodes: InviteCode[];
   createdAt: Date;
+  startedAt?: Date;
   archivedAt?: Date;
 }
 
@@ -53,6 +54,7 @@ export const ClassSchema = new Schema<Class, ClassModel>(
     teacherId: { type: String, ref: "Player" },
     inviteCodes: { type: [InviteCodeSchema], default: [] },
     createdAt: { type: Date },
+    startedAt: { type: Date },
     archivedAt: { type: Date },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
@@ -89,6 +91,7 @@ export const ClassType = new GraphQLObjectType({
     teacherId: { type: GraphQLString },
     inviteCodes: { type: new GraphQLList(InviteCodeType) },
     createdAt: { type: DateType },
+    startedAt: { type: DateType },
     archivedAt: { type: DateType },
   }),
 });

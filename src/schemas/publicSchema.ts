@@ -44,6 +44,8 @@ import pingGameRoomProcess from "./mutation/ping-game-room-process";
 import updatePlayerGameStateData from "./mutation/update-player-game-state-data";
 import viewGameRoomSimulation from "./mutation/view-game-room-simulation";
 import fetchGamesList from "./query/fetch-games-list";
+import assignStudentToGroup from "./mutation/assign-student-to-group";
+import assignClassGroupsAndStart from "./mutation/assign-class-groups-and-start";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -76,6 +78,8 @@ const PublicMutation = new GraphQLObjectType({
     removeStudentFromClass,
     blockStudentFromClass,
     unblockStudentFromClass,
+    assignStudentToGroup,
+    assignClassGroupsAndStart,
     adjustClassroomArchiveStatus,
     updateClassNameDescription,
     createNewGameRoom,
