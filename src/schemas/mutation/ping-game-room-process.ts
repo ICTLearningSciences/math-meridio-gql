@@ -137,7 +137,7 @@ export const pingGameRoomProcess = {
             "gameData.curGameState": {
               curState: newGameState,
               playersLeftToRespond:
-                requestUserInputStageStatus.playersLeftToRespond,
+                requestUserInputStageStatus.playersLeftToRespond || [],
             },
           },
         },

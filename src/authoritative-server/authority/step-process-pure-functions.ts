@@ -442,7 +442,7 @@ export async function processCurStep(
       );
       gameData.curGameState = {
         curState: requestUserInputStep.requireInputType,
-        playersLeftToRespond: stageStatus.playersLeftToRespond,
+        playersLeftToRespond: stageStatus.playersLeftToRespond || [],
       };
       break;
     case DiscussionStageStepType.SYSTEM_MESSAGE:
@@ -581,7 +581,7 @@ export function requestUserInputStageStatus(
     );
     return {
       isComplete: isComplete,
-      playersLeftToRespond: playersLeftToRespond,
+      playersLeftToRespond: playersLeftToRespond || [],
     };
   } else {
     // Single input required, so just check that we got 1 user message after the input step message.

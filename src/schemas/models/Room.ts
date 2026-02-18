@@ -141,7 +141,13 @@ export const GameSchema = new Schema<GameDataDocument>(
     gameId: { type: String },
     players: [{ type: String }],
     chat: [{ type: ChatMessageSchema }],
-    curGameState: { type: CurGameStateSchema },
+    curGameState: {
+      type: CurGameStateSchema,
+      default: {
+        curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+        playersLeftToRespond: [],
+      },
+    },
     globalStateData: { type: GlobalStateSchema },
     persistTruthGlobalStateData: [{ type: String }],
     playersGameStateData: { type: Schema.Types.Mixed, default: {} },
@@ -225,7 +231,7 @@ export const CurGameStateType = new GraphQLObjectType({
   name: "CurGameStateType",
   fields: () => ({
     curState: { type: GraphQLNonNull(GraphQLString) },
-    playersLeftToRespond: { type: new GraphQLList(GraphQLList(GraphQLString)) },
+    playersLeftToRespond: { type: new GraphQLList(GraphQLString) },
   }),
 });
 
