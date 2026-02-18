@@ -95,6 +95,11 @@ export const createNewGameRoom = {
       const classRoom = await ClassModel.findOne({ _id: args.classId });
       if (!classRoom) throw new Error("Invalid class");
     }
+    const membership = await ClassMembershipModel.findOne({
+      classId: args.classId,
+      userId: context.userId,
+    });
+
     const _discussionStages = await DiscussionStageModel.find();
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
     const _newRoom: Room = initializeGameRoom(
@@ -102,12 +107,8 @@ export const createNewGameRoom = {
       args.gameId,
       args.classId || "",
       discussionStages,
-      rooms.length
+      membership ? membership.groupId : rooms.length
     );
-    const membership = await ClassMembershipModel.findOne({
-      classId: args.classId,
-      userId: context.userId,
-    });
     if (membership) {
       _newRoom.groupId = membership.groupId;
     }

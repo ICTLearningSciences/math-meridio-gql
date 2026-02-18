@@ -134,7 +134,7 @@ describe("create new room", () => {
     expect(response.body.data.createNewGameRoom).to.exist;
     expect(response.body.data.createNewGameRoom._id).to.exist;
     expect(response.body.data.createNewGameRoom.name).to.equal(
-      "Unit Test Solution Space 1"
+      "Unit Test Solution Space 2"
     );
     expect(response.body.data.createNewGameRoom.classId).to.equal(classId);
     expect(response.body.data.createNewGameRoom.groupId).to.equal(1);
