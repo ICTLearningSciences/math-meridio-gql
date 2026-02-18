@@ -26,6 +26,7 @@ export const fullRoomData = `
       _id
       name
       classId
+      groupId
       gameData {
         gameId
         players {

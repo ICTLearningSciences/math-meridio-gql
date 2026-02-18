@@ -6,11 +6,13 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import { GraphQLString, GraphQLObjectType } from "graphql";
+import mongoose from "mongoose";
 import ClassModel from "../../models/classes/Class";
 import RoomModel, { Room, RoomPhase, RoomType } from "../../models/Room";
 import PlayerModel from "../../models/Player";
 import { addPlayerToRoom } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { getGameById } from "../../../authoritative-server/games/game-helpers";
+import ClassMembershipModel from "../../models/classes/ClassMembership";
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
 import {
   DiscussionStage,
@@ -23,9 +25,9 @@ import {
   processStepsUntilNextRequestUserInputStep,
 } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { AiServiceNames } from "../../../authoritative-server/llm-request/types";
-import mongoose from "mongoose";
 import { getCurStageAndStep } from "../../../authoritative-server/authority/user-action-pure-functions";
 import { RequireInputType } from "../../../schemas/models/DiscussionStage/objects";
+
 /**
  * Initializes the new game room with the first stage and step.
  */
@@ -102,6 +104,13 @@ export const createNewGameRoom = {
       discussionStages,
       rooms.length
     );
+    const membership = await ClassMembershipModel.findOne({
+      classId: args.classId,
+      userId: context.userId,
+    });
+    if (membership) {
+      _newRoom.groupId = membership.groupId;
+    }
     const newRoom: Room = await (await RoomModel.create(_newRoom)).toObject();
     const roomWithPlayerAdded: Room = await addPlayerToRoom(newRoom, player);
 

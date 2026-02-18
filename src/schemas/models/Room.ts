@@ -12,7 +12,6 @@ import {
   GraphQLObjectType,
   GraphQLList,
   GraphQLID,
-  GraphQLInputObjectType,
   GraphQLInt,
   GraphQLNonNull,
 } from "graphql";
@@ -83,6 +82,7 @@ export enum RoomPhase {
 export interface Room {
   _id: string;
   classId?: Class["_id"];
+  groupId?: number;
   name: string;
   gameData: GameData;
   phase: RoomPhase;
@@ -162,6 +162,7 @@ export const GameSchema = new Schema<GameDataDocument>(
 export const RoomSchema = new Schema<RoomDocument, RoomModel>(
   {
     classId: { type: Schema.Types.ObjectId, ref: "Class" },
+    groupId: { type: Number },
     name: { type: String },
     gameData: { type: GameSchema },
     phase: {
@@ -258,6 +259,7 @@ export const RoomType = new GraphQLObjectType({
   fields: () => ({
     _id: { type: GraphQLID },
     classId: { type: GraphQLID },
+    groupId: { type: GraphQLInt },
     name: { type: GraphQLString },
     gameData: { type: GameDataType },
     phase: { type: GraphQLString },

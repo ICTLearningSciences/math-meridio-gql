@@ -11,13 +11,19 @@ import { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import mongoose from "mongoose";
-import { getToken, createUser, createClassroom } from "../../helpers";
+import {
+  getToken,
+  createUser,
+  createClassroom,
+  createClassMembership,
+} from "../../helpers";
 import {
   createNewGameRoomMutation,
   UserRole,
 } from "../../../src/schemas/types/types";
 import { EducationalRole } from "../../../src/schemas/models/Player";
 import RoomModel from "../../../src/schemas/models/Room";
+import { ClassMembershipStatus } from "../../../src/schemas/models/classes/ClassMembership";
 const { ObjectId } = mongoose.Types;
 
 describe("create new room", () => {
@@ -95,6 +101,43 @@ describe("create new room", () => {
       "Unit Test Solution Space 1"
     );
     expect(response.body.data.createNewGameRoom.classId).to.equal(classId);
+    expect(response.body.data.createNewGameRoom.groupId).to.equal(null);
+    expect(response.body.data.createNewGameRoom.deletedRoom).to.equal(false);
+    expect(response.body.data.createNewGameRoom.gameData).to.exist;
+
+    const room = await RoomModel.findById(
+      response.body.data.createNewGameRoom._id
+    );
+    expect(room).to.exist;
+    expect(room?.classId?.toString()).to.equal(classId);
+  });
+
+  it(`successfully creates a room with a valid classId and a groupId`, async () => {
+    await createClassMembership(
+      classId,
+      userId,
+      ClassMembershipStatus.MEMBER,
+      1
+    );
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test",
+          classId: classId,
+        },
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body.data.createNewGameRoom).to.exist;
+    expect(response.body.data.createNewGameRoom._id).to.exist;
+    expect(response.body.data.createNewGameRoom.name).to.equal(
+      "Unit Test Solution Space 1"
+    );
+    expect(response.body.data.createNewGameRoom.classId).to.equal(classId);
+    expect(response.body.data.createNewGameRoom.groupId).to.equal(1);
     expect(response.body.data.createNewGameRoom.deletedRoom).to.equal(false);
     expect(response.body.data.createNewGameRoom.gameData).to.exist;
 

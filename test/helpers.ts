@@ -93,11 +93,13 @@ export function addInviteCodeToClassroom(
 export function createClassMembership(
   classId: string,
   userId: string,
-  status: ClassMembershipStatus
+  status: ClassMembershipStatus,
+  groupId?: number
 ) {
   return ClassMembershipModel.create({
     classId,
     userId,
+    groupId,
     status,
   });
 }
