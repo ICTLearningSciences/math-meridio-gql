@@ -30,6 +30,7 @@ import { DiscussionCurrentStage } from "../../../schemas/models/DiscussionStage/
 import { UserRole } from "../../../schemas/types/types";
 import { PromptOutputTypes } from "../../llm-request/types";
 import * as crypto from "node:crypto";
+import { RequireInputType } from "../../../schemas/models/DiscussionStage/objects";
 
 export function createMockPlayer(id: string, name: string): PlayerDocument {
   return {
@@ -61,6 +62,10 @@ export function createBaseRoom(): Room {
 export function createBaseGameData(): GameData {
   return {
     persistTruthGlobalStateData: [],
+    curGameState: {
+      curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+      playersLeftToRespond: [],
+    },
     chat: [],
     players: [
       createMockPlayer("player1", "Player 1")._id,
@@ -90,24 +95,6 @@ export function createSystemMessageStep(
     stepId,
     stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
     message: options.message || "System message",
-    lastStep: options.lastStep || false,
-    jumpToStepId: options.jumpToStepId || "",
-  };
-}
-
-// Builder for RequestUserInputStageStep
-export function createRequestUserInputStep(
-  stepId: string,
-  options: Partial<RequestUserInputStageStep> = {}
-): RequestUserInputStageStep {
-  return {
-    stepId,
-    stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
-    message: options.message || "Enter your response",
-    saveResponseVariableName: options.saveResponseVariableName || "",
-    disableFreeInput: options.disableFreeInput || false,
-    predefinedResponses: options.predefinedResponses || [],
-    requireAllUserInputs: options.requireAllUserInputs || false,
     lastStep: options.lastStep || false,
     jumpToStepId: options.jumpToStepId || "",
   };

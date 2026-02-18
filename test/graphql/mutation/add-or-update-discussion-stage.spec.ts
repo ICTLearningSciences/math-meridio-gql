@@ -20,6 +20,7 @@ import {
 } from "../../../src/schemas/models/DiscussionStage/types";
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 import { fullDiscussionStageQueryData } from "../query/fetch-discussion-stages.spec";
+import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
 
 describe("update discussion stage", () => {
   let app: Express;
@@ -65,7 +66,7 @@ describe("update discussion stage", () => {
               },
             ],
             lastStep: false,
-            requireAllUserInputs: false,
+            requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
           },
           {
             stepId: "789",
@@ -139,7 +140,7 @@ describe("update discussion stage", () => {
               },
             ],
             lastStep: false,
-            requireAllUserInputs: false,
+            requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
           },
           {
             stepId: "789",
@@ -216,7 +217,7 @@ describe("update discussion stage", () => {
               },
             ],
             lastStep: false,
-            requireAllUserInputs: false,
+            requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
           },
           {
             stepId: "789",

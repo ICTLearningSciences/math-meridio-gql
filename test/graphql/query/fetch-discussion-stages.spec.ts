@@ -12,6 +12,7 @@ import { describe } from "mocha";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { DiscussionStageStepType } from "../../../src/schemas/models/DiscussionStage/types";
+import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
 
 export const fullDiscussionStageQueryData = `
                       _id
@@ -46,7 +47,7 @@ export const fullDiscussionStageQueryData = `
                                   jumpToStepId
                                   responseWeight
                               }
-                              requireAllUserInputs
+                              requireInputType
                           }
 
                           ... on PromptStageStepType{
@@ -124,8 +125,8 @@ describe("fetch discussion stages", () => {
     ).to.equal(DiscussionStageStepType.SYSTEM_MESSAGE);
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps[1]
-        .requireAllUserInputs
-    ).to.equal(false);
+        .requireInputType
+    ).to.equal(RequireInputType.SINGLE_RESPONSE_REQUIRED);
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps[4]
     ).to.deep.equal({

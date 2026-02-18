@@ -14,12 +14,10 @@ import {
   replaceStoredDataInString,
   chatLogToString,
   isJsonString,
-  acquireProcessingLock,
 } from "./helpers/helpers";
 import {
   CollectedDiscussionData,
   DiscussionStage,
-  DiscussionStageStep,
   DiscussionStageStepType,
   isDiscussionStage,
   PromptStageStep,
@@ -27,7 +25,6 @@ import {
   SystemMessageStageStep,
 } from "../../schemas/models/DiscussionStage/types";
 import {
-  AiServiceNames,
   GenericLlmRequest,
   JsonResponseData,
   PromptOutputTypes,
@@ -56,6 +53,7 @@ import {
 } from "../../authoritative-server/games/game-helpers";
 import RoomModel from "../../schemas/models/Room";
 import { PlayerDocument } from "../../schemas/models/Player";
+import { RequireInputType } from "../../schemas/models/DiscussionStage/objects";
 
 export enum RoomModificationEnum {
   ADD_MESSAGE = "ADD_MESSAGE",
@@ -437,6 +435,15 @@ export async function processCurStep(
         [roomModificationActions],
         room._id
       );
+      const requestUserInputStep = curStep as RequestUserInputStageStep;
+      const stageStatus = requestUserInputStageStatus(
+        gameData,
+        requestUserInputStep
+      );
+      gameData.curGameState = {
+        curState: requestUserInputStep.requireInputType,
+        playersLeftToRespond: stageStatus.playersLeftToRespond,
+      };
       break;
     case DiscussionStageStepType.SYSTEM_MESSAGE:
       const newSystemMessageStepAction: AtomicRoomModiticationAction =
@@ -481,14 +488,40 @@ export async function processCurStep(
   };
 }
 
-export function isRequestUserInputStepComplete(
+export function processSimulationStep(room: Room): Room {
+  return {
+    ...room,
+    gameData: {
+      ...room.gameData,
+      curGameState: {
+        curState: "WAITING_FOR_SIMULATION",
+        playersLeftToRespond: [],
+      },
+    },
+  };
+}
+
+export interface RequestUserInputStepCompletionStatus {
+  isComplete: boolean;
+  playersLeftToRespond: string[];
+}
+
+export function requestUserInputStageStatus(
   _gameData: GameData,
   curStep: RequestUserInputStageStep
-): boolean {
+): RequestUserInputStepCompletionStatus {
   // Just check the chat log for the messages that came after the request user input step.
   const gameData = getGameDataCopy(_gameData);
   let mostRecentSystemMessageIdx = -1;
   let mostRecentUserMessageIdx = -1;
+
+  if (!gameData.players.length) {
+    console.log("no players in room, will not progress step");
+    return {
+      isComplete: false,
+      playersLeftToRespond: [],
+    };
+  }
 
   for (let i = 0; i < gameData.chat.length; i++) {
     if (gameData.chat[i].fromStepId === curStep.stepId) {
@@ -508,15 +541,16 @@ export function isRequestUserInputStepComplete(
     }
   }
 
-  // If no system message was found, then the step is not complete.
-  if (mostRecentSystemMessageIdx === -1) {
-    console.log("no system message found, step is not complete");
-    return false;
-  }
-
-  if (curStep.requireAllUserInputs) {
-    // Require all user inputs, so we check that every player provided a response AFTER the user inputs system message.
-    console.log("requiring all user inputs");
+  if (
+    curStep.requireInputType ===
+      RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL ||
+    curStep.requireInputType ===
+      RequireInputType.ALL_USER_RESPONSES_REQUIRED_IN_ORDER
+  ) {
+    // Both of these types require that every player provided a response, so check for that.
+    console.log(
+      `Requiring all player inputs with type: ${curStep.requireInputType}`
+    );
     const playerIds = gameData.players;
     const messagesAfterInputStepMessage = gameData.chat.slice(
       mostRecentSystemMessageIdx + 1
@@ -525,13 +559,40 @@ export function isRequestUserInputStepComplete(
       messagesAfterInputStepMessage.filter(
         (msg) => msg.sender === SenderType.PLAYER
       );
-    return playerIds.every((playerId) =>
+
+    // If no system message was found, then the step is not complete.
+    if (mostRecentSystemMessageIdx === -1) {
+      console.log("no system message found, step is not complete");
+      return {
+        isComplete: false,
+        playersLeftToRespond: [],
+      };
+    }
+
+    const isComplete = playerIds.every((playerId) =>
       userMessagesAfterInputStepMessage.some((msg) => msg.senderId === playerId)
     );
+
+    const playersLeftToRespond = playerIds.filter(
+      (playerId) =>
+        !userMessagesAfterInputStepMessage.some(
+          (msg) => msg.senderId === playerId
+        )
+    );
+    return {
+      isComplete: isComplete,
+      playersLeftToRespond: playersLeftToRespond,
+    };
   } else {
-    console.log("not requiring all user inputs");
-    // Do not require all user inputs, so we check that the users message came after the most recent system message.
-    return mostRecentUserMessageIdx > mostRecentSystemMessageIdx;
+    // Single input required, so just check that we got 1 user message after the input step message.
+    console.log(
+      `Single input required, checking for 1 user message after input step message`
+    );
+    const isComplete = mostRecentUserMessageIdx > mostRecentSystemMessageIdx;
+    return {
+      isComplete: isComplete,
+      playersLeftToRespond: [],
+    };
   }
 }
 
@@ -583,11 +644,15 @@ export async function processStepsUntilNextRequestUserInputStep(
         playerIdToUpdate,
         sessionId
       );
+    } else {
+      // is simulation stage
+      latestRoom = processSimulationStep(latestRoom);
     }
   } while (
     stepAndStage.curStep?.stepType !==
       DiscussionStageStepType.REQUEST_USER_INPUT &&
     stepAndStage.curStage.clientId !== WAIT_FOR_SIMULATION_STAGE_CLIENT_ID
   );
+
   return latestRoom;
 }

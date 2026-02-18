@@ -5,6 +5,8 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
+import { RequireInputType } from "./objects";
+
 export interface IStage {
   stageType: "discussion" | "simulation";
   clientId: string;
@@ -75,7 +77,7 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
   saveResponseVariableName: string;
   disableFreeInput: boolean;
   predefinedResponses: PredefinedResponse[];
-  requireAllUserInputs: boolean;
+  requireInputType: RequireInputType;
 }
 
 export interface PromptStageStep extends StageBuilderStep {

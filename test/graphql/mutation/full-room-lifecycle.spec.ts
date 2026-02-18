@@ -41,6 +41,7 @@ import * as llmRequest from "../../../src/authoritative-server/llm-request/llm-r
 import { AiServicesResponseTypes } from "../../../src/authoritative-server/llm-request/ai-services/ai-service-types";
 import { SenderType } from "../../../src/authoritative-server/llm-request/types";
 import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../../src/authoritative-server/games/game-helpers";
+import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
 
 describe("full room lifecycle", () => {
   let app: Express;
@@ -93,6 +94,14 @@ describe("full room lifecycle", () => {
       "Welcome to the request user input discussion"
     );
     expect(newRoom?.gameData.chat[1].message).to.equal("What is your name?");
+    console.log(JSON.stringify(newRoom?.gameData, null, 2));
+    // Check that the rooms curGameState is set correctly.
+    expect(newRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.SINGLE_RESPONSE_REQUIRED
+    );
+    expect(newRoom?.gameData.curGameState.playersLeftToRespond).to.deep.equal(
+      []
+    );
 
     // 3. Send a message to the room, should add the message to the chat log
     const sendMessageToGameRoomResponse = await request(app)
@@ -409,6 +418,15 @@ describe("full room lifecycle", () => {
     expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
     const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
 
+    // ENSURE the room is in the correct state after creation
+    let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL
+    );
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([ownerStudentId]);
+
     // 3: add studentTwo and leavingStudent to the room with joinGameRoomMutation's
     const joinStudentTwoResponse = await request(app)
       .post("/graphql")
@@ -435,7 +453,7 @@ describe("full room lifecycle", () => {
     expect(joinLeavingStudentResponse.body.data.joinGameRoom).to.exist;
 
     // ENSURE all three students are in the room.
-    let currentRoom = await RoomModel.findById(newRoomId);
+    currentRoom = await RoomModel.findById(newRoomId);
     expect(currentRoom?.gameData.players).to.have.length(3);
     expect(currentRoom?.gameData.players).to.include(ownerStudentId);
     expect(currentRoom?.gameData.players).to.include(studentTwoId);
@@ -467,8 +485,13 @@ describe("full room lifecycle", () => {
       });
     expect(firstPingResponse.status).to.equal(200);
 
-    // ENSURE still on first request user input stage and step
+    // ENSURE the room now expects responses from all three students
     currentRoom = await RoomModel.findById(newRoomId);
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([ownerStudentId, studentTwoId, leavingStudentId]);
+
+    // ENSURE still on first request user input stage and step
     expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
       REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
     );
@@ -513,6 +536,11 @@ describe("full room lifecycle", () => {
     );
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
+    // ENSURE the room now expects responses from the two remaining students
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([studentTwoId, leavingStudentId]);
+
     // 6: studentTwo send message + ping room process
     const studentTwoMessageResponse = await request(app)
       .post("/graphql")
@@ -552,6 +580,11 @@ describe("full room lifecycle", () => {
     );
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
+    // ENSURE the room now expects response from the last student
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([leavingStudentId]);
+
     // 7: leavingStudent send message + ping room process
     const leavingStudentMessageResponse = await request(app)
       .post("/graphql")
@@ -584,6 +617,11 @@ describe("full room lifecycle", () => {
       REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
     );
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
+
+    // ENSURE the room once against expects response from all students from this new stage
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([ownerStudentId, studentTwoId, leavingStudentId]);
 
     // ENSURE messages were sent up to this stage
     expect(currentRoom?.gameData.chat[2].message).to.equal(
@@ -649,10 +687,16 @@ describe("full room lifecycle", () => {
 
     // ENSURE on same stage and step
     currentRoom = await RoomModel.findById(newRoomId);
+
     expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
       REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
     );
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
+
+    // ENSURE the room expects a response from just the leave room studnet (last studnet)
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([leavingStudentId]);
 
     // 9: leavingStudent leaves room with leaveGameRoomMutation
     const leaveRoomResponse = await request(app)
@@ -686,6 +730,11 @@ describe("full room lifecycle", () => {
       REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
     );
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // ENSURE the room expects a response from remaining students
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([ownerStudentId, studentTwoId]);
 
     // 10: sendMessage from ownerStudent
     const ownerThirdMessageResponse = await request(app)
@@ -752,6 +801,11 @@ describe("full room lifecycle", () => {
     );
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
+    // ENSURE the room expects a response from the late student (last student response needed)
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([lateStudentId]);
+
     // 13: sendMessage from lateStudent
     const lateStudentMessageResponse = await request(app)
       .post("/graphql")
@@ -784,6 +838,11 @@ describe("full room lifecycle", () => {
       REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
     );
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
+
+    // ENSURE the room expects a response from all students
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([ownerStudentId, studentTwoId, lateStudentId]);
   });
 
   it("process locking handles fast requests", async () => {
@@ -954,6 +1013,18 @@ describe("full room lifecycle", () => {
       });
     expect(createRoomResponse.status).to.equal(200);
     expect(createRoomResponse.body.data.createNewGameRoom).to.exist;
+
+    // ENSURE the room is in the correct state after creation
+    let currentRoom = await RoomModel.findById(
+      createRoomResponse.body.data.createNewGameRoom._id
+    );
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL
+    );
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([studentUserId]);
+
     const roomId = createRoomResponse.body.data.createNewGameRoom._id;
 
     // 2. Join the room.
@@ -970,7 +1041,7 @@ describe("full room lifecycle", () => {
     expect(joinRoomResponse.body.data.joinGameRoom).to.exist;
 
     // ENSURE room is in TEST_SIMULATION_DISCUSSION_CLIENT_ID stage and step "1"
-    let currentRoom = await RoomModel.findById(roomId);
+    currentRoom = await RoomModel.findById(roomId);
     expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
       TEST_SIMULATION_DISCUSSION_CLIENT_ID
     );
@@ -1017,6 +1088,11 @@ describe("full room lifecycle", () => {
       "wait-for-simulation"
     );
 
+    // ENSURE the room game state is set to WAITING_FOR_SIMULATION
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "WAITING_FOR_SIMULATION"
+    );
+
     // 4. call viewGameRoomSimulationMutation for user in room + call room process
     const viewSimulationResponse = await request(app)
       .post("/graphql")
@@ -1057,5 +1133,13 @@ describe("full room lifecycle", () => {
       TEST_SIMULATION_DISCUSSION_CLIENT_ID
     );
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+
+    // ENSURE the room game state is set to ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL
+    );
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([studentUserId]);
   });
 });

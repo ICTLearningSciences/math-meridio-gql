@@ -90,6 +90,12 @@ export const PredefinedResponseTypeInput = new GraphQLInputObjectType({
   }),
 });
 
+export enum RequireInputType {
+  SINGLE_RESPONSE_REQUIRED = "SINGLE_RESPONSE_REQUIRED",
+  ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL = "ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL",
+  ALL_USER_RESPONSES_REQUIRED_IN_ORDER = "ALL_REQUIRED_IN_ORDER",
+}
+
 export const RequestUserInputStageStepType = new GraphQLObjectType({
   name: "RequestUserInputStageStepType",
   fields: () => ({
@@ -104,7 +110,7 @@ export const RequestUserInputStageStepType = new GraphQLObjectType({
     saveResponseVariableName: { type: GraphQLString },
     disableFreeInput: { type: GraphQLBoolean },
     predefinedResponses: { type: GraphQLList(PredefinedResponseType) },
-    requireAllUserInputs: { type: GraphQLBoolean },
+    requireInputType: { type: GraphQLString },
   }),
 });
 
@@ -122,7 +128,7 @@ export const RequestUserInputStageStepTypeInput = new GraphQLInputObjectType({
     saveResponseVariableName: { type: GraphQLString },
     disableFreeInput: { type: GraphQLBoolean },
     predefinedResponses: { type: GraphQLList(PredefinedResponseTypeInput) },
-    requireAllUserInputs: { type: GraphQLBoolean },
+    requireInputType: { type: GraphQLString },
   }),
 });
 
@@ -236,7 +242,10 @@ export const RequestUserInputStageStepSchema = new Schema({
   saveResponseVariableName: { type: String },
   disableFreeInput: { type: Boolean },
   predefinedResponses: [PredefinedResponseSchema],
-  requireAllUserInputs: { type: Boolean, default: false },
+  requireInputType: {
+    type: GraphQLString,
+    default: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+  },
 });
 
 export const LogicStepConditionalSchema = new Schema({

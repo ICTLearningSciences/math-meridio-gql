@@ -25,6 +25,7 @@ import {
 import { AiServiceNames } from "../../../authoritative-server/llm-request/types";
 import mongoose from "mongoose";
 import { getCurStageAndStep } from "../../../authoritative-server/authority/user-action-pure-functions";
+import { RequireInputType } from "../../../schemas/models/DiscussionStage/objects";
 /**
  * Initializes the new game room with the first stage and step.
  */
@@ -48,6 +49,10 @@ export function initializeGameRoom(
       gameId: gameId,
       players: [],
       chat: [],
+      curGameState: {
+        curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+        playersLeftToRespond: [],
+      },
       persistTruthGlobalStateData: game.persistTruthGlobalStateData,
       playersGameStateData: {},
       globalStateData: {
@@ -121,7 +126,7 @@ export const createNewGameRoom = {
       curStageAndStep.curStep?.stepType !==
         DiscussionStageStepType.REQUEST_USER_INPUT
     ) {
-      // Now process all other steps until we reach a request user input step.
+      // Now process all other steps until we reach a request user input step or simulation stage.
       const roomWithProcessedSteps: Room =
         await processStepsUntilNextRequestUserInputStep(
           roomWithFirstStepProcessed,
@@ -133,9 +138,17 @@ export const createNewGameRoom = {
           context.userId,
           args.sessionId
         );
-      return roomWithProcessedSteps;
+      return await RoomModel.findOneAndUpdate(
+        { _id: roomWithProcessedSteps._id },
+        { $set: { gameData: roomWithProcessedSteps.gameData } },
+        { new: true }
+      );
     }
-    return roomWithFirstStepProcessed;
+    return await RoomModel.findOneAndUpdate(
+      { _id: roomWithFirstStepProcessed._id },
+      { $set: { gameData: roomWithFirstStepProcessed.gameData } },
+      { new: true }
+    );
   },
 };
 

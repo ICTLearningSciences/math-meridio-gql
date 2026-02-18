@@ -14,7 +14,7 @@ import {
 import { DiscussionStageStepType } from "../../schemas/models/DiscussionStage/types";
 import { acquireProcessingLock } from "../../authoritative-server/authority/helpers/helpers";
 import {
-  isRequestUserInputStepComplete as _isRequestUserInputStepComplete,
+  requestUserInputStageStatus as _isRequestUserInputStepComplete,
   isSimulationStageComplete as _isSimulationStageComplete,
 } from "../../authoritative-server/authority/step-process-pure-functions";
 import { processStepsUntilNextRequestUserInputStep } from "../../authoritative-server/authority/step-process-pure-functions";
@@ -43,6 +43,10 @@ export const pingGameRoomProcess = {
     }
 
     let room: Room = _room.toObject();
+    if (room.gameData.players.length === 0) {
+      console.log("no players in room, returning room as is");
+      return room;
+    }
     const _discussionStages = await DiscussionStageModel.find();
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
     const stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
@@ -52,7 +56,7 @@ export const pingGameRoomProcess = {
       isDiscussionStage &&
       stageAndStep.curStep?.stepType ===
         DiscussionStageStepType.REQUEST_USER_INPUT;
-    const isRequestUserInputStepComplete =
+    const requestUserInputStageStatus =
       isRequestUserInputStep &&
       _isRequestUserInputStepComplete(
         room.gameData,
@@ -66,10 +70,7 @@ export const pingGameRoomProcess = {
 
     console.log("isDiscussionStage", isDiscussionStage);
     console.log("isRequestUserInputStep", isRequestUserInputStep);
-    console.log(
-      "isRequestUserInputStepComplete",
-      isRequestUserInputStepComplete
-    );
+    console.log("requestUserInputStageStatus", requestUserInputStageStatus);
     console.log("isSimulationStage", isSimulationStage);
     console.log("isSimulationStageComplete", isSimulationStageComplete);
     console.log("roomIsProcessing", roomIsProcessing);
@@ -77,7 +78,7 @@ export const pingGameRoomProcess = {
     if (
       ((isDiscussionStage &&
         isRequestUserInputStep &&
-        isRequestUserInputStepComplete) ||
+        requestUserInputStageStatus.isComplete) ||
         (isSimulationStage && isSimulationStageComplete)) &&
       !roomIsProcessing
     ) {
@@ -123,6 +124,27 @@ export const pingGameRoomProcess = {
       );
     }
     console.log("No complete step found, no processing required.");
+
+    // Update the rooms state with players left to respond with is a request user input step.
+    if (isRequestUserInputStep && !requestUserInputStageStatus.isComplete) {
+      const newGameState = (stageAndStep.curStep as RequestUserInputStageStep)
+        .requireInputType;
+
+      room = await RoomModel.findOneAndUpdate(
+        { _id: args.roomId },
+        {
+          $set: {
+            "gameData.curGameState": {
+              curState: newGameState,
+              playersLeftToRespond:
+                requestUserInputStageStatus.playersLeftToRespond,
+            },
+          },
+        },
+        { new: true }
+      );
+    }
+
     return room;
   },
 };

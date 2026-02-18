@@ -34,6 +34,10 @@ export const fullRoomData = `
         chat {
           message
         }
+        curGameState {
+          curState
+          playersLeftToRespond
+        }
         persistTruthGlobalStateData
         playersGameStateData
         globalStateData {
