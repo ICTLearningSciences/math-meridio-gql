@@ -396,13 +396,17 @@ export async function addPlayerToRoom(
     console.log("Player already in room");
     return room;
   }
+  const oldPlayerData = room.gameData.playersGameStateData[player._id] || {};
   const updatedRoom = await RoomModel.findByIdAndUpdate(
     room._id,
     {
       $push: { "gameData.players": player._id },
       $set: {
         "gameData.playersGameStateData": {
-          [player._id]: room.gameData.globalStateData.gameStateData || {},
+          [player._id]: {
+            ...(room.gameData.globalStateData.gameStateData || {}),
+            ...oldPlayerData,
+          },
         },
       },
     },

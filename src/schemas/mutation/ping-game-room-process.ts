@@ -130,6 +130,11 @@ export const pingGameRoomProcess = {
       const newGameState = (stageAndStep.curStep as RequestUserInputStageStep)
         .requireInputType;
 
+      const curRoomState = _isRequestUserInputStepComplete(
+        room.gameData,
+        stageAndStep.curStep as RequestUserInputStageStep
+      );
+
       room = await RoomModel.findOneAndUpdate(
         { _id: args.roomId },
         {
