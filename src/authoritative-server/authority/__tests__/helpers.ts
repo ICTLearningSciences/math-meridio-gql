@@ -64,6 +64,7 @@ export function createBaseGameData(): GameData {
     curGameState: {
       curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
       playersLeftToRespond: [],
+      studentReadyToContinue: false,
     },
     chat: [],
     players: [

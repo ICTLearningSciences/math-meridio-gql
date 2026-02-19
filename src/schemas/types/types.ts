@@ -100,3 +100,9 @@ export const viewGameRoomSimulationMutation = `
     }
   }
 `;
+
+export const submitReadyToContinueMutation = `
+  mutation SubmitReadyToContinue($roomId: String!) {
+    submitReadyToContinue(roomId: $roomId)
+  }
+`;

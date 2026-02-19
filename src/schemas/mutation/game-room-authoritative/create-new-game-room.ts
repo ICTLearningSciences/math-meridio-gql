@@ -52,6 +52,7 @@ export function initializeGameRoom(
       curGameState: {
         curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
         playersLeftToRespond: [],
+        studentReadyToContinue: false,
       },
       persistTruthGlobalStateData: game.persistTruthGlobalStateData,
       playersGameStateData: {},

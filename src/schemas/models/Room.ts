@@ -65,8 +65,10 @@ export interface CurGameState {
   curState:
     | RequireInputType
     | "WAITING_FOR_SIMULATION"
-    | "END_OF_PHASE_REFLECTION";
+    | "END_OF_PHASE_REFLECTION"
+    | "WAITING_FOR_STUDENT_READY_TO_CONTINUE";
   playersLeftToRespond: string[];
+  studentReadyToContinue: boolean;
   curRoundNumber?: number;
   endOfPhaseStep?: EndOfPhaseReflectionStep;
   selectedQuestion?: string;
@@ -129,6 +131,7 @@ export const CurGameStateSchema = new Schema<CurGameStateDocument>(
   {
     curState: { type: String },
     playersLeftToRespond: [{ type: String }],
+    studentReadyToContinue: { type: Boolean },
     curRoundNumber: { type: Number },
     endOfPhaseStep: { type: EndOfPhaseReflectionStepSchema },
     selectedQuestion: { type: String },
@@ -161,6 +164,7 @@ export const GameSchema = new Schema<GameDataDocument>(
       default: {
         curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
         playersLeftToRespond: [],
+        studentReadyToContinue: false,
         curRoundNumber: 0,
         endOfPhaseStep: undefined,
         studentReflections: {},
@@ -254,6 +258,7 @@ export const CurGameStateType = new GraphQLObjectType({
   fields: () => ({
     curState: { type: GraphQLNonNull(GraphQLString) },
     playersLeftToRespond: { type: new GraphQLList(GraphQLString) },
+    studentReadyToContinue: { type: GraphQLBoolean },
     curRoundNumber: { type: GraphQLInt },
     endOfPhaseStep: { type: EndOfPhaseReflectionStepType },
     selectedQuestion: { type: GraphQLString },

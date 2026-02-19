@@ -87,33 +87,84 @@ export const pingGameRoomProcess = {
     let isEndOfPhaseReflectionStep =
       isDiscussionStage &&
       stageAndStep.curStep?.stepType ===
-        DiscussionStageStepType.END_OF_PHASE_REFLECTION;
+        DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
+      room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION";
     let endOfPhaseReflectionStepStatus =
       isEndOfPhaseReflectionStep &&
       _endOfPhaseReflectionStepStatus(room, curRoundGamePhaseReflection);
 
+    const isWaitingForEndOfPhaseReflectionReadyUp =
+      isDiscussionStage &&
+      stageAndStep.curStep?.stepType ===
+        DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
+      room.gameData.curGameState.curState ===
+        "WAITING_FOR_STUDENT_READY_TO_CONTINUE";
+    const isEndOfPhaseReflectionReadyUpComplete = Boolean(
+      room.gameData.curGameState.studentReadyToContinue
+    );
+
+    const isCompleteRequestUserInputStep =
+      isDiscussionStage &&
+      isRequestUserInputStep &&
+      requestUserInputStageStatus.isComplete;
+    const isCompleteSimulationStage =
+      isSimulationStage && isSimulationStageComplete;
+    const isCompleteEndOfPhaseReflectionStep =
+      isEndOfPhaseReflectionStep && endOfPhaseReflectionStepStatus.isComplete;
+    const isCompleteEndOfPhaseReflectionReadyUp =
+      isWaitingForEndOfPhaseReflectionReadyUp &&
+      isEndOfPhaseReflectionReadyUpComplete;
+
     console.log("-------------------------------- FIRST CHECKING VARS -----");
-    console.log("isDiscussionStage", isDiscussionStage);
-    console.log("isRequestUserInputStep", isRequestUserInputStep);
-    console.log("requestUserInputStageStatus", requestUserInputStageStatus);
-    console.log("isSimulationStage", isSimulationStage);
-    console.log("isSimulationStageComplete", isSimulationStageComplete);
-    console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
+    // console.log("isDiscussionStage", isDiscussionStage);
+    // console.log("isRequestUserInputStep", isRequestUserInputStep);
+    // console.log("requestUserInputStageStatus", requestUserInputStageStatus);
+    // console.log("isSimulationStage", isSimulationStage);
+    // console.log("isSimulationStageComplete", isSimulationStageComplete);
+    // console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
+    // console.log(
+    //   "endOfPhaseReflectionStepStatus",
+    //   endOfPhaseReflectionStepStatus
+    // );
+    // console.log("isWaitingForStudentReadyToContinue", isWaitingForStudentReadyToContinue);
+    // console.log("studentReadyToContinue", studentReadyToContinue);
     console.log(
-      "endOfPhaseReflectionStepStatus",
-      endOfPhaseReflectionStepStatus
+      "isCompleteRequestUserInputStep",
+      isCompleteRequestUserInputStep
+    );
+    console.log("isCompleteSimulationStage", isCompleteSimulationStage);
+    console.log(
+      "isCompleteEndOfPhaseReflectionStep",
+      isCompleteEndOfPhaseReflectionStep
+    );
+    console.log(
+      "isCompleteEndOfPhaseReflectionReadyUp",
+      isCompleteEndOfPhaseReflectionReadyUp
     );
     console.log("roomIsProcessing", roomIsProcessing);
     console.log("-------------------------------- FIRST CHECKING VARS -----");
 
-    if (
-      (isDiscussionStage &&
-        isRequestUserInputStep &&
-        requestUserInputStageStatus.isComplete) ||
-      (isSimulationStage && isSimulationStageComplete) ||
-      (isEndOfPhaseReflectionStep &&
-        endOfPhaseReflectionStepStatus.isComplete &&
-        !roomIsProcessing)
+    // Transition from end of phase reflection step to waiting for student ready to continue
+    if (isCompleteEndOfPhaseReflectionStep) {
+      console.log(
+        "Transitioning to WAITING_FOR_STUDENT_READY_TO_CONTINUE state"
+      );
+      room = await RoomModel.findOneAndUpdate(
+        { _id: args.roomId },
+        {
+          $set: {
+            "gameData.curGameState.curState":
+              "WAITING_FOR_STUDENT_READY_TO_CONTINUE",
+            "gameData.curGameState.studentReadyToContinue": false,
+          },
+        },
+        { new: true }
+      );
+    } else if (
+      (isCompleteRequestUserInputStep ||
+        isCompleteSimulationStage ||
+        isCompleteEndOfPhaseReflectionReadyUp) &&
+      !roomIsProcessing
     ) {
       const lockResult = await acquireProcessingLock(
         args.roomId,
@@ -222,7 +273,9 @@ export const pingGameRoomProcess = {
     // if we are now in a game phase reflection state and it is not complete, check and update the status of the request user input step
     if (
       isEndOfPhaseReflectionStep &&
-      !endOfPhaseReflectionStepStatus.isComplete
+      !endOfPhaseReflectionStepStatus.isComplete &&
+      room.gameData.curGameState.curState !==
+        "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
     ) {
       console.log("incomplete end of phase reflection step, checking status");
       const curStepGamePhaseReflections = roomGamePhaseReflections.filter(

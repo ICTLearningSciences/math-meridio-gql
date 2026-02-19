@@ -476,6 +476,7 @@ export async function processCurStep(
       gameData.curGameState = {
         curState: requestUserInputStep.requireInputType,
         playersLeftToRespond: stageStatus.playersLeftToRespond || [],
+        studentReadyToContinue: false,
       };
       break;
     case DiscussionStageStepType.SYSTEM_MESSAGE:
@@ -529,6 +530,7 @@ export function processSimulationStep(room: Room): Room {
       curGameState: {
         curState: "WAITING_FOR_SIMULATION",
         playersLeftToRespond: [],
+        studentReadyToContinue: false,
       },
     },
   };

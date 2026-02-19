@@ -23,6 +23,7 @@ import {
   pingGameRoomProcessMutation,
   PromptRoles,
   sendMessageToGameRoomMutation,
+  submitReadyToContinueMutation,
   UserRole,
   viewGameRoomSimulationMutation,
 } from "../../../src/schemas/types/types";
@@ -1278,6 +1279,41 @@ describe("full room lifecycle", () => {
       });
     expect(pingAfterFirstReflection.status).to.equal(200);
 
+    // 3.5 We should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
+    );
+    expect(currentRoom?.gameData.curGameState.studentReadyToContinue).to.be
+      .false;
+
+    // 3.75 a student submits that they are ready to continue
+    const submitReadyToContinueResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: submitReadyToContinueMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(submitReadyToContinueResponse.status).to.equal(200);
+    expect(submitReadyToContinueResponse.body.data.submitReadyToContinue).to
+      .exist;
+
+    // 3.75 ping process
+    const pingAfterSubmitReadyToContinue = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterSubmitReadyToContinue.status).to.equal(200);
+
     // ENSURE we are now back at the request user input step.
     currentRoom = await RoomModel.findById(newRoomId);
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
@@ -1292,6 +1328,10 @@ describe("full room lifecycle", () => {
       roundNumber: 1,
     });
     expect(gamePhaseReflection).to.exist;
+    expect([
+      "What did you think of the activity?",
+      "What did you like about the activity?",
+    ]).to.include(gamePhaseReflection?.question);
     expect(gamePhaseReflection?.reflections[ownerStudentId]).to.equal(
       "This was a great activity!"
     );
@@ -1429,6 +1469,42 @@ describe("full room lifecycle", () => {
       });
     expect(pingAfterStudentTwoSecondReflection.status).to.equal(200);
 
+    // 7.5 we should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
+    );
+    expect(currentRoom?.gameData.curGameState.studentReadyToContinue).to.be
+      .false;
+
+    // 7.75 a student submits that they are ready to continue
+    let submitStudentTwoReadyToContinueResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: submitReadyToContinueMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(submitStudentTwoReadyToContinueResponse.status).to.equal(200);
+    expect(
+      submitStudentTwoReadyToContinueResponse.body.data.submitReadyToContinue
+    ).to.exist;
+
+    // 7.75 ping process
+    let pingAfterStudentTwoSubmitReadyToContinue = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session2",
+        },
+      });
+    expect(pingAfterStudentTwoSubmitReadyToContinue.status).to.equal(200);
+
     // ENSURE we are now back at the request user input step.
     currentRoom = await RoomModel.findById(newRoomId);
 
@@ -1562,6 +1638,41 @@ describe("full room lifecycle", () => {
         },
       });
     expect(pingAfterStudentTwoLeaves.status).to.equal(200);
+
+    // 10.5 we should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
+    );
+    expect(currentRoom?.gameData.curGameState.studentReadyToContinue).to.be
+      .false;
+
+    // 10.75 a student submits that they are ready to continue
+    let submitOwnerReadyToContinueResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: submitReadyToContinueMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(submitOwnerReadyToContinueResponse.status).to.equal(200);
+    expect(submitOwnerReadyToContinueResponse.body.data.submitReadyToContinue)
+      .to.exist;
+
+    // 10.75 ping process
+    pingAfterStudentTwoSubmitReadyToContinue = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session2",
+        },
+      });
+    expect(pingAfterStudentTwoSubmitReadyToContinue.status).to.equal(200);
 
     // ENSURE we are now back at the request user input step because without student two, all people have provided input
     currentRoom = await RoomModel.findById(newRoomId);
