@@ -416,7 +416,7 @@ module.exports = {
 
     {
       _id: new ObjectId("5ffdf1231ee2b62320a49e31"),
-      clientId: "test-end-of-phase-reflection-discussion-client-id",
+      clientId: "test-end-of-phase-reflection-client-id",
       title: "Test End of Phase Reflection Discussion",
       stageType: "discussion",
       description: "",
@@ -432,8 +432,7 @@ module.exports = {
               saveResponseVariableName: "input_name",
               disableFreeInput: false,
               predefinedResponses: [],
-              requireInputType:
-                RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
+              requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
               lastStep: false,
             },
             {
