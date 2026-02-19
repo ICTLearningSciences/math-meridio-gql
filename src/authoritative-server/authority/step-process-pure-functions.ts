@@ -55,8 +55,8 @@ import {
 import RoomModel from "../../schemas/models/Room";
 import { PlayerDocument } from "../../schemas/models/Player";
 import { RequireInputType } from "../../schemas/models/DiscussionStage/objects";
-import { GamePhaseReflections } from "schemas/models/GamePhaseReflections";
-import GamePhaseReflectionsModel from "schemas/models/GamePhaseReflections";
+import { GamePhaseReflections } from "../../schemas/models/GamePhaseReflections";
+import GamePhaseReflectionsModel from "../../schemas/models/GamePhaseReflections";
 
 export enum RoomModificationEnum {
   ADD_MESSAGE = "ADD_MESSAGE",

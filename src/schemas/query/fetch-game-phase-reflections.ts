@@ -14,11 +14,11 @@ import {
 import GamePhaseReflectionsModel from "../models/GamePhaseReflections";
 import RoomModel from "../models/Room";
 import GraphQLScalarType from "../types/anything-scalar-type";
-import DiscussionStageModel from "schemas/models/DiscussionStage/DiscussionStage";
+import DiscussionStageModel from "../../schemas/models/DiscussionStage/DiscussionStage";
 import {
   DiscussionStageStepType,
   EndOfPhaseReflectionStep,
-} from "schemas/models/DiscussionStage/types";
+} from "../../schemas/models/DiscussionStage/types";
 export const FetchGamePhaseReflectionDataType = new GraphQLObjectType({
   name: "FetchGamePhaseReflectionDataType",
   fields: () => ({
