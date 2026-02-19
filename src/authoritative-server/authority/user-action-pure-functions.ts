@@ -7,12 +7,9 @@ The full terms of this copyright and license should always be found in the root 
 
 import { getGameById } from "../../authoritative-server/games/game-helpers";
 import {
-  CurrentStage,
   DiscussionStage,
   DiscussionStageStep,
-  DiscussionStageStepType,
   isDiscussionStage,
-  IStage,
 } from "../../schemas/models/DiscussionStage/types";
 import { GameData } from "../../schemas/models/Room";
 import { SimulationStage } from "../../authoritative-server/llm-request/types";

@@ -12,7 +12,6 @@ import {
   GraphQLObjectType,
   GraphQLList,
   GraphQLID,
-  GraphQLInputObjectType,
   GraphQLInt,
   GraphQLNonNull,
 } from "graphql";
@@ -25,7 +24,12 @@ import {
 import PlayerModel, { PlayerType } from "./Player";
 import GraphQLScalarType from "../types/anything-scalar-type";
 import { Class } from "./classes/Class";
-import { RequireInputType } from "./DiscussionStage/objects";
+import {
+  EndOfPhaseReflectionStepSchema,
+  EndOfPhaseReflectionStepType,
+  RequireInputType,
+} from "./DiscussionStage/objects";
+import { EndOfPhaseReflectionStep } from "./DiscussionStage/types";
 
 /** mongoose */
 
@@ -58,8 +62,14 @@ export interface GlobalStateData {
 export interface GlobalStateDataDocument extends GlobalStateData, Document {}
 
 export interface CurGameState {
-  curState: RequireInputType | "WAITING_FOR_SIMULATION";
+  curState:
+    | RequireInputType
+    | "WAITING_FOR_SIMULATION"
+    | "END_OF_PHASE_REFLECTION";
   playersLeftToRespond: string[];
+  curRoundNumber?: number;
+  endOfPhaseStep?: EndOfPhaseReflectionStep;
+  studentReflections?: Record<string, string>; // keyed by player ID
 }
 export interface CurGameStateDocument extends CurGameState, Document {}
 export interface GameData {
@@ -118,6 +128,9 @@ export const CurGameStateSchema = new Schema<CurGameStateDocument>(
   {
     curState: { type: String },
     playersLeftToRespond: [{ type: String }],
+    curRoundNumber: { type: Number },
+    endOfPhaseStep: { type: EndOfPhaseReflectionStepSchema },
+    studentReflections: { type: Schema.Types.Mixed, default: {} },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -146,6 +159,9 @@ export const GameSchema = new Schema<GameDataDocument>(
       default: {
         curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
         playersLeftToRespond: [],
+        curRoundNumber: 0,
+        endOfPhaseStep: undefined,
+        studentReflections: {},
       },
     },
     globalStateData: { type: GlobalStateSchema },
@@ -226,12 +242,19 @@ export const GlobalStateDataType = new GraphQLObjectType({
 // PROCESSING_REQUEST
 //  - no extra data
 // WAITING_FOR_SIMULATION
+// COLLECTING_PHASE_REFLECTION
+//  - playersLeftToRespond (reflect)
+//  - studentReflections (just for frontend display)
+//  - roundNumber (how many times this phase has been run)
 
 export const CurGameStateType = new GraphQLObjectType({
   name: "CurGameStateType",
   fields: () => ({
     curState: { type: GraphQLNonNull(GraphQLString) },
     playersLeftToRespond: { type: new GraphQLList(GraphQLString) },
+    curRoundNumber: { type: GraphQLInt },
+    endOfPhaseStep: { type: EndOfPhaseReflectionStepType },
+    studentReflections: { type: GraphQLScalarType },
   }),
 });
 
