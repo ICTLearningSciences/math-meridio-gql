@@ -422,11 +422,9 @@ export async function addPlayerToRoom(
     {
       $push: { "gameData.players": player._id },
       $set: {
-        "gameData.playersGameStateData": {
-          [player._id]: {
-            ...(room.gameData.globalStateData.gameStateData || {}),
-            ...oldPlayerData,
-          },
+        [`gameData.playersGameStateData.${player._id}`]: {
+          ...(room.gameData.globalStateData.gameStateData || {}),
+          ...oldPlayerData,
         },
       },
     },
