@@ -177,7 +177,7 @@ export class BasketballStateHandler extends AbstractGameData {
         id: "finished",
         stage: finishedStage,
         getNextStage: () => {
-          return finishedStage;
+          return introDiscussionStage;
         },
       },
     ];
