@@ -559,10 +559,14 @@ export async function transitionToEndOfPhaseReflectionState(
   // TODO: create a new gamePhaseReflection for the roomId + phaseStepId + roundNumber
   const roundNumber = curStepGamePhaseReflections.length + 1;
 
+  const selectedQuestion =
+    curStep.questions[Math.floor(Math.random() * curStep.questions.length)];
+
   await GamePhaseReflectionsModel.create({
     roomId: room._id,
     stepId: curStep.stepId,
     roundNumber: roundNumber,
+    question: selectedQuestion,
     reflections: {},
   });
 
@@ -576,6 +580,7 @@ export async function transitionToEndOfPhaseReflectionState(
             playersLeftToRespond: room.gameData.players,
             curRoundNumber: roundNumber,
             endOfPhaseStep: curStep,
+            selectedQuestion: selectedQuestion,
           },
         },
       },

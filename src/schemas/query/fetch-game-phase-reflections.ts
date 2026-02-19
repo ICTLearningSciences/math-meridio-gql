@@ -22,6 +22,7 @@ import {
 export const FetchGamePhaseReflectionDataType = new GraphQLObjectType({
   name: "FetchGamePhaseReflectionDataType",
   fields: () => ({
+    question: { type: GraphQLString },
     roomId: { type: GraphQLString },
     gameId: { type: GraphQLString },
     phaseName: { type: GraphQLString },
@@ -32,6 +33,8 @@ export const FetchGamePhaseReflectionDataType = new GraphQLObjectType({
 });
 
 export interface FetchGamePhaseReflectionData {
+  question: string;
+  roomId: string;
   gameId: string;
   phaseName: string;
   endOfPhaseStepId: string;
@@ -83,9 +86,11 @@ export const fetchGamePhaseReflections = {
           return acc;
         }
         acc.push({
+          roomId: gamePhaseReflection.roomId,
           gameId: room.gameData.gameId,
           phaseName: (endOfPhaseReflectionStage as EndOfPhaseReflectionStep)
             .phaseTitle,
+          question: gamePhaseReflection.question,
           endOfPhaseStepId: gamePhaseReflection.stepId,
           roundNumber: gamePhaseReflection.roundNumber,
           reflections: gamePhaseReflection.reflections || {},

@@ -92,17 +92,19 @@ export const pingGameRoomProcess = {
       isEndOfPhaseReflectionStep &&
       _endOfPhaseReflectionStepStatus(room, curRoundGamePhaseReflection);
 
-    // console.log("isDiscussionStage", isDiscussionStage);
-    // console.log("isRequestUserInputStep", isRequestUserInputStep);
-    // console.log("requestUserInputStageStatus", requestUserInputStageStatus);
-    // console.log("isSimulationStage", isSimulationStage);
-    // console.log("isSimulationStageComplete", isSimulationStageComplete);
-    // console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
-    // console.log(
-    //   "endOfPhaseReflectionStepStatus",
-    //   endOfPhaseReflectionStepStatus
-    // );
-    // console.log("roomIsProcessing", roomIsProcessing);
+    console.log("-------------------------------- FIRST CHECKING VARS -----");
+    console.log("isDiscussionStage", isDiscussionStage);
+    console.log("isRequestUserInputStep", isRequestUserInputStep);
+    console.log("requestUserInputStageStatus", requestUserInputStageStatus);
+    console.log("isSimulationStage", isSimulationStage);
+    console.log("isSimulationStageComplete", isSimulationStageComplete);
+    console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
+    console.log(
+      "endOfPhaseReflectionStepStatus",
+      endOfPhaseReflectionStepStatus
+    );
+    console.log("roomIsProcessing", roomIsProcessing);
+    console.log("-------------------------------- FIRST CHECKING VARS -----");
 
     if (
       (isDiscussionStage &&
@@ -183,19 +185,19 @@ export const pingGameRoomProcess = {
       isEndOfPhaseReflectionStep &&
       _endOfPhaseReflectionStepStatus(room, curRoundGamePhaseReflection);
 
-    // console.log("----- RECHECKING VARS -----")
-    // console.log("isDiscussionStage", isDiscussionStage);
-    // console.log("isRequestUserInputStep", isRequestUserInputStep);
-    // console.log("requestUserInputStageStatus", requestUserInputStageStatus);
-    // console.log("isSimulationStage", isSimulationStage);
-    // console.log("isSimulationStageComplete", isSimulationStageComplete);
-    // console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
-    // console.log(
-    //   "endOfPhaseReflectionStepStatus",
-    //   endOfPhaseReflectionStepStatus
-    // );
-    // console.log("roomIsProcessing", roomIsProcessing);
-    // console.log("----- RECHECKING VARS -----")
+    console.log("----- RECHECKING VARS -----");
+    console.log("isDiscussionStage", isDiscussionStage);
+    console.log("isRequestUserInputStep", isRequestUserInputStep);
+    console.log("requestUserInputStageStatus", requestUserInputStageStatus);
+    console.log("isSimulationStage", isSimulationStage);
+    console.log("isSimulationStageComplete", isSimulationStageComplete);
+    console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
+    console.log(
+      "endOfPhaseReflectionStepStatus",
+      endOfPhaseReflectionStepStatus
+    );
+    console.log("roomIsProcessing", roomIsProcessing);
+    console.log("----- RECHECKING VARS -----");
 
     // if we are now in a request user input step and it is not complete, check the status of the request user input step.
     if (isRequestUserInputStep && !requestUserInputStageStatus.isComplete) {

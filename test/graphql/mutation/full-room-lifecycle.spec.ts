@@ -107,7 +107,6 @@ describe("full room lifecycle", () => {
       "Welcome to the request user input discussion"
     );
     expect(newRoom?.gameData.chat[1].message).to.equal("What is your name?");
-    console.log(JSON.stringify(newRoom?.gameData, null, 2));
     // Check that the rooms curGameState is set correctly.
     expect(newRoom?.gameData.curGameState.curState).to.equal(
       RequireInputType.SINGLE_RESPONSE_REQUIRED
@@ -1236,6 +1235,10 @@ describe("full room lifecycle", () => {
       "END_OF_PHASE_REFLECTION"
     );
     expect(currentRoom?.gameData.curGameState.curRoundNumber).to.equal(1);
+    expect([
+      "What did you think of the activity?",
+      "What did you like about the activity?",
+    ]).to.include(currentRoom?.gameData.curGameState.selectedQuestion);
     expect(
       currentRoom?.gameData.curGameState.playersLeftToRespond
     ).to.deep.equal([ownerStudentId]);
@@ -1246,9 +1249,6 @@ describe("full room lifecycle", () => {
     expect(
       currentRoom?.gameData.curGameState.endOfPhaseStep?.phaseTitle
     ).to.equal("End of Phase Reflection");
-    expect(
-      currentRoom?.gameData.curGameState.endOfPhaseStep?.question
-    ).to.equal("What did you think of the activity?");
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
     // 3. submit phase reflection from owner + ping process
@@ -1347,6 +1347,10 @@ describe("full room lifecycle", () => {
       "END_OF_PHASE_REFLECTION"
     );
     expect(currentRoom?.gameData.curGameState.curRoundNumber).to.equal(2);
+    expect([
+      "What did you think of the activity?",
+      "What did you like about the activity?",
+    ]).to.include(currentRoom?.gameData.curGameState.selectedQuestion);
     expect(
       currentRoom?.gameData.curGameState.playersLeftToRespond
     ).to.deep.equal([ownerStudentId, studentTwoId]);

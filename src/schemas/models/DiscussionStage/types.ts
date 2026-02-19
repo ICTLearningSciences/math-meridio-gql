@@ -128,7 +128,7 @@ export interface EndOfPhaseReflectionStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION;
   phaseTitle: string;
   message: string;
-  question: string;
+  questions: string[];
 }
 
 export type CollectedDiscussionData = Record<

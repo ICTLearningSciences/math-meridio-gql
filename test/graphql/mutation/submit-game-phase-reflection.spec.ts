@@ -24,6 +24,7 @@ const submitGamePhaseReflectionMutation = `
       roomId
       stepId
       roundNumber
+      question
       reflections
     }
   }
@@ -65,6 +66,7 @@ describe("submit game phase reflection", () => {
       roomId: roomId,
       stepId: "step1",
       roundNumber: 1,
+      question: "Test question",
       reflections: {},
     });
     // Room needs to be in reflection phase
@@ -91,7 +93,6 @@ describe("submit game phase reflection", () => {
           reflection: "Test reflection",
         },
       });
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.status).to.equal(200);
     expect(response.body.data.submitGamePhaseReflection).to.exist;
     expect(response.body.data.submitGamePhaseReflection.roomId).to.equal(
@@ -102,6 +103,9 @@ describe("submit game phase reflection", () => {
     );
     expect(response.body.data.submitGamePhaseReflection.roundNumber).to.equal(
       1
+    );
+    expect(response.body.data.submitGamePhaseReflection.question).to.equal(
+      "Test question"
     );
     expect(response.body.data.submitGamePhaseReflection.reflections).to.exist;
     expect(

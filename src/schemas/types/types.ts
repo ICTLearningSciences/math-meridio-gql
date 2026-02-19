@@ -37,6 +37,9 @@ export const fullRoomData = `
         curGameState {
           curState
           playersLeftToRespond
+          curRoundNumber
+          selectedQuestion
+          studentReflections
         }
         persistTruthGlobalStateData
         playersGameStateData

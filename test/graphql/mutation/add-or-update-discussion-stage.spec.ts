@@ -251,7 +251,7 @@ describe("update discussion stage", () => {
             stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
             phaseTitle: "phase title 1",
             message: "message 1",
-            question: "question 1",
+            questions: ["question 1", "question 2", "question 3"],
             lastStep: true,
           },
         ],

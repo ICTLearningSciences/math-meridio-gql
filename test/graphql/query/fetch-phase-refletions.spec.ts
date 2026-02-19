@@ -24,6 +24,7 @@ export const fetchPhaseRefletionsQuery = `
       phaseName
       endOfPhaseStepId
       roundNumber
+      question
       reflections
     }
   }
@@ -64,6 +65,7 @@ describe("fetch players", () => {
       roomId: roomId,
       stepId: "2",
       roundNumber: 1,
+      question: "Test question",
       reflections: {
         [userId]: "Test reflection",
       },
@@ -72,7 +74,6 @@ describe("fetch players", () => {
       query: fetchPhaseRefletionsQuery,
     });
     expect(response.status).to.equal(200);
-    console.log(JSON.stringify(response.body, null, 2));
     expect(
       response.body.data.fetchGamePhaseReflections
     ).to.deep.include.members([
@@ -81,6 +82,7 @@ describe("fetch players", () => {
         phaseName: "End of Phase Reflection",
         endOfPhaseStepId: "2",
         roundNumber: 1,
+        question: "Test question",
         reflections: {
           [userId]: "Test reflection",
         },

@@ -69,6 +69,7 @@ export interface CurGameState {
   playersLeftToRespond: string[];
   curRoundNumber?: number;
   endOfPhaseStep?: EndOfPhaseReflectionStep;
+  selectedQuestion?: string;
   studentReflections?: Record<string, string>; // keyed by player ID
 }
 export interface CurGameStateDocument extends CurGameState, Document {}
@@ -130,6 +131,7 @@ export const CurGameStateSchema = new Schema<CurGameStateDocument>(
     playersLeftToRespond: [{ type: String }],
     curRoundNumber: { type: Number },
     endOfPhaseStep: { type: EndOfPhaseReflectionStepSchema },
+    selectedQuestion: { type: String },
     studentReflections: { type: Schema.Types.Mixed, default: {} },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
@@ -254,6 +256,7 @@ export const CurGameStateType = new GraphQLObjectType({
     playersLeftToRespond: { type: new GraphQLList(GraphQLString) },
     curRoundNumber: { type: GraphQLInt },
     endOfPhaseStep: { type: EndOfPhaseReflectionStepType },
+    selectedQuestion: { type: GraphQLString },
     studentReflections: { type: GraphQLScalarType },
   }),
 });

@@ -38,7 +38,7 @@ export const fullDiscussionStageQueryData = `
                               stepType
                               phaseTitle
                               message
-                              question
+                              questions
                           }
 
                           ... on RequestUserInputStageStepType {

@@ -224,7 +224,7 @@ export const EndOfPhaseReflectionStepType = new GraphQLObjectType({
     },
     phaseTitle: { type: GraphQLString },
     message: { type: GraphQLString },
-    question: { type: GraphQLString },
+    questions: { type: GraphQLList(GraphQLString) },
   }),
 });
 
@@ -239,7 +239,7 @@ export const EndOfPhaseReflectionStepTypeInput = new GraphQLInputObjectType({
     },
     phaseTitle: { type: GraphQLString },
     message: { type: GraphQLString },
-    question: { type: GraphQLString },
+    questions: { type: GraphQLList(GraphQLString) },
   }),
 });
 
@@ -311,7 +311,7 @@ export const EndOfPhaseReflectionStepSchema = new Schema({
   },
   phaseTitle: { type: String },
   message: { type: String },
-  question: { type: String },
+  questions: { type: [String] },
 });
 
 // union the 3 step schemas
