@@ -246,6 +246,14 @@ describe("update discussion stage", () => {
               },
             ],
           },
+          {
+            stepId: "6",
+            stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
+            phaseTitle: "phase title 1",
+            message: "message 1",
+            question: "question 1",
+            lastStep: true,
+          },
         ],
       },
     ];

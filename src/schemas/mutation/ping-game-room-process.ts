@@ -125,15 +125,10 @@ export const pingGameRoomProcess = {
     }
     console.log("No complete step found, no processing required.");
 
-    // Update the rooms state with players left to respond with is a request user input step.
+    // Update the rooms state with players left to respond with if is a request user input step and the step is not complete.
     if (isRequestUserInputStep && !requestUserInputStageStatus.isComplete) {
       const newGameState = (stageAndStep.curStep as RequestUserInputStageStep)
         .requireInputType;
-
-      const curRoomState = _isRequestUserInputStepComplete(
-        room.gameData,
-        stageAndStep.curStep as RequestUserInputStageStep
-      );
 
       room = await RoomModel.findOneAndUpdate(
         { _id: args.roomId },

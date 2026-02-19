@@ -32,6 +32,15 @@ export const fullDiscussionStageQueryData = `
                               message
                           }
 
+                          ... on EndOfPhaseReflectionStepType {
+                              lastStep
+                              stepId
+                              stepType
+                              phaseTitle
+                              message
+                              question
+                          }
+
                           ... on RequestUserInputStageStepType {
                               lastStep
                               stepId
