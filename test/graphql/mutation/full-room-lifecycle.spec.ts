@@ -1286,6 +1286,11 @@ describe("full room lifecycle", () => {
     );
     expect(currentRoom?.gameData.curGameState.studentReadyToContinue).to.be
       .false;
+    expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
+      {
+        [ownerStudentId]: "This was a great activity!",
+      }
+    );
 
     // 3.75 a student submits that they are ready to continue
     const submitReadyToContinueResponse = await request(app)
@@ -1432,6 +1437,11 @@ describe("full room lifecycle", () => {
       currentRoom?.gameData.curGameState.playersLeftToRespond
     ).to.deep.equal([studentTwoId]);
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+    expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
+      {
+        [ownerStudentId]: "Round 2 was even better!",
+      }
+    );
 
     // ENSURE GamePhaseReflection document has room owners reflection and is roundNumber 2
     gamePhaseReflection = await GamePhaseReflectionsModel.findOne({
@@ -1469,8 +1479,30 @@ describe("full room lifecycle", () => {
       });
     expect(pingAfterStudentTwoSecondReflection.status).to.equal(200);
 
-    // 7.5 we should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
+    // ESNURE the studentReflections are set correctly
     currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
+      {
+        [ownerStudentId]: "Round 2 was even better!",
+        [studentTwoId]: "I learned a lot in round 2!",
+      }
+    );
+
+    // ENSURE GamePhaseReflection document has both owner and studentTwo reflections
+    gamePhaseReflection = await GamePhaseReflectionsModel.findOne({
+      roomId: newRoomId,
+      stepId: "2",
+      roundNumber: 2,
+    });
+    expect(gamePhaseReflection).to.exist;
+    expect(gamePhaseReflection?.reflections[ownerStudentId]).to.equal(
+      "Round 2 was even better!"
+    );
+    expect(gamePhaseReflection?.reflections[studentTwoId]).to.equal(
+      "I learned a lot in round 2!"
+    );
+
+    // 7.5 we should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
     expect(currentRoom?.gameData.curGameState.curState).to.equal(
       "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
     );

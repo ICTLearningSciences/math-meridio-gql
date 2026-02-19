@@ -544,11 +544,9 @@ export interface RequestUserInputStepCompletionStatus {
 export interface EndOfPhaseReflectionStepCompletionStatus {
   isComplete: boolean;
   playersLeftToRespond: string[];
+  studentReflections: Record<string, string>;
 }
 
-/**
- *
- */
 export async function transitionToEndOfPhaseReflectionState(
   room: Room,
   curStep: EndOfPhaseReflectionStep,
@@ -558,7 +556,6 @@ export async function transitionToEndOfPhaseReflectionState(
     console.log("already transitioned to end of phase reflection state");
     return room;
   }
-  // TODO: create a new gamePhaseReflection for the roomId + phaseStepId + roundNumber
   const roundNumber = curStepGamePhaseReflections.length + 1;
 
   const selectedQuestion =
@@ -606,6 +603,7 @@ export function endOfPhaseReflectionStepStatus(
       isComplete: false,
       playersLeftToRespond:
         room.gameData.curGameState.playersLeftToRespond || [],
+      studentReflections: {},
     };
   }
   const playersInRoom = room.gameData.players;
@@ -615,6 +613,7 @@ export function endOfPhaseReflectionStepStatus(
   return {
     isComplete: playersWithNoReponse.length === 0,
     playersLeftToRespond: playersWithNoReponse,
+    studentReflections: curRoundGameReflections.reflections,
   };
 }
 

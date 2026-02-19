@@ -156,6 +156,8 @@ export const pingGameRoomProcess = {
             "gameData.curGameState.curState":
               "WAITING_FOR_STUDENT_READY_TO_CONTINUE",
             "gameData.curGameState.studentReadyToContinue": false,
+            "gameData.curGameState.studentReflections":
+              endOfPhaseReflectionStepStatus.studentReflections,
           },
         },
         { new: true }
@@ -298,6 +300,8 @@ export const pingGameRoomProcess = {
               "gameData.curGameState.curState": "END_OF_PHASE_REFLECTION",
               "gameData.curGameState.playersLeftToRespond":
                 endOfPhaseReflectionStepStatus.playersLeftToRespond,
+              "gameData.curGameState.studentReflections":
+                endOfPhaseReflectionStepStatus.studentReflections,
             },
           },
           { new: true }
