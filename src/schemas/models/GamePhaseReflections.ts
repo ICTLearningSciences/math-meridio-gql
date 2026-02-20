@@ -41,7 +41,11 @@ export const GamePhaseReflectionsSchema = new Schema<
     roundNumber: { type: Number, required: true },
     reflections: { type: Schema.Types.Mixed, required: true },
   },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
+  {
+    timestamps: true,
+    collation: { locale: "en", strength: 2 },
+    minimize: false,
+  }
 );
 
 pluginPagination(GamePhaseReflectionsSchema);

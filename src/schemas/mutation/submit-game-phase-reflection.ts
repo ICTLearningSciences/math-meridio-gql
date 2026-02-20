@@ -32,7 +32,9 @@ export const submitGamePhaseReflection = {
     if (!room) throw new Error("Invalid room");
 
     const roomIsInGamePhaseReflection =
-      room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION";
+      room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION" ||
+      room.gameData.curGameState.curState ===
+        "WAITING_FOR_STUDENT_READY_TO_CONTINUE";
 
     if (!roomIsInGamePhaseReflection)
       throw new Error("Room is not in game phase reflection");
