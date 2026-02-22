@@ -34,6 +34,13 @@ export const fullRoomData = `
         chat {
           message
         }
+        curGameState {
+          curState
+          playersLeftToRespond
+          curRoundNumber
+          selectedQuestion
+          studentReflections
+        }
         persistTruthGlobalStateData
         playersGameStateData
         globalStateData {
@@ -91,5 +98,11 @@ export const viewGameRoomSimulationMutation = `
     viewGameRoomSimulation(roomId: $roomId) {
        ${fullRoomData}
     }
+  }
+`;
+
+export const submitReadyToContinueMutation = `
+  mutation SubmitReadyToContinue($roomId: String!) {
+    submitReadyToContinue(roomId: $roomId)
   }
 `;

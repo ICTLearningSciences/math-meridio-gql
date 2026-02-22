@@ -5,13 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import {
-  GraphQLList,
-  GraphQLString,
-  GraphQLBoolean,
-  GraphQLObjectType,
-} from "graphql";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import { GraphQLList, GraphQLString, GraphQLObjectType } from "graphql";
 import { BasketballStateHandler } from "../../authoritative-server/games/basketball-game";
 import { ConcertTicketSalesStateHandler } from "../../authoritative-server/games/concert-ticket-game";
 

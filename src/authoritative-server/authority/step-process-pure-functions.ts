@@ -14,20 +14,18 @@ import {
   replaceStoredDataInString,
   chatLogToString,
   isJsonString,
-  acquireProcessingLock,
 } from "./helpers/helpers";
 import {
   CollectedDiscussionData,
   DiscussionStage,
-  DiscussionStageStep,
   DiscussionStageStepType,
+  EndOfPhaseReflectionStep,
   isDiscussionStage,
   PromptStageStep,
   RequestUserInputStageStep,
   SystemMessageStageStep,
 } from "../../schemas/models/DiscussionStage/types";
 import {
-  AiServiceNames,
   GenericLlmRequest,
   JsonResponseData,
   PromptOutputTypes,
@@ -56,6 +54,9 @@ import {
 } from "../../authoritative-server/games/game-helpers";
 import RoomModel from "../../schemas/models/Room";
 import { PlayerDocument } from "../../schemas/models/Player";
+import { RequireInputType } from "../../schemas/models/DiscussionStage/objects";
+import { GamePhaseReflections } from "../../schemas/models/GamePhaseReflections";
+import GamePhaseReflectionsModel from "../../schemas/models/GamePhaseReflections";
 
 export enum RoomModificationEnum {
   ADD_MESSAGE = "ADD_MESSAGE",
@@ -225,6 +226,23 @@ export async function applyAtomicRoomModificationActions(
   }
 
   return updatedRoom.gameData;
+}
+
+export function startEndOfPhaseReflectionStep(
+  _gameData: GameData,
+  curStep: EndOfPhaseReflectionStep,
+  sessionId: string
+): AddMessageRoomAtomicAction {
+  const newMessage = buildSystemMessage(
+    _gameData,
+    curStep.message,
+    sessionId,
+    curStep.stepId
+  );
+  return {
+    actionType: RoomModificationEnum.ADD_MESSAGE,
+    newMessage: newMessage,
+  };
 }
 
 export function startRequestUserInputStep(
@@ -398,13 +416,15 @@ export async function addPlayerToRoom(
     console.log("Player already in room");
     return room;
   }
+  const oldPlayerData = room.gameData.playersGameStateData[player._id] || {};
   const updatedRoom = await RoomModel.findByIdAndUpdate(
     room._id,
     {
       $push: { "gameData.players": player._id },
       $set: {
-        "gameData.playersGameStateData": {
-          [player._id]: room.gameData.globalStateData.gameStateData || {},
+        [`gameData.playersGameStateData.${player._id}`]: {
+          ...(room.gameData.globalStateData.gameStateData || {}),
+          ...oldPlayerData,
         },
       },
     },
@@ -429,6 +449,15 @@ export async function processCurStep(
     return room;
   }
   switch (curStep.stepType) {
+    case DiscussionStageStepType.END_OF_PHASE_REFLECTION:
+      const endOfPhaseReflectionStepAction: AtomicRoomModiticationAction =
+        startEndOfPhaseReflectionStep(gameData, curStep, sessionId);
+      gameData = await applyAtomicRoomModificationActions(
+        gameData,
+        [endOfPhaseReflectionStepAction],
+        room._id
+      );
+      break;
     case DiscussionStageStepType.REQUEST_USER_INPUT:
       const roomModificationActions: AtomicRoomModiticationAction =
         startRequestUserInputStep(gameData, curStep, sessionId);
@@ -437,6 +466,16 @@ export async function processCurStep(
         [roomModificationActions],
         room._id
       );
+      const requestUserInputStep = curStep as RequestUserInputStageStep;
+      const stageStatus = requestUserInputStageStatus(
+        gameData,
+        requestUserInputStep
+      );
+      gameData.curGameState = {
+        curState: requestUserInputStep.requireInputType,
+        playersLeftToRespond: stageStatus.playersLeftToRespond || [],
+        studentReadyToContinue: false,
+      };
       break;
     case DiscussionStageStepType.SYSTEM_MESSAGE:
       const newSystemMessageStepAction: AtomicRoomModiticationAction =
@@ -481,14 +520,117 @@ export async function processCurStep(
   };
 }
 
-export function isRequestUserInputStepComplete(
+export function processSimulationStep(room: Room): Room {
+  return {
+    ...room,
+    gameData: {
+      ...room.gameData,
+      curGameState: {
+        curState: "WAITING_FOR_SIMULATION",
+        playersLeftToRespond: [],
+        studentReadyToContinue: false,
+      },
+    },
+  };
+}
+
+export interface RequestUserInputStepCompletionStatus {
+  isComplete: boolean;
+  playersLeftToRespond: string[];
+}
+
+export interface EndOfPhaseReflectionStepCompletionStatus {
+  isComplete: boolean;
+  playersLeftToRespond: string[];
+  studentReflections: Record<string, string>;
+}
+
+export async function transitionToEndOfPhaseReflectionState(
+  room: Room,
+  curStep: EndOfPhaseReflectionStep,
+  curStepGamePhaseReflections: GamePhaseReflections[]
+) {
+  if (room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION") {
+    console.log("already transitioned to end of phase reflection state");
+    return room;
+  }
+  const roundNumber = curStepGamePhaseReflections.length + 1;
+
+  const selectedQuestion =
+    curStep.questions[Math.floor(Math.random() * curStep.questions.length)];
+
+  await GamePhaseReflectionsModel.create({
+    roomId: room._id,
+    stepId: curStep.stepId,
+    roundNumber: roundNumber,
+    question: selectedQuestion,
+    reflections: {},
+  });
+
+  return (
+    await RoomModel.findOneAndUpdate(
+      { _id: room._id },
+      {
+        $set: {
+          "gameData.curGameState": {
+            curState: "END_OF_PHASE_REFLECTION",
+            playersLeftToRespond: room.gameData.players,
+            curRoundNumber: roundNumber,
+            endOfPhaseStep: curStep,
+            selectedQuestion: selectedQuestion,
+          },
+        },
+      },
+      { new: true }
+    )
+  ).toObject();
+}
+
+/**
+ * Checks if all users CURRENTLY in the room have provided a response for the reflection
+ * @param room A room that is already in the END_OF_PHASE_REFLECTION state
+ * @returns
+ */
+export function endOfPhaseReflectionStepStatus(
+  room: Room,
+  curRoundGameReflections: GamePhaseReflections
+): EndOfPhaseReflectionStepCompletionStatus {
+  if (room.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION") {
+    console.log("not in end of phase reflection state, will not check status");
+    return {
+      isComplete: false,
+      playersLeftToRespond:
+        room.gameData.curGameState.playersLeftToRespond || [],
+      studentReflections: {},
+    };
+  }
+  const playersInRoom = room.gameData.players;
+  const playersWithNoReponse = playersInRoom.filter(
+    (playerId) => !curRoundGameReflections.reflections[playerId]
+  );
+  return {
+    isComplete: playersWithNoReponse.length === 0,
+    playersLeftToRespond: playersWithNoReponse,
+    studentReflections: curRoundGameReflections.reflections,
+  };
+}
+
+export function requestUserInputStageStatus(
   _gameData: GameData,
   curStep: RequestUserInputStageStep
-): boolean {
+): RequestUserInputStepCompletionStatus {
   // Just check the chat log for the messages that came after the request user input step.
   const gameData = getGameDataCopy(_gameData);
   let mostRecentSystemMessageIdx = -1;
   let mostRecentUserMessageIdx = -1;
+
+  if (!gameData.players.length) {
+    console.log("no players in room, will not progress step");
+    return {
+      isComplete: false,
+      playersLeftToRespond: [],
+    };
+  }
 
   for (let i = 0; i < gameData.chat.length; i++) {
     if (gameData.chat[i].fromStepId === curStep.stepId) {
@@ -508,15 +650,16 @@ export function isRequestUserInputStepComplete(
     }
   }
 
-  // If no system message was found, then the step is not complete.
-  if (mostRecentSystemMessageIdx === -1) {
-    console.log("no system message found, step is not complete");
-    return false;
-  }
-
-  if (curStep.requireAllUserInputs) {
-    // Require all user inputs, so we check that every player provided a response AFTER the user inputs system message.
-    console.log("requiring all user inputs");
+  if (
+    curStep.requireInputType ===
+      RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL ||
+    curStep.requireInputType ===
+      RequireInputType.ALL_USER_RESPONSES_REQUIRED_IN_ORDER
+  ) {
+    // Both of these types require that every player provided a response, so check for that.
+    console.log(
+      `Requiring all player inputs with type: ${curStep.requireInputType}`
+    );
     const playerIds = gameData.players;
     const messagesAfterInputStepMessage = gameData.chat.slice(
       mostRecentSystemMessageIdx + 1
@@ -525,13 +668,40 @@ export function isRequestUserInputStepComplete(
       messagesAfterInputStepMessage.filter(
         (msg) => msg.sender === SenderType.PLAYER
       );
-    return playerIds.every((playerId) =>
+
+    // If no system message was found, then the step is not complete.
+    if (mostRecentSystemMessageIdx === -1) {
+      console.log("no system message found, step is not complete");
+      return {
+        isComplete: false,
+        playersLeftToRespond: [],
+      };
+    }
+
+    const isComplete = playerIds.every((playerId) =>
       userMessagesAfterInputStepMessage.some((msg) => msg.senderId === playerId)
     );
+
+    const playersLeftToRespond = playerIds.filter(
+      (playerId) =>
+        !userMessagesAfterInputStepMessage.some(
+          (msg) => msg.senderId === playerId
+        )
+    );
+    return {
+      isComplete: isComplete,
+      playersLeftToRespond: playersLeftToRespond || [],
+    };
   } else {
-    console.log("not requiring all user inputs");
-    // Do not require all user inputs, so we check that the users message came after the most recent system message.
-    return mostRecentUserMessageIdx > mostRecentSystemMessageIdx;
+    // Single input required, so just check that we got 1 user message after the input step message.
+    console.log(
+      `Single input required, checking for 1 user message after input step message`
+    );
+    const isComplete = mostRecentUserMessageIdx > mostRecentSystemMessageIdx;
+    return {
+      isComplete: isComplete,
+      playersLeftToRespond: [],
+    };
   }
 }
 
@@ -547,10 +717,10 @@ export function isSimulationStageComplete(_gameData: GameData): boolean {
 }
 
 /**
- * Goes to the next step and continues processing steps until we reach the next request user input step.
- * This means we process prompts, system messages, and conditionals until we reach the next request user input step, of which will still have its message added to the chat.
+ * Goes to the next step and continues processing steps until we reach the next stalling phase (Request user input, simulation stage, end of phase reflection stage)
+ * This means we process prompts, system messages, and conditionals until we reach the next stalling phase, of which will still have its message added to the chat.
  */
-export async function processStepsUntilNextRequestUserInputStep(
+export async function processStepsUntilNextStallingPhase(
   room: Room,
   discussionStages: DiscussionStage[],
   targetAiServiceModel: TargetAiModelServiceType,
@@ -583,11 +753,17 @@ export async function processStepsUntilNextRequestUserInputStep(
         playerIdToUpdate,
         sessionId
       );
+    } else {
+      // is simulation stage
+      latestRoom = processSimulationStep(latestRoom);
     }
   } while (
     stepAndStage.curStep?.stepType !==
       DiscussionStageStepType.REQUEST_USER_INPUT &&
+    stepAndStage.curStep?.stepType !==
+      DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
     stepAndStage.curStage.clientId !== WAIT_FOR_SIMULATION_STAGE_CLIENT_ID
   );
+
   return latestRoom;
 }

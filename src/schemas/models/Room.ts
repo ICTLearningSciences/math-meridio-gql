@@ -12,7 +12,6 @@ import {
   GraphQLObjectType,
   GraphQLList,
   GraphQLID,
-  GraphQLInputObjectType,
   GraphQLInt,
   GraphQLNonNull,
 } from "graphql";
@@ -25,6 +24,12 @@ import {
 import PlayerModel, { PlayerType } from "./Player";
 import GraphQLScalarType from "../types/anything-scalar-type";
 import { Class } from "./classes/Class";
+import {
+  EndOfPhaseReflectionStepSchema,
+  EndOfPhaseReflectionStepType,
+  RequireInputType,
+} from "./DiscussionStage/objects";
+import { EndOfPhaseReflectionStep } from "./DiscussionStage/types";
 
 /** mongoose */
 
@@ -56,9 +61,25 @@ export interface GlobalStateData {
 
 export interface GlobalStateDataDocument extends GlobalStateData, Document {}
 
+export interface CurGameState {
+  curState:
+    | RequireInputType
+    | "WAITING_FOR_SIMULATION"
+    | "END_OF_PHASE_REFLECTION"
+    | "WAITING_FOR_STUDENT_READY_TO_CONTINUE";
+  playersLeftToRespond: string[];
+  studentReadyToContinue: boolean;
+  curRoundNumber?: number;
+  endOfPhaseStep?: EndOfPhaseReflectionStep;
+  selectedQuestion?: string;
+  studentReflections?: Record<string, string>; // keyed by player ID
+}
+export interface CurGameStateDocument extends CurGameState, Document {}
 export interface GameData {
   gameId: string;
   players: string[];
+
+  curGameState: CurGameState;
   chat: ChatMessage[];
   globalStateData: GlobalStateData;
   persistTruthGlobalStateData: string[];
@@ -106,6 +127,18 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
+export const CurGameStateSchema = new Schema<CurGameStateDocument>(
+  {
+    curState: { type: String },
+    playersLeftToRespond: [{ type: String }],
+    studentReadyToContinue: { type: Boolean },
+    curRoundNumber: { type: Number },
+    endOfPhaseStep: { type: EndOfPhaseReflectionStepSchema },
+    selectedQuestion: { type: String },
+    studentReflections: { type: Schema.Types.Mixed, default: {} },
+  },
+  { timestamps: true, collation: { locale: "en", strength: 2 } }
+);
 export const GlobalStateSchema = new Schema<GlobalStateDataDocument>(
   {
     curStageId: { type: String },
@@ -126,6 +159,17 @@ export const GameSchema = new Schema<GameDataDocument>(
     gameId: { type: String },
     players: [{ type: String }],
     chat: [{ type: ChatMessageSchema }],
+    curGameState: {
+      type: CurGameStateSchema,
+      default: {
+        curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+        playersLeftToRespond: [],
+        studentReadyToContinue: false,
+        curRoundNumber: 0,
+        endOfPhaseStep: undefined,
+        studentReflections: {},
+      },
+    },
     globalStateData: { type: GlobalStateSchema },
     persistTruthGlobalStateData: [{ type: String }],
     playersGameStateData: { type: Schema.Types.Mixed, default: {} },
@@ -190,19 +234,35 @@ export const GlobalStateDataType = new GraphQLObjectType({
 // gamePhases:
 // WAITING_FOR_SINGLE_PLAYERS_INPUT
 //  - no extra data
+//  - Set when: request user input step started without requireAllUsersInput
 // WAITING_FOR_ALL_PLAYERS_INPUT_FREE_FOR_ALL
 //  - list of players we are waiting for a response from
+//  - Set when: request user input step started with requireAllUsersInput
+
 // WAITING_FOR_ALL_PLAYERS_IN_ORDER
 //  - next player we need a response from
+//  - Set when:
+//      - on create room
+//      - on ping process
+//      - When: request user input step started with requireAllUsersInput and requireAllUsersInput is ALL_REQUIRED_IN_ORDER
 // PROCESSING_REQUEST
 //  - no extra data
+// WAITING_FOR_SIMULATION
+// COLLECTING_PHASE_REFLECTION
+//  - playersLeftToRespond (reflect)
+//  - studentReflections (just for frontend display)
+//  - roundNumber (how many times this phase has been run)
 
 export const CurGameStateType = new GraphQLObjectType({
   name: "CurGameStateType",
   fields: () => ({
     curState: { type: GraphQLNonNull(GraphQLString) },
-    freeForAllPlayersResponseLeft: { type: GraphQLList(GraphQLString) },
-    orderedResponseNextPlayer: { type: GraphQLString },
+    playersLeftToRespond: { type: new GraphQLList(GraphQLString) },
+    studentReadyToContinue: { type: GraphQLBoolean },
+    curRoundNumber: { type: GraphQLInt },
+    endOfPhaseStep: { type: EndOfPhaseReflectionStepType },
+    selectedQuestion: { type: GraphQLString },
+    studentReflections: { type: GraphQLScalarType },
   }),
 });
 
@@ -232,56 +292,6 @@ export const RoomType = new GraphQLObjectType({
     name: { type: GraphQLString },
     gameData: { type: GameDataType },
     phase: { type: GraphQLString },
-    deletedRoom: { type: GraphQLBoolean },
-    versionNumber: { type: GraphQLInt },
-  }),
-});
-
-export const GlobalStateDataInputType = new GraphQLInputObjectType({
-  name: "GlobalStateDataInputType",
-  fields: () => ({
-    curStageId: { type: GraphQLString },
-    curStepId: { type: GraphQLString },
-    roomOwnerId: { type: GraphQLString },
-    discussionData: { type: GraphQLScalarType },
-    gameStateData: { type: GraphQLScalarType }, // Changed from List to Record (JSON scalar)
-  }),
-});
-
-export const ChatMessageInputType = new GraphQLInputObjectType({
-  name: "ChatMessageInput",
-  fields: () => ({
-    messageId: { type: GraphQLString },
-    message: { type: GraphQLString },
-    sender: { type: GraphQLString },
-    senderId: { type: GraphQLString },
-    senderName: { type: GraphQLString },
-    fromStepId: { type: GraphQLString },
-    sessionId: { type: GraphQLString },
-    displayType: { type: GraphQLString },
-    disableUserInput: { type: GraphQLBoolean },
-    mcqChoices: { type: new GraphQLList(GraphQLString) },
-  }),
-});
-
-export const GameDataInputType = new GraphQLInputObjectType({
-  name: "GameDataInputType",
-  fields: () => ({
-    gameId: { type: GraphQLString },
-    players: { type: new GraphQLList(GraphQLString) },
-    chat: { type: new GraphQLList(ChatMessageInputType) },
-    persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
-    globalStateData: { type: GlobalStateDataInputType },
-    playersGameStateData: { type: GraphQLScalarType }, // keyed by player ID
-  }),
-});
-
-export const RoomDataInputType = new GraphQLInputObjectType({
-  name: "RoomDataInputType",
-  fields: () => ({
-    classId: { type: GraphQLString },
-    name: { type: GraphQLString },
-    gameData: { type: GameDataInputType },
     deletedRoom: { type: GraphQLBoolean },
     versionNumber: { type: GraphQLInt },
   }),

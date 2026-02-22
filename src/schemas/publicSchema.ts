@@ -46,6 +46,9 @@ import viewGameRoomSimulation from "./mutation/view-game-room-simulation";
 import fetchGamesList from "./query/fetch-games-list";
 import assignStudentToGroup from "./mutation/assign-student-to-group";
 import assignClassGroupsAndStart from "./mutation/assign-class-groups-and-start";
+import submitGamePhaseReflection from "./mutation/submit-game-phase-reflection";
+import submitReadyToContinue from "./mutation/room-sumbit-ready-to-continue";
+import fetchGamePhaseReflections from "./query/fetch-game-phase-reflections";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -58,6 +61,7 @@ const PublicRootQuery = new GraphQLObjectType({
     fetchStudentDataHydration,
     fetchRoomHeartbeats,
     fetchGamesList,
+    fetchGamePhaseReflections,
   },
 });
 
@@ -84,6 +88,7 @@ const PublicMutation = new GraphQLObjectType({
     updateClassNameDescription,
     createNewGameRoom,
     roomHeartBeat,
+    submitReadyToContinue,
     testLlmCall,
     sendMessageToGameRoom,
     joinGameRoom,
@@ -91,6 +96,7 @@ const PublicMutation = new GraphQLObjectType({
     leaveGameRoom,
     pingGameRoomProcess,
     viewGameRoomSimulation,
+    submitGamePhaseReflection,
   },
 });
 

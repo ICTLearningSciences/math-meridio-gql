@@ -5,6 +5,8 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
+import { RequireInputType } from "./objects";
+
 export interface IStage {
   stageType: "discussion" | "simulation";
   clientId: string;
@@ -22,6 +24,7 @@ export interface FlowItem {
     | RequestUserInputStageStep
     | PromptStageStep
     | ConditionalActivityStep
+    | EndOfPhaseReflectionStep
   )[];
 }
 
@@ -38,13 +41,15 @@ export type DiscussionStageStep =
   | SystemMessageStageStep
   | RequestUserInputStageStep
   | PromptStageStep
-  | ConditionalActivityStep;
+  | ConditionalActivityStep
+  | EndOfPhaseReflectionStep;
 
 export enum DiscussionStageStepType {
   SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
   REQUEST_USER_INPUT = "REQUEST_USER_INPUT",
   PROMPT = "PROMPT",
   CONDITIONAL = "CONDITIONAL",
+  END_OF_PHASE_REFLECTION = "END_OF_PHASE_REFLECTION",
   NONE = "NONE",
 }
 
@@ -75,7 +80,7 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
   saveResponseVariableName: string;
   disableFreeInput: boolean;
   predefinedResponses: PredefinedResponse[];
-  requireAllUserInputs: boolean;
+  requireInputType: RequireInputType;
 }
 
 export interface PromptStageStep extends StageBuilderStep {
@@ -117,6 +122,13 @@ export interface LogicStepConditional {
 export interface ConditionalActivityStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.CONDITIONAL;
   conditionals: LogicStepConditional[];
+}
+
+export interface EndOfPhaseReflectionStep extends StageBuilderStep {
+  stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION;
+  phaseTitle: string;
+  message: string;
+  questions: string[];
 }
 
 export type CollectedDiscussionData = Record<

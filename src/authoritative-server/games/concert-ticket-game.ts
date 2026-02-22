@@ -143,7 +143,7 @@ export class ConcertTicketSalesStateHandler extends AbstractGameData {
         id: "finished",
         stage: finishedStage,
         getNextStage: () => {
-          return finishedStage;
+          return introDiscussionStage;
         },
       },
     ];

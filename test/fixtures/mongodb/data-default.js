@@ -7,6 +7,7 @@ The full terms of this copyright and license should always be found in the root 
 
 import mongoose from "mongoose";
 import { DiscussionStageStepType } from "../../../src/schemas/models/DiscussionStage/types";
+import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
 const { ObjectId } = mongoose.Types;
 
 const player1Id = "5f748650f4b3f1b9f1f1f1f1";
@@ -184,7 +185,7 @@ module.exports = {
               saveResponseVariableName: "name",
               disableFreeInput: false,
               predefinedResponses: [],
-              requireAllUserInputs: false,
+              requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
               lastStep: false,
             },
             {
@@ -222,7 +223,7 @@ module.exports = {
               message: "What is your prompt?",
               saveResponseVariableName: "user_input_prompt",
               disableFreeInput: false,
-              requireAllUserInputs: false,
+              requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
               predefinedResponses: [],
             },
             {
@@ -281,7 +282,7 @@ module.exports = {
               message: "Please enter number 1 or 2",
               saveResponseVariableName: "user_input_number",
               disableFreeInput: false,
-              requireAllUserInputs: false,
+              requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
               predefinedResponses: [],
             },
             {
@@ -354,7 +355,8 @@ module.exports = {
               saveResponseVariableName: "input_name",
               disableFreeInput: false,
               predefinedResponses: [],
-              requireAllUserInputs: true,
+              requireInputType:
+                RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
               lastStep: false,
             },
             {
@@ -370,7 +372,8 @@ module.exports = {
               saveResponseVariableName: "input_location",
               disableFreeInput: false,
               predefinedResponses: [],
-              requireAllUserInputs: true,
+              requireInputType:
+                RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
               lastStep: false,
             },
             {
@@ -402,8 +405,53 @@ module.exports = {
               saveResponseVariableName: "input_name",
               disableFreeInput: false,
               predefinedResponses: [],
-              requireAllUserInputs: true,
+              requireInputType:
+                RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
               lastStep: true,
+            },
+          ],
+        },
+      ],
+    },
+
+    {
+      _id: new ObjectId("5ffdf1231ee2b62320a49e31"),
+      clientId: "test-end-of-phase-reflection-client-id",
+      title: "Test End of Phase Reflection Discussion",
+      stageType: "discussion",
+      description: "",
+      flowsList: [
+        {
+          clientId: new ObjectId("5ffdf2221ee2c22322b49e6f"),
+          name: "Test End of Phase Reflection Flow",
+          steps: [
+            {
+              stepId: "1",
+              stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
+              message: "Ready for reflection?",
+              saveResponseVariableName: "input_name",
+              disableFreeInput: false,
+              predefinedResponses: [],
+              requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+              lastStep: false,
+            },
+            {
+              stepId: "2",
+              stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
+              phaseTitle: "End of Phase Reflection",
+              message: "Thank you for participating!",
+              questions: [
+                "What did you think of the activity?",
+                "What did you like about the activity?",
+              ],
+              lastStep: false,
+            },
+            {
+              stepId: "3",
+              stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
+              message: "Thank you for participating!",
+              lastStep: false,
+              jumpToStepId: "1",
             },
           ],
         },

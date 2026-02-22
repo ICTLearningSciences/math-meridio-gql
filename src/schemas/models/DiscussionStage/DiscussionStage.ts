@@ -32,6 +32,8 @@ import {
   PromptStageStepSchema,
   ConditionalActivityStepType,
   ConditionalActivityStepTypeInput,
+  EndOfPhaseReflectionStepType,
+  EndOfPhaseReflectionStepTypeInput,
 } from "./objects";
 import { DiscussionStage, DiscussionStageStepType } from "./types";
 
@@ -43,6 +45,7 @@ export const StageBuilderStepTypeUnion = new GraphQLUnionType({
     RequestUserInputStageStepType,
     SystemMessageStageStepType,
     ConditionalActivityStepType,
+    EndOfPhaseReflectionStepType,
   ],
   resolveType(value) {
     switch (value.stepType) {
@@ -54,6 +57,8 @@ export const StageBuilderStepTypeUnion = new GraphQLUnionType({
         return SystemMessageStageStepType;
       case DiscussionStageStepType.CONDITIONAL:
         return ConditionalActivityStepType;
+      case DiscussionStageStepType.END_OF_PHASE_REFLECTION:
+        return EndOfPhaseReflectionStepType;
       default:
         throw new Error("invalid step type");
     }
@@ -94,6 +99,7 @@ export const StageBuilderStepTypeInputUnion = new GraphQLInputObjectType({
     ...RequestUserInputStageStepTypeInput.getFields(),
     ...SystemMessageStageStepTypeInput.getFields(),
     ...ConditionalActivityStepTypeInput.getFields(),
+    ...EndOfPhaseReflectionStepTypeInput.getFields(),
   },
 });
 
