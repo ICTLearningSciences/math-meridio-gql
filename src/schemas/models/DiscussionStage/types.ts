@@ -24,6 +24,7 @@ export interface FlowItem {
     | RequestUserInputStageStep
     | PromptStageStep
     | ConditionalActivityStep
+    | EndOfPhaseReflectionStep
   )[];
 }
 
@@ -40,13 +41,15 @@ export type DiscussionStageStep =
   | SystemMessageStageStep
   | RequestUserInputStageStep
   | PromptStageStep
-  | ConditionalActivityStep;
+  | ConditionalActivityStep
+  | EndOfPhaseReflectionStep;
 
 export enum DiscussionStageStepType {
   SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
   REQUEST_USER_INPUT = "REQUEST_USER_INPUT",
   PROMPT = "PROMPT",
   CONDITIONAL = "CONDITIONAL",
+  END_OF_PHASE_REFLECTION = "END_OF_PHASE_REFLECTION",
   NONE = "NONE",
 }
 
@@ -119,6 +122,13 @@ export interface LogicStepConditional {
 export interface ConditionalActivityStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.CONDITIONAL;
   conditionals: LogicStepConditional[];
+}
+
+export interface EndOfPhaseReflectionStep extends StageBuilderStep {
+  stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION;
+  phaseTitle: string;
+  message: string;
+  questions: string[];
 }
 
 export type CollectedDiscussionData = Record<

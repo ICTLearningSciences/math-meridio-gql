@@ -11,6 +11,7 @@ import { ConcertTicketSalesStateHandler } from "./concert-ticket-game";
 import { UnitTestGame } from "./unit-test-game";
 import { UnitTestMultipleUsersGame } from "./unit-test-multiple-users-game";
 import { UnitTestSimulationGame } from "./unit-test-simulation-game";
+import { UnitTestEndOfPhaseReflectionGame } from "./unit-test-end-of-phase";
 
 export const WAIT_FOR_SIMULATION_STAGE_CLIENT_ID = "wait-for-simulation";
 
@@ -29,6 +30,8 @@ export function getGameById(
       return new UnitTestMultipleUsersGame(discussionStages);
     case "unit-test-simulation":
       return new UnitTestSimulationGame(discussionStages);
+    case "unit-test-end-of-phase":
+      return new UnitTestEndOfPhaseReflectionGame(discussionStages);
     default:
       throw new Error(`Game not found: ${gameId}`);
   }

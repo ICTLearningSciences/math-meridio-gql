@@ -20,7 +20,7 @@ import {
 import { getFirstStepId } from "../../../authoritative-server/authority/helpers/helpers";
 import {
   processCurStep,
-  processStepsUntilNextRequestUserInputStep,
+  processStepsUntilNextStallingPhase,
 } from "../../../authoritative-server/authority/step-process-pure-functions";
 import { AiServiceNames } from "../../../authoritative-server/llm-request/types";
 import mongoose from "mongoose";
@@ -52,6 +52,7 @@ export function initializeGameRoom(
       curGameState: {
         curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
         playersLeftToRespond: [],
+        studentReadyToContinue: false,
       },
       persistTruthGlobalStateData: game.persistTruthGlobalStateData,
       playersGameStateData: {},
@@ -126,9 +127,9 @@ export const createNewGameRoom = {
       curStageAndStep.curStep?.stepType !==
         DiscussionStageStepType.REQUEST_USER_INPUT
     ) {
-      // Now process all other steps until we reach a request user input step or simulation stage.
+      // Now process all other steps until we reach a request user input step or simulation stage or end of phase reflection step.
       const roomWithProcessedSteps: Room =
-        await processStepsUntilNextRequestUserInputStep(
+        await processStepsUntilNextStallingPhase(
           roomWithFirstStepProcessed,
           discussionStages,
           {

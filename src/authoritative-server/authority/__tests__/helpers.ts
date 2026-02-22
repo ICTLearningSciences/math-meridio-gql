@@ -21,7 +21,6 @@ import {
   DiscussionStageStep,
   DiscussionStage,
   SystemMessageStageStep,
-  RequestUserInputStageStep,
   PromptStageStep,
   NumericOperations,
   LogicStepConditional,
@@ -65,6 +64,7 @@ export function createBaseGameData(): GameData {
     curGameState: {
       curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
       playersLeftToRespond: [],
+      studentReadyToContinue: false,
     },
     chat: [],
     players: [

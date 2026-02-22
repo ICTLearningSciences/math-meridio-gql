@@ -213,6 +213,36 @@ export const PromptStageStepTypeInput = new GraphQLInputObjectType({
   }),
 });
 
+export const EndOfPhaseReflectionStepType = new GraphQLObjectType({
+  name: "EndOfPhaseReflectionStepType",
+  fields: () => ({
+    stepId: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
+    stepType: {
+      type: GraphQLString,
+      value: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
+    },
+    phaseTitle: { type: GraphQLString },
+    message: { type: GraphQLString },
+    questions: { type: GraphQLList(GraphQLString) },
+  }),
+});
+
+export const EndOfPhaseReflectionStepTypeInput = new GraphQLInputObjectType({
+  name: "EndOfPhaseReflectionStepTypeInput",
+  fields: () => ({
+    stepId: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
+    stepType: {
+      type: GraphQLString,
+      value: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
+    },
+    phaseTitle: { type: GraphQLString },
+    message: { type: GraphQLString },
+    questions: { type: GraphQLList(GraphQLString) },
+  }),
+});
+
 // schemas
 
 const StageBuilderStepSchema = new Schema(
@@ -273,10 +303,22 @@ export const PromptStageStepSchema = new Schema({
   customSystemRole: { type: String },
 });
 
+export const EndOfPhaseReflectionStepSchema = new Schema({
+  ...StageBuilderStepSchema.obj,
+  stepType: {
+    type: String,
+    default: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
+  },
+  phaseTitle: { type: String },
+  message: { type: String },
+  questions: { type: [String] },
+});
+
 // union the 3 step schemas
 export const StageBuilderStepUnionSchema = new Schema({
   ...SystemMessageStageStepSchema.obj,
   ...RequestUserInputStageStepSchema.obj,
   ...PromptStageStepSchema.obj,
   ...LogicOperationActivityStepSchema.obj,
+  ...EndOfPhaseReflectionStepSchema.obj,
 });

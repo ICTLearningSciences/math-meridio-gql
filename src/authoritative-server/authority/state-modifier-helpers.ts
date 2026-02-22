@@ -10,10 +10,6 @@ import { ChatMessage, GameData } from "../../schemas/models/Room";
 
 import * as crypto from "node:crypto"; // Use 'node:crypto' for ESM or require('crypto') for CommonJS
 import { replaceStoredDataInString } from "./helpers/helpers";
-import {
-  DiscussionStageStep,
-  DiscussionStageStepType,
-} from "../../schemas/models/DiscussionStage/types";
 
 export function getGameDataCopy(gameData: GameData): GameData {
   return JSON.parse(JSON.stringify(gameData));

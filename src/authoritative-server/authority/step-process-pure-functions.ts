@@ -19,6 +19,7 @@ import {
   CollectedDiscussionData,
   DiscussionStage,
   DiscussionStageStepType,
+  EndOfPhaseReflectionStep,
   isDiscussionStage,
   PromptStageStep,
   RequestUserInputStageStep,
@@ -54,6 +55,8 @@ import {
 import RoomModel from "../../schemas/models/Room";
 import { PlayerDocument } from "../../schemas/models/Player";
 import { RequireInputType } from "../../schemas/models/DiscussionStage/objects";
+import { GamePhaseReflections } from "../../schemas/models/GamePhaseReflections";
+import GamePhaseReflectionsModel from "../../schemas/models/GamePhaseReflections";
 
 export enum RoomModificationEnum {
   ADD_MESSAGE = "ADD_MESSAGE",
@@ -223,6 +226,23 @@ export async function applyAtomicRoomModificationActions(
   }
 
   return updatedRoom.gameData;
+}
+
+export function startEndOfPhaseReflectionStep(
+  _gameData: GameData,
+  curStep: EndOfPhaseReflectionStep,
+  sessionId: string
+): AddMessageRoomAtomicAction {
+  const newMessage = buildSystemMessage(
+    _gameData,
+    curStep.message,
+    sessionId,
+    curStep.stepId
+  );
+  return {
+    actionType: RoomModificationEnum.ADD_MESSAGE,
+    newMessage: newMessage,
+  };
 }
 
 export function startRequestUserInputStep(
@@ -402,11 +422,9 @@ export async function addPlayerToRoom(
     {
       $push: { "gameData.players": player._id },
       $set: {
-        "gameData.playersGameStateData": {
-          [player._id]: {
-            ...(room.gameData.globalStateData.gameStateData || {}),
-            ...oldPlayerData,
-          },
+        [`gameData.playersGameStateData.${player._id}`]: {
+          ...(room.gameData.globalStateData.gameStateData || {}),
+          ...oldPlayerData,
         },
       },
     },
@@ -431,6 +449,15 @@ export async function processCurStep(
     return room;
   }
   switch (curStep.stepType) {
+    case DiscussionStageStepType.END_OF_PHASE_REFLECTION:
+      const endOfPhaseReflectionStepAction: AtomicRoomModiticationAction =
+        startEndOfPhaseReflectionStep(gameData, curStep, sessionId);
+      gameData = await applyAtomicRoomModificationActions(
+        gameData,
+        [endOfPhaseReflectionStepAction],
+        room._id
+      );
+      break;
     case DiscussionStageStepType.REQUEST_USER_INPUT:
       const roomModificationActions: AtomicRoomModiticationAction =
         startRequestUserInputStep(gameData, curStep, sessionId);
@@ -447,6 +474,7 @@ export async function processCurStep(
       gameData.curGameState = {
         curState: requestUserInputStep.requireInputType,
         playersLeftToRespond: stageStatus.playersLeftToRespond || [],
+        studentReadyToContinue: false,
       };
       break;
     case DiscussionStageStepType.SYSTEM_MESSAGE:
@@ -500,6 +528,7 @@ export function processSimulationStep(room: Room): Room {
       curGameState: {
         curState: "WAITING_FOR_SIMULATION",
         playersLeftToRespond: [],
+        studentReadyToContinue: false,
       },
     },
   };
@@ -508,6 +537,82 @@ export function processSimulationStep(room: Room): Room {
 export interface RequestUserInputStepCompletionStatus {
   isComplete: boolean;
   playersLeftToRespond: string[];
+}
+
+export interface EndOfPhaseReflectionStepCompletionStatus {
+  isComplete: boolean;
+  playersLeftToRespond: string[];
+  studentReflections: Record<string, string>;
+}
+
+export async function transitionToEndOfPhaseReflectionState(
+  room: Room,
+  curStep: EndOfPhaseReflectionStep,
+  curStepGamePhaseReflections: GamePhaseReflections[]
+) {
+  if (room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION") {
+    console.log("already transitioned to end of phase reflection state");
+    return room;
+  }
+  const roundNumber = curStepGamePhaseReflections.length + 1;
+
+  const selectedQuestion =
+    curStep.questions[Math.floor(Math.random() * curStep.questions.length)];
+
+  await GamePhaseReflectionsModel.create({
+    roomId: room._id,
+    stepId: curStep.stepId,
+    roundNumber: roundNumber,
+    question: selectedQuestion,
+    reflections: {},
+  });
+
+  return (
+    await RoomModel.findOneAndUpdate(
+      { _id: room._id },
+      {
+        $set: {
+          "gameData.curGameState": {
+            curState: "END_OF_PHASE_REFLECTION",
+            playersLeftToRespond: room.gameData.players,
+            curRoundNumber: roundNumber,
+            endOfPhaseStep: curStep,
+            selectedQuestion: selectedQuestion,
+          },
+        },
+      },
+      { new: true }
+    )
+  ).toObject();
+}
+
+/**
+ * Checks if all users CURRENTLY in the room have provided a response for the reflection
+ * @param room A room that is already in the END_OF_PHASE_REFLECTION state
+ * @returns
+ */
+export function endOfPhaseReflectionStepStatus(
+  room: Room,
+  curRoundGameReflections: GamePhaseReflections
+): EndOfPhaseReflectionStepCompletionStatus {
+  if (room.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION") {
+    console.log("not in end of phase reflection state, will not check status");
+    return {
+      isComplete: false,
+      playersLeftToRespond:
+        room.gameData.curGameState.playersLeftToRespond || [],
+      studentReflections: {},
+    };
+  }
+  const playersInRoom = room.gameData.players;
+  const playersWithNoReponse = playersInRoom.filter(
+    (playerId) => !curRoundGameReflections.reflections[playerId]
+  );
+  return {
+    isComplete: playersWithNoReponse.length === 0,
+    playersLeftToRespond: playersWithNoReponse,
+    studentReflections: curRoundGameReflections.reflections,
+  };
 }
 
 export function requestUserInputStageStatus(
@@ -612,10 +717,10 @@ export function isSimulationStageComplete(_gameData: GameData): boolean {
 }
 
 /**
- * Goes to the next step and continues processing steps until we reach the next request user input step.
- * This means we process prompts, system messages, and conditionals until we reach the next request user input step, of which will still have its message added to the chat.
+ * Goes to the next step and continues processing steps until we reach the next stalling phase (Request user input, simulation stage, end of phase reflection stage)
+ * This means we process prompts, system messages, and conditionals until we reach the next stalling phase, of which will still have its message added to the chat.
  */
-export async function processStepsUntilNextRequestUserInputStep(
+export async function processStepsUntilNextStallingPhase(
   room: Room,
   discussionStages: DiscussionStage[],
   targetAiServiceModel: TargetAiModelServiceType,
@@ -655,6 +760,8 @@ export async function processStepsUntilNextRequestUserInputStep(
   } while (
     stepAndStage.curStep?.stepType !==
       DiscussionStageStepType.REQUEST_USER_INPUT &&
+    stepAndStage.curStep?.stepType !==
+      DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
     stepAndStage.curStage.clientId !== WAIT_FOR_SIMULATION_STAGE_CLIENT_ID
   );
 

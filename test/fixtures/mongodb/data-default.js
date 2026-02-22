@@ -413,5 +413,49 @@ module.exports = {
         },
       ],
     },
+
+    {
+      _id: new ObjectId("5ffdf1231ee2b62320a49e31"),
+      clientId: "test-end-of-phase-reflection-client-id",
+      title: "Test End of Phase Reflection Discussion",
+      stageType: "discussion",
+      description: "",
+      flowsList: [
+        {
+          clientId: new ObjectId("5ffdf2221ee2c22322b49e6f"),
+          name: "Test End of Phase Reflection Flow",
+          steps: [
+            {
+              stepId: "1",
+              stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
+              message: "Ready for reflection?",
+              saveResponseVariableName: "input_name",
+              disableFreeInput: false,
+              predefinedResponses: [],
+              requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+              lastStep: false,
+            },
+            {
+              stepId: "2",
+              stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
+              phaseTitle: "End of Phase Reflection",
+              message: "Thank you for participating!",
+              questions: [
+                "What did you think of the activity?",
+                "What did you like about the activity?",
+              ],
+              lastStep: false,
+            },
+            {
+              stepId: "3",
+              stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
+              message: "Thank you for participating!",
+              lastStep: false,
+              jumpToStepId: "1",
+            },
+          ],
+        },
+      ],
+    },
   ],
 };
