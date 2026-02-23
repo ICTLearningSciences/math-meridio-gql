@@ -57,7 +57,10 @@ import { PlayerDocument } from "../../schemas/models/Player";
 import { RequireInputType } from "../../schemas/models/DiscussionStage/objects";
 import { GamePhaseReflections } from "../../schemas/models/GamePhaseReflections";
 import GamePhaseReflectionsModel from "../../schemas/models/GamePhaseReflections";
-import { PlayerComputedState } from "schemas/types/types";
+import {
+  PlayerComputedState,
+  PlayerStatusData,
+} from "../../schemas/types/types";
 
 export enum RoomModificationEnum {
   ADD_MESSAGE = "ADD_MESSAGE",
@@ -408,6 +411,52 @@ export async function processPromptStep(
 
   return atomicRoomModificationActions;
 }
+export const defaultPlayerStatusRecord: PlayerStatusData = {
+  lastHeartbeatAt: new Date(),
+  reportedAwayStatus: {
+    isAway: false,
+  },
+  pausedByAdmin: false,
+  computedState: PlayerComputedState.ACTIVE,
+};
+
+export async function updatePlayersHeartbeat(
+  roomId: string,
+  playerId: string
+): Promise<Room> {
+  let needToInitializePlayerStatusRecord = false;
+  let room = await RoomModel.findOne({ _id: roomId, deletedRoom: false });
+  if (!room) {
+    throw new Error(`Room not found: ${roomId}`);
+  }
+  if (!Object.keys(room.gameData.playersStatusRecord).includes(playerId)) {
+    needToInitializePlayerStatusRecord = true;
+  }
+  if (needToInitializePlayerStatusRecord) {
+    room = await RoomModel.findOneAndUpdate(
+      { _id: roomId },
+      {
+        $set: {
+          [`gameData.playersStatusRecord.${playerId}`]:
+            defaultPlayerStatusRecord,
+        },
+      },
+      { new: true }
+    );
+  } else {
+    room = await RoomModel.findOneAndUpdate(
+      { _id: room._id },
+      {
+        $set: {
+          [`gameData.playersStatusRecord.${playerId}.lastHeartbeatAt`]:
+            new Date(),
+        },
+      },
+      { new: true }
+    );
+  }
+  return room.toObject();
+}
 
 export async function addPlayerToRoom(
   room: Room,
@@ -431,14 +480,8 @@ export async function addPlayerToRoom(
       $set: {
         ...(shouldUpdateStatusRecord
           ? {
-              [`gameData.playersStatusRecord.${player._id}`]: {
-                lastHeartbeatAt: new Date(),
-                reportedAwayStatus: {
-                  isAway: false,
-                },
-                pausedByAdmin: false,
-                computedState: PlayerComputedState.ACTIVE,
-              },
+              [`gameData.playersStatusRecord.${player._id}`]:
+                defaultPlayerStatusRecord,
             }
           : {}),
         [`gameData.playersGameStateData.${player._id}`]: {
@@ -605,6 +648,18 @@ export async function transitionToEndOfPhaseReflectionState(
   ).toObject();
 }
 
+export function getActivePlayersInRoom(gameData: GameData): string[] {
+  const playersInRoom = gameData.players;
+  const activePlayersInRoom = Object.entries(gameData.playersStatusRecord)
+    .filter(
+      ([playerId, playerStatus]) =>
+        playersInRoom.includes(playerId) &&
+        playerStatus.computedState === PlayerComputedState.ACTIVE
+    )
+    .map(([playerId, _]) => playerId);
+  return activePlayersInRoom;
+}
+
 /**
  * Checks if all users CURRENTLY in the room have provided a response for the reflection
  * @param room A room that is already in the END_OF_PHASE_REFLECTION state
@@ -623,8 +678,8 @@ export function endOfPhaseReflectionStepStatus(
       studentReflections: {},
     };
   }
-  const playersInRoom = room.gameData.players;
-  const playersWithNoReponse = playersInRoom.filter(
+  const activePlayersInRoom = getActivePlayersInRoom(room.gameData);
+  const playersWithNoReponse = activePlayersInRoom.filter(
     (playerId) => !curRoundGameReflections.reflections[playerId]
   );
   return {
@@ -679,7 +734,7 @@ export function requestUserInputStageStatus(
     console.log(
       `Requiring all player inputs with type: ${curStep.requireInputType}`
     );
-    const playerIds = gameData.players;
+    const activePlayerIds = getActivePlayersInRoom(gameData);
     const messagesAfterInputStepMessage = gameData.chat.slice(
       mostRecentSystemMessageIdx + 1
     );
@@ -697,11 +752,11 @@ export function requestUserInputStageStatus(
       };
     }
 
-    const isComplete = playerIds.every((playerId) =>
+    const isComplete = activePlayerIds.every((playerId) =>
       userMessagesAfterInputStepMessage.some((msg) => msg.senderId === playerId)
     );
 
-    const playersLeftToRespond = playerIds.filter(
+    const playersLeftToRespond = activePlayerIds.filter(
       (playerId) =>
         !userMessagesAfterInputStepMessage.some(
           (msg) => msg.senderId === playerId

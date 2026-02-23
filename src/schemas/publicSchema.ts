@@ -9,6 +9,8 @@ import { GraphQLObjectType, GraphQLSchema } from "graphql";
 import fetchRoom from "./query/fetch-room";
 import fetchRooms from "./query/fetch-rooms";
 import deleteRoom from "./mutation/room-delete";
+import reportPlayerAway from "./mutation/report-player-away";
+import clearAwayStatus from "./mutation/clear-away-status";
 import renameRoom from "./mutation/room-rename";
 import joinGameRoom from "./mutation/join-game-room";
 import leaveGameRoom from "./mutation/leave-game-room";
@@ -26,6 +28,7 @@ import loginGoogle from "./mutation/login-google";
 import refreshAccessToken from "./mutation/refresh-access-token";
 
 import createClassroom from "./mutation/create-classroom";
+import setPlayerPauseStatus from "./mutation/set-player-pause-status";
 import createNewClassInviteCode from "./mutation/create-new-class-invite-code";
 import revokeClassInviteCode from "./mutation/revoke-class-invite-code";
 import joinClassroom from "./mutation/join-classroom";
@@ -70,7 +73,10 @@ const PublicMutation = new GraphQLObjectType({
   name: "PublicMutation",
   fields: {
     deleteRoom,
+    reportPlayerAway,
+    clearAwayStatus,
     renameRoom,
+    setPlayerPauseStatus,
     addOrUpdatePlayer,
     addOrUpdateDiscussionStage,
     createClassMembership,

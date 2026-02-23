@@ -13,7 +13,10 @@ import {
   RequestUserInputStageStep,
 } from "../../schemas/models/DiscussionStage/types";
 import { DiscussionStageStepType } from "../../schemas/models/DiscussionStage/types";
-import { acquireProcessingLock } from "../../authoritative-server/authority/helpers/helpers";
+import {
+  acquireProcessingLock,
+  updateRoomPlayerStatusedRecord,
+} from "../../authoritative-server/authority/helpers/helpers";
 import {
   requestUserInputStageStatus as _isRequestUserInputStepComplete,
   isSimulationStageComplete as _isSimulationStageComplete,
@@ -28,6 +31,9 @@ import GamePhaseReflectionsModel, {
 } from "../../schemas/models/GamePhaseReflections";
 import { getCurStageAndStep } from "../../authoritative-server/authority/user-action-pure-functions";
 import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../authoritative-server/games/game-helpers";
+import { PlayerComputedState } from "../../schemas/types/types";
+import { EducationalRole } from "../../schemas/models/Player";
+import { updatePlayersHeartbeat } from "../../authoritative-server/authority/step-process-pure-functions";
 
 export const pingGameRoomProcess = {
   type: RoomType,
@@ -40,17 +46,31 @@ export const pingGameRoomProcess = {
     args: {
       roomId: string;
       sessionId: string;
+    },
+    context: {
+      userId: string;
+      userEducationalRole: EducationalRole;
     }
   ): Promise<Room> => {
     const { roomId, sessionId } = args;
-    const _room = await RoomModel.findOne({ _id: roomId, deletedRoom: false });
-    if (!_room) {
-      throw new Error("Room not found");
-    }
-
-    let room: Room = _room.toObject();
+    let room = await updatePlayersHeartbeat(roomId, context.userId);
     if (room.gameData.players.length === 0) {
       console.log("no players in room, returning room as is");
+      return room;
+    }
+    room = await updateRoomPlayerStatusedRecord(
+      room,
+      context.userId,
+      RoomModel
+    );
+    const activePlayers = Object.values(
+      room.gameData.playersStatusRecord
+    ).filter(
+      (playerStatus) =>
+        playerStatus.computedState === PlayerComputedState.ACTIVE
+    );
+    if (activePlayers.length === 0) {
+      console.log("no active players in room, returning room as is");
       return room;
     }
     const _discussionStages = await DiscussionStageModel.find();
@@ -116,18 +136,6 @@ export const pingGameRoomProcess = {
       isEndOfPhaseReflectionReadyUpComplete;
 
     console.log("-------------------------------- FIRST CHECKING VARS -----");
-    // console.log("isDiscussionStage", isDiscussionStage);
-    // console.log("isRequestUserInputStep", isRequestUserInputStep);
-    // console.log("requestUserInputStageStatus", requestUserInputStageStatus);
-    // console.log("isSimulationStage", isSimulationStage);
-    // console.log("isSimulationStageComplete", isSimulationStageComplete);
-    // console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
-    // console.log(
-    //   "endOfPhaseReflectionStepStatus",
-    //   endOfPhaseReflectionStepStatus
-    // );
-    // console.log("isWaitingForStudentReadyToContinue", isWaitingForStudentReadyToContinue);
-    // console.log("studentReadyToContinue", studentReadyToContinue);
     console.log(
       "isCompleteRequestUserInputStep",
       isCompleteRequestUserInputStep

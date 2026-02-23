@@ -131,3 +131,27 @@ export const submitReadyToContinueMutation = `
     submitReadyToContinue(roomId: $roomId)
   }
 `;
+
+export const reportPlayerAwayMutation = `
+  mutation ReportPlayerAway($roomId: String!, $playerId: ID!) {
+    reportPlayerAway(roomId: $roomId, playerId: $playerId) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const clearAwayStatusMutation = `
+  mutation ClearAwayStatus($roomId: String!, $playerId: ID!) {
+    clearAwayStatus(roomId: $roomId, playerId: $playerId) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const setPlayerPauseStatusMutation = `
+  mutation SetPlayerPauseStatus($roomId: String!, $playerId: ID!, $isPaused: Boolean!) {
+    setPlayerPauseStatus(roomId: $roomId, playerId: $playerId, isPaused: $isPaused) {
+      ${fullRoomData}
+    }
+  }
+`;

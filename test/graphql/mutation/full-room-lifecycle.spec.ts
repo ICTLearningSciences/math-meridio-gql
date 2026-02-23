@@ -16,13 +16,16 @@ import mongoose from "mongoose";
 const { ObjectId } = mongoose.Types;
 import RoomModel, { Room } from "../../../src/schemas/models/Room";
 import {
+  clearAwayStatusMutation,
   createNewGameRoomMutation,
-  fullRoomData,
   joinGameRoomMutation,
   leaveGameRoomMutation,
   pingGameRoomProcessMutation,
+  PlayerComputedState,
   PromptRoles,
+  reportPlayerAwayMutation,
   sendMessageToGameRoomMutation,
+  setPlayerPauseStatusMutation,
   submitReadyToContinueMutation,
   UserRole,
   viewGameRoomSimulationMutation,
@@ -60,6 +63,97 @@ const submitGamePhaseReflectionMutation = `
 describe("full room lifecycle", () => {
   let app: Express;
   const syncLlmRequestStub = sinon.stub(llmRequest, "syncLlmRequest");
+
+  async function pingRoomProcess(
+    roomId: string,
+    sessionId: string,
+    token: string
+  ) {
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: { roomId, sessionId },
+      });
+    return response;
+  }
+
+  async function reportPlayerAway(
+    roomId: string,
+    playerId: string,
+    reporterToken: string
+  ) {
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${reporterToken}`)
+      .send({
+        query: reportPlayerAwayMutation,
+        variables: { roomId, playerId },
+      });
+    return response;
+  }
+
+  async function sendMessageToGameRoom(
+    roomId: string,
+    message: string,
+    sessionId: string,
+    token: string
+  ) {
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: { roomId, message, sessionId },
+      });
+    return response;
+  }
+
+  async function clearAwayStatus(
+    roomId: string,
+    playerId: string,
+    instructorToken: string
+  ) {
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${instructorToken}`)
+      .send({
+        query: clearAwayStatusMutation,
+        variables: { roomId, playerId },
+      });
+    return response;
+  }
+
+  async function pausePlayer(
+    roomId: string,
+    playerId: string,
+    instructorToken: string
+  ) {
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${instructorToken}`)
+      .send({
+        query: setPlayerPauseStatusMutation,
+        variables: { roomId, playerId, isPaused: true },
+      });
+    return response;
+  }
+
+  async function unpausePlayer(
+    roomId: string,
+    playerId: string,
+    instructorToken: string
+  ) {
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${instructorToken}`)
+      .send({
+        query: setPlayerPauseStatusMutation,
+        variables: { roomId, playerId, isPaused: false },
+      });
+    return response;
+  }
 
   beforeEach(async () => {
     await mongoUnit.load(require("test/fixtures/mongodb/data-default.js"));
@@ -856,6 +950,347 @@ describe("full room lifecycle", () => {
     expect(
       currentRoom?.gameData.curGameState.playersLeftToRespond
     ).to.deep.equal([ownerStudentId, studentTwoId, lateStudentId]);
+  });
+
+  it("player statuses enforced and set correctly", async () => {
+    // 1: create 4 new students to track
+    const ownerStudentId = new ObjectId().toString();
+    const studentTwoId = new ObjectId().toString();
+    const instructorId = new ObjectId().toString();
+
+    await createUser(ownerStudentId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(studentTwoId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(instructorId, UserRole.USER, EducationalRole.INSTRUCTOR);
+
+    const ownerStudentToken = await getToken(
+      ownerStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const studentTwoToken = await getToken(
+      studentTwoId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const instructorToken = await getToken(
+      instructorId,
+      UserRole.USER,
+      EducationalRole.INSTRUCTOR
+    );
+
+    // 2: create a room with createNewGameRoomMutation for gameId "unit-test-multiple-users"
+    const createNewGameRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test-multiple-users",
+        },
+      });
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
+    const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
+
+    // ENSURE the room is in the correct state after creation
+    let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL
+    );
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([ownerStudentId]);
+
+    // ENSURE starting at correct stage and step
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // 3: add studentTwo to the room with joinGameRoomMutation
+    const joinStudentTwoResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: joinGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(joinStudentTwoResponse.status).to.equal(200);
+    expect(joinStudentTwoResponse.body.data.joinGameRoom).to.exist;
+
+    // ENSURE that both users have their statuses initialized
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId].computedState
+    ).to.equal(PlayerComputedState.ACTIVE);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].computedState
+    ).to.equal(PlayerComputedState.ACTIVE);
+
+    // 4: ping the room from the owner student
+    const pingRoomResponse = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingRoomResponse.status).to.equal(200);
+
+    // ENSURE the owners heartbeat is > studentTwo's heartbeat, but both are active.
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId].computedState
+    ).to.equal(PlayerComputedState.ACTIVE);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].computedState
+    ).to.equal(PlayerComputedState.ACTIVE);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId].lastHeartbeatAt
+    ).to.be.greaterThan(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].lastHeartbeatAt ||
+        new Date(0)
+    );
+
+    // 5. set the studentTwo as away + ping
+    const reportStudentTwoAwayResponse = await reportPlayerAway(
+      newRoomId,
+      studentTwoId,
+      ownerStudentToken
+    );
+    expect(reportStudentTwoAwayResponse.status).to.equal(200);
+    expect(reportStudentTwoAwayResponse.body.data.reportPlayerAway).to.exist;
+
+    const pingAfterReportStudentTwoAway = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterReportStudentTwoAway.status).to.equal(200);
+
+    // ENSURE studentTwo's computed state is set as REPORTED_AWAY_BY_OTHER_PLAYER and isAway is set to true
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].computedState
+    ).to.equal(PlayerComputedState.REPORTED_AWAY_BY_OTHER_PLAYER);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].reportedAwayStatus
+        .isAway
+    ).to.be.true;
+
+    // 6. send owner message + ping
+    const ownerMessageResponse = await sendMessageToGameRoom(
+      newRoomId,
+      "Owner's first input",
+      "session1",
+      ownerStudentToken
+    );
+    expect(ownerMessageResponse.status).to.equal(200);
+
+    const pingAfterOwnerMessage = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterOwnerMessage.status).to.equal(200);
+
+    // ENSURE has moved on to next require user input step since studentTwo is away, ignores requiring their message.
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
+
+    // 7. studentTwo clears their away status + ping
+    const clearStudentTwoAwayStatusResponse = await clearAwayStatus(
+      newRoomId,
+      studentTwoId,
+      ownerStudentToken
+    );
+    expect(clearStudentTwoAwayStatusResponse.status).to.equal(200);
+
+    const pingAfterClearStudentTwoAwayStatus = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterClearStudentTwoAwayStatus.status).to.equal(200);
+
+    // ENSURE studentTwo isAway is false and is set to ACTIVE
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].computedState
+    ).to.equal(PlayerComputedState.ACTIVE);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].reportedAwayStatus
+        .isAway
+    ).to.be.false;
+
+    // 8. send owner message + ping
+    const ownerSecondMessageResponse = await sendMessageToGameRoom(
+      newRoomId,
+      "Owner's second input",
+      "session1",
+      ownerStudentToken
+    );
+    expect(ownerSecondMessageResponse.status).to.equal(200);
+
+    const pingAfterOwnerSecondMessage = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterOwnerSecondMessage.status).to.equal(200);
+
+    // ENSURE still on same require user input step since studentTwo is back.
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
+
+    // 9. instructor pauses studentTwo + ping
+    const pauseStudentTwoResponse = await pausePlayer(
+      newRoomId,
+      studentTwoId,
+      instructorToken
+    );
+    expect(pauseStudentTwoResponse.status).to.equal(200);
+
+    const pingAfterPauseStudentTwo = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      instructorToken
+    );
+    expect(pingAfterPauseStudentTwo.status).to.equal(200);
+    console.log(JSON.stringify(pingAfterPauseStudentTwo.body, null, 2));
+
+    // ENSURE has moved on to next require user input step since studentTwo is paused, ignores requiring their message.
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // 10. instructor unpauses studentTwo + ping
+    const unpauseStudentTwoResponse = await unpausePlayer(
+      newRoomId,
+      studentTwoId,
+      instructorToken
+    );
+    expect(unpauseStudentTwoResponse.status).to.equal(200);
+
+    const pingAfterUnpauseStudentTwo = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      instructorToken
+    );
+    expect(pingAfterUnpauseStudentTwo.status).to.equal(200);
+
+    // ENSURE studentTwo is computedState is set to ACTIVE
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].computedState
+    ).to.equal(PlayerComputedState.ACTIVE);
+
+    // 11. owner sends message + ping
+    const ownerThirdMessageResponse = await sendMessageToGameRoom(
+      newRoomId,
+      "Owner's third input",
+      "session1",
+      ownerStudentToken
+    );
+    expect(ownerThirdMessageResponse.status).to.equal(200);
+
+    const pingAfterOwnerThirdMessage = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterOwnerThirdMessage.status).to.equal(200);
+
+    // ENSURE still on same require user input step since studentTwo is unpaused.
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // 12. studentTwo sends a message + ping
+    const studentTwoThirdMessageResponse = await sendMessageToGameRoom(
+      newRoomId,
+      "Student Two's third input",
+      "session2",
+      studentTwoToken
+    );
+    expect(studentTwoThirdMessageResponse.status).to.equal(200);
+
+    const pingAfterStudentTwoThirdMessage = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      studentTwoToken
+    );
+    expect(pingAfterStudentTwoThirdMessage.status).to.equal(200);
+
+    // ENSURE moves on to next require user input step
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("4");
+
+    // 13. manually set the heartbeat of studentTwo to 30 seconds ago + ping
+    await RoomModel.updateOne(
+      { _id: newRoomId },
+      {
+        $set: {
+          [`gameData.playersStatusRecord.${studentTwoId}.lastHeartbeatAt`]:
+            new Date(Date.now() - 30000),
+        },
+      },
+      { new: true }
+    );
+
+    const pingAfterStudentTwoHeartbeatSet = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterStudentTwoHeartbeatSet.status).to.equal(200);
+
+    // ENSURE studentTwo is computedState is set to INACTIVE
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].computedState
+    ).to.equal(PlayerComputedState.INACTIVE);
+
+    // 14. owner sends message + ping
+    const ownerFourthMessageResponse = await sendMessageToGameRoom(
+      newRoomId,
+      "Owner's fourth input",
+      "session1",
+      ownerStudentToken
+    );
+    expect(ownerFourthMessageResponse.status).to.equal(200);
+
+    const pingAfterOwnerFourthMessage = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterOwnerFourthMessage.status).to.equal(200);
+
+    // ENSURE moved on to next request user input step since studentTwo is INACTIVE
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // 15. owner sends message + ping FROM STUDENT TWO
+    const ownerFifthMessageResponse = await sendMessageToGameRoom(
+      newRoomId,
+      "Owner's fifth input",
+      "session1",
+      ownerStudentToken
+    );
+    expect(ownerFifthMessageResponse.status).to.equal(200);
+
+    const pingFromStudentTwo = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      studentTwoToken
+    );
+    expect(pingFromStudentTwo.status).to.equal(200);
+
+    // ENSURE we have NOT moved on since studentTwo has pinged, they should now be active again.
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+    expect(
+      currentRoom?.gameData.playersStatusRecord[studentTwoId].computedState
+    ).to.equal(PlayerComputedState.ACTIVE);
   });
 
   it("process locking handles fast requests", async () => {
