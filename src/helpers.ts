@@ -12,6 +12,8 @@ import { Request } from "express";
 import mongoose from "mongoose";
 dotenv.config();
 import jwt from "jsonwebtoken";
+import { PlayerComputedState } from "./schemas/types/types";
+import { PlayerStatusData } from "./schemas/types/types";
 
 const queryPayloadSchema = {
   type: "object",
@@ -90,4 +92,33 @@ export async function getDataFromRequest(
   } catch (err) {
     return undefined;
   }
+}
+
+export const PLAYER_INACTIVE_THRESHOLD_MS = 15000;
+
+export function getPlayerComputedState(
+  playerStatus: PlayerStatusData
+): PlayerComputedState {
+  if (playerStatus.lastHeartbeatAt === undefined) {
+    return PlayerComputedState.NEVER_ACCESSED_ACTIVITY;
+  }
+  if (playerStatus.pausedByAdmin) {
+    return PlayerComputedState.PAUSED_BY_ADMIN;
+  }
+  if (playerStatus.reportedAwayStatus.isAway) {
+    if (playerStatus.reportedAwayStatus.reportedBy === "STUDENT") {
+      return PlayerComputedState.REPORTED_AWAY_BY_OTHER_PLAYER;
+    } else if (
+      playerStatus.reportedAwayStatus.reportedBy === "FRONTEND_SYSTEM"
+    ) {
+      return PlayerComputedState.REPORTED_AWAY_BY_FRONTEND_DETECTION;
+    }
+  }
+  const now = new Date();
+  const timeSinceLastHeartbeat =
+    now.getTime() - playerStatus.lastHeartbeatAt.getTime();
+  if (timeSinceLastHeartbeat > PLAYER_INACTIVE_THRESHOLD_MS) {
+    return PlayerComputedState.INACTIVE;
+  }
+  return PlayerComputedState.ACTIVE;
 }

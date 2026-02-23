@@ -22,6 +22,30 @@ export enum UserRole {
   ADMIN = "ADMIN",
 }
 
+export enum PlayerComputedState {
+  NEVER_ACCESSED_ACTIVITY = "NEVER_ACCESSED_ACTIVITY", // no heartebeat ever recorded
+  PAUSED_BY_ADMIN = "PAUSED_BY_ADMIN", // paused by admin
+  REPORTED_AWAY_BY_OTHER_PLAYER = "REPORTED_AWAY_BY_OTHER_PLAYER", // reported away by other player
+  REPORTED_AWAY_BY_FRONTEND_DETECTION = "REPORTED_AWAY_BY_FRONTEND_DETECTION", // reported away by frontend detection
+  INACTIVE = "INACTIVE", // no heartbeat in the last 15 seconds
+  ACTIVE = "ACTIVE", // heartbeat in the last 15 seconds
+}
+
+export interface ReportedAwayStatus {
+  isAway: boolean;
+  reportedAwayAt?: Date;
+  reportedBy?: "STUDENT" | "FRONTEND_SYSTEM";
+}
+
+export interface PlayerStatusData {
+  lastHeartbeatAt?: Date;
+  reportedAwayStatus: ReportedAwayStatus;
+  pausedByAdmin: boolean;
+  computedState: PlayerComputedState;
+}
+
+export type PlayerStatusRecord = Record<string, PlayerStatusData>;
+
 export const fullRoomData = `
       _id
       name

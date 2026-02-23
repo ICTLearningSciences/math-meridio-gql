@@ -48,6 +48,7 @@ export function initializeGameRoom(
     gameData: {
       gameId: gameId,
       players: [],
+      playersStatusRecord: {},
       chat: [],
       curGameState: {
         curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,

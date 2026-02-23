@@ -18,8 +18,8 @@ import {
 } from "../models/classes/ClassMembership";
 import ClassMembershipModel, {
   ClassMembership,
-} from "schemas/models/classes/ClassMembership";
-import PlayerModel from "schemas/models/Player";
+} from "../../schemas/models/classes/ClassMembership";
+import PlayerModel from "../../schemas/models/Player";
 
 export const createClassroom = {
   type: ClassMembershipType,

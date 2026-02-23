@@ -60,6 +60,7 @@ export function createBaseRoom(): Room {
 
 export function createBaseGameData(): GameData {
   return {
+    playersStatusRecord: {},
     persistTruthGlobalStateData: [],
     curGameState: {
       curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,

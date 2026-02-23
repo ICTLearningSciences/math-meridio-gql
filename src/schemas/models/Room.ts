@@ -30,6 +30,8 @@ import {
   RequireInputType,
 } from "./DiscussionStage/objects";
 import { EndOfPhaseReflectionStep } from "./DiscussionStage/types";
+import { PlayerStatusRecord } from "../../schemas/types/types";
+import { getPlayerComputedState } from "../../helpers";
 
 /** mongoose */
 
@@ -83,6 +85,7 @@ export interface GameData {
   chat: ChatMessage[];
   globalStateData: GlobalStateData;
   persistTruthGlobalStateData: string[];
+  playersStatusRecord: PlayerStatusRecord; // keyed by player ID
   playersGameStateData: Record<string, GameStateData>; // keyed by player ID
 }
 
@@ -157,7 +160,7 @@ export const GlobalStateSchema = new Schema<GlobalStateDataDocument>(
 export const GameSchema = new Schema<GameDataDocument>(
   {
     gameId: { type: String },
-    players: [{ type: String }],
+    players: [{ type: String }], // keyed by player Id
     chat: [{ type: ChatMessageSchema }],
     curGameState: {
       type: CurGameStateSchema,
@@ -172,7 +175,8 @@ export const GameSchema = new Schema<GameDataDocument>(
     },
     globalStateData: { type: GlobalStateSchema },
     persistTruthGlobalStateData: [{ type: String }],
-    playersGameStateData: { type: Schema.Types.Mixed, default: {} },
+    playersStatusRecord: { type: Schema.Types.Mixed, default: {} },
+    playersGameStateData: { type: Schema.Types.Mixed, default: {} }, // keyed by player Id
   },
   {
     timestamps: true,
@@ -194,7 +198,11 @@ export const RoomSchema = new Schema<RoomDocument, RoomModel>(
     deletedRoom: { type: Boolean },
     versionNumber: { type: Number, default: 1 },
   },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
+  {
+    timestamps: true,
+    collation: { locale: "en", strength: 2 },
+    minimize: false, // Preserve empty objects in Mixed fields
+  }
 );
 
 pluginPagination(RoomSchema);
@@ -276,6 +284,21 @@ export const GameDataType = new GraphQLObjectType({
         return PlayerModel.find({ _id: { $in: game.players } });
       },
     },
+    playersStatusRecord: {
+      type: GraphQLScalarType,
+      resolve: function (game: GameDataDocument) {
+        return Object.entries(game.playersStatusRecord).reduce(
+          (acc, [playerEmail, playerStatus]) => {
+            acc[playerEmail] = {
+              ...playerStatus,
+              computedState: getPlayerComputedState(playerStatus),
+            };
+            return acc;
+          },
+          {} as PlayerStatusRecord
+        );
+      },
+    }, // keyed by player email
     curGameState: { type: CurGameStateType },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
