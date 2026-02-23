@@ -57,6 +57,7 @@ import { PlayerDocument } from "../../schemas/models/Player";
 import { RequireInputType } from "../../schemas/models/DiscussionStage/objects";
 import { GamePhaseReflections } from "../../schemas/models/GamePhaseReflections";
 import GamePhaseReflectionsModel from "../../schemas/models/GamePhaseReflections";
+import { PlayerComputedState } from "schemas/types/types";
 
 export enum RoomModificationEnum {
   ADD_MESSAGE = "ADD_MESSAGE",
@@ -416,12 +417,30 @@ export async function addPlayerToRoom(
     console.log("Player already in room");
     return room;
   }
+
+  let shouldUpdateStatusRecord = false;
+  if (!Object.keys(room.gameData.playersStatusRecord).includes(player._id)) {
+    shouldUpdateStatusRecord = true;
+  }
+
   const oldPlayerData = room.gameData.playersGameStateData[player._id] || {};
   const updatedRoom = await RoomModel.findByIdAndUpdate(
     room._id,
     {
       $push: { "gameData.players": player._id },
       $set: {
+        ...(shouldUpdateStatusRecord
+          ? {
+              [`gameData.playersStatusRecord.${player._id}`]: {
+                lastHeartbeatAt: new Date(),
+                reportedAwayStatus: {
+                  isAway: false,
+                },
+                pausedByAdmin: false,
+                computedState: PlayerComputedState.ACTIVE,
+              },
+            }
+          : {}),
         [`gameData.playersGameStateData.${player._id}`]: {
           ...(room.gameData.globalStateData.gameStateData || {}),
           ...oldPlayerData,

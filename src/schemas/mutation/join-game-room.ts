@@ -9,6 +9,7 @@ import { Room, RoomType } from "../models/Room";
 import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
 import { addPlayerToRoom } from "../../authoritative-server/authority/step-process-pure-functions";
+import { PlayerComputedState } from "../types/types";
 
 export const joinGameRoom = {
   type: RoomType,
@@ -41,6 +42,17 @@ export const joinGameRoom = {
       if (room.gameData.players.includes(player._id)) {
         console.log("Player already in room");
         return room;
+      }
+
+      if (!room.gameData.playersStatusRecord[player._id]) {
+        room.gameData.playersStatusRecord[player._id] = {
+          lastHeartbeatAt: new Date(),
+          reportedAwayStatus: {
+            isAway: false,
+          },
+          pausedByAdmin: false,
+          computedState: PlayerComputedState.ACTIVE,
+        };
       }
 
       return await addPlayerToRoom(room, player);

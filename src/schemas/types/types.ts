@@ -67,6 +67,7 @@ export const fullRoomData = `
         }
         persistTruthGlobalStateData
         playersGameStateData
+        playersStatusRecord
         globalStateData {
           curStageId
           curStepId
