@@ -64,6 +64,7 @@ export interface JwtData {
   userId: string;
   userRole: string;
   userEducationalRole: string;
+  userEmail: string;
 }
 
 export async function getDataFromRequest(
@@ -82,6 +83,7 @@ export async function getDataFromRequest(
         userId: decodedJwt.id,
         userRole: decodedJwt.userRole,
         userEducationalRole: decodedJwt.educationalRole,
+        userEmail: decodedJwt.email,
       };
     }
     return undefined;

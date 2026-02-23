@@ -49,6 +49,7 @@ import assignClassGroupsAndStart from "./mutation/assign-class-groups-and-start"
 import submitGamePhaseReflection from "./mutation/submit-game-phase-reflection";
 import submitReadyToContinue from "./mutation/room-sumbit-ready-to-continue";
 import fetchGamePhaseReflections from "./query/fetch-game-phase-reflections";
+import createClassMembership from "./mutation/create-class-membership";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -72,6 +73,7 @@ const PublicMutation = new GraphQLObjectType({
     renameRoom,
     addOrUpdatePlayer,
     addOrUpdateDiscussionStage,
+    createClassMembership,
     loginGoogle,
     refreshAccessToken,
     createClassroom,

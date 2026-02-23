@@ -36,7 +36,8 @@ export async function getToken(
   userId: string,
   userRole: UserRole,
   educationalRole: EducationalRole,
-  expiresIn?: number
+  expiresIn?: number,
+  userEmail: string = "user@example.com"
 ): Promise<string> {
   if (!expiresIn) {
     expiresIn = accessTokenDuration();
@@ -47,6 +48,7 @@ export async function getToken(
       id: userId,
       expirationDate,
       userRole: userRole,
+      email: userEmail,
       educationalRole: educationalRole,
     },
     requireEnv("JWT_SECRET"),
@@ -58,13 +60,14 @@ export async function getToken(
 export function createUser(
   userId: string,
   userRole: UserRole,
-  educationalRole: EducationalRole
+  educationalRole: EducationalRole,
+  userEmail: string = "user@example.com"
 ) {
   return PlayerModel.create({
     _id: userId,
     googleId: userId,
     name: "User",
-    email: "user@example.com",
+    email: userEmail,
     userRole: userRole,
     educationalRole: educationalRole,
   });
@@ -93,12 +96,14 @@ export function addInviteCodeToClassroom(
 export function createClassMembership(
   classId: string,
   userId: string,
-  status: ClassMembershipStatus
+  status: ClassMembershipStatus,
+  userEmail: string = "user@example.com"
 ) {
   return ClassMembershipModel.create({
     classId,
     userId,
     status,
+    userEmail,
   });
 }
 

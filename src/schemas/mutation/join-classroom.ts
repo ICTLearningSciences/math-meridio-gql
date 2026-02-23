@@ -38,6 +38,7 @@ export const joinClassroom = {
     },
     context: {
       userId: string;
+      userEmail: string;
       userEducationalRole: EducationalRole;
     }
   ): Promise<JoinClassroomResponse> => {
@@ -87,12 +88,18 @@ export const joinClassroom = {
         userId: userId,
       });
 
+      console.log("context.userEmail", context.userEmail);
+      console.log("userId", userId);
+      console.log("classroom._id", classroom._id);
+      console.log("classMembership", classMembership);
+
       if (!classMembership) {
         // Create document for student/classroom with status set to MEMBER
         classMembership = await ClassMembershipModel.create({
           classId: classroom._id,
           userId: userId,
           status: ClassMembershipStatus.MEMBER,
+          userEmail: context.userEmail,
         });
       } else {
         // Ensure student is not BLOCKED

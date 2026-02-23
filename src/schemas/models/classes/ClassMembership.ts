@@ -31,9 +31,10 @@ export enum ClassMembershipStatus {
 
 export interface ClassMembership extends Document {
   classId: Class["_id"];
-  userId: PlayerDocument["_id"];
+  userId: string;
   groupId: number;
   status: ClassMembershipStatus;
+  userEmail: PlayerDocument["email"];
 }
 
 export const ClassMembershipSchema = new Schema<
@@ -42,8 +43,9 @@ export const ClassMembershipSchema = new Schema<
 >(
   {
     classId: { type: Schema.Types.ObjectId, ref: "Class" },
-    userId: { type: Schema.Types.ObjectId, ref: "Player" },
+    userId: { type: String, required: false },
     groupId: { type: Number, default: 0 },
+    userEmail: { type: String, required: true },
     status: {
       type: String,
       enum: ClassMembershipStatus,
@@ -73,6 +75,7 @@ export const ClassMembershipType = new GraphQLObjectType({
   fields: () => ({
     classId: { type: GraphQLID },
     userId: { type: GraphQLID },
+    userEmail: { type: GraphQLString },
     groupId: { type: GraphQLInt },
     status: { type: GraphQLString, enum: ClassMembershipStatus },
   }),
@@ -83,6 +86,7 @@ export const ClassMembershipInputType = new GraphQLInputObjectType({
   fields: () => ({
     classId: { type: GraphQLID },
     userId: { type: GraphQLID },
+    userEmail: { type: GraphQLString },
     groupId: { type: GraphQLInt },
     status: { type: GraphQLString, enum: ClassMembershipStatus },
   }),
