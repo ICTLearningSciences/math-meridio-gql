@@ -73,6 +73,10 @@ export const pingGameRoomProcess = {
       console.log("no active players in room, returning room as is");
       return room;
     }
+    if (!room.gameData.gameId) {
+      console.log("no gameId selected for room, returning room as is");
+      return room;
+    }
     const _discussionStages = await DiscussionStageModel.find();
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
     const _roomGamePhaseReflections = await GamePhaseReflectionsModel.find({

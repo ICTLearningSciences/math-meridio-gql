@@ -458,7 +458,45 @@ export async function updatePlayersHeartbeat(
   return room.toObject();
 }
 
-export async function addPlayerToRoom(
+export function addPlayerToRoomNonAtomically(
+  room: Room,
+  playerId: string
+): Room {
+  if (room.gameData.players.includes(playerId)) {
+    console.log("Player already in room");
+    return room;
+  }
+
+  let shouldUpdateStatusRecord = false;
+  if (!Object.keys(room.gameData.playersStatusRecord).includes(playerId)) {
+    shouldUpdateStatusRecord = true;
+  }
+
+  const oldPlayerData = room.gameData.playersGameStateData[playerId] || {};
+  const updatedRoom: Room = {
+    ...room,
+    gameData: {
+      ...room.gameData,
+      players: [...room.gameData.players, playerId],
+      playersStatusRecord: {
+        ...room.gameData.playersStatusRecord,
+        ...(shouldUpdateStatusRecord
+          ? { [playerId]: defaultPlayerStatusRecord }
+          : {}),
+      },
+      playersGameStateData: {
+        ...room.gameData.playersGameStateData,
+        [playerId]: {
+          ...(room.gameData.globalStateData.gameStateData || {}),
+          ...oldPlayerData,
+        },
+      },
+    },
+  };
+  return updatedRoom;
+}
+
+export async function addPlayerToRoomAtomically(
   room: Room,
   player: PlayerDocument
 ): Promise<Room> {

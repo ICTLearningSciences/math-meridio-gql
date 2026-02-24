@@ -8,7 +8,7 @@ import { GraphQLObjectType, GraphQLString } from "graphql";
 import { Room, RoomType } from "../models/Room";
 import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
-import { addPlayerToRoom } from "../../authoritative-server/authority/step-process-pure-functions";
+import { addPlayerToRoomAtomically } from "../../authoritative-server/authority/step-process-pure-functions";
 import { PlayerComputedState } from "../types/types";
 
 export const joinGameRoom = {
@@ -55,7 +55,7 @@ export const joinGameRoom = {
         };
       }
 
-      return await addPlayerToRoom(room, player);
+      return await addPlayerToRoomAtomically(room, player);
     } catch (error) {
       throw new Error(error);
     }

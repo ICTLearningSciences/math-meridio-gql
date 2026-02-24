@@ -14,6 +14,7 @@ import clearAwayStatus from "./mutation/clear-away-status";
 import renameRoom from "./mutation/room-rename";
 import joinGameRoom from "./mutation/join-game-room";
 import leaveGameRoom from "./mutation/leave-game-room";
+import assignGameToGameRoom from "./mutation/assign-game-to-game-room";
 import fetchPlayer from "./query/fetch-player";
 import fetchPlayers from "./query/fetch-players";
 import addOrUpdatePlayer from "./mutation/add-or-update-player";
@@ -102,6 +103,7 @@ const PublicMutation = new GraphQLObjectType({
     testLlmCall,
     sendMessageToGameRoom,
     joinGameRoom,
+    assignGameToGameRoom,
     updatePlayerGameStateData,
     leaveGameRoom,
     pingGameRoomProcess,

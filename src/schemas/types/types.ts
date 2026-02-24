@@ -161,6 +161,7 @@ export const fullClassroomData = `
         name
         teacherId
         sharedWithInstructorIds
+        startedAt
         inviteCodes {
             code
             validUntil
