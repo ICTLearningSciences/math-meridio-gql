@@ -155,3 +155,24 @@ export const setPlayerPauseStatusMutation = `
     }
   }
 `;
+
+export const fullClassroomData = `
+        _id
+        name
+        teacherId
+        sharedWithInstructorIds
+        inviteCodes {
+            code
+            validUntil
+            maxUses
+            uses
+        }
+`;
+
+export const shareClassroomWithInstructorMutation = `
+  mutation ShareClassroomWithInstructor($classId: String!, $instructorId: String!) {
+    shareClassroomWithInstructor(classId: $classId, instructorId: $instructorId) {
+      ${fullClassroomData}
+    }
+  }
+`;

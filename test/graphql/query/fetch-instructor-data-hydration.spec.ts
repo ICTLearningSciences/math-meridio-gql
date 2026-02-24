@@ -67,6 +67,7 @@ describe("fetch instructor data hydration", () => {
   let studentAccessToken: string;
   let class1Id: string;
   let class2Id: string;
+  let class3Id: string;
   let otherInstructorClassId: string;
   let room1Id: string;
   let room2Id: string;
@@ -83,6 +84,7 @@ describe("fetch instructor data hydration", () => {
     student2UserId = new ObjectId().toString();
     class1Id = new ObjectId().toString();
     class2Id = new ObjectId().toString();
+    class3Id = new ObjectId().toString();
     otherInstructorClassId = new ObjectId().toString();
     room1Id = new ObjectId().toString();
     room2Id = new ObjectId().toString();
@@ -289,5 +291,27 @@ describe("fetch instructor data hydration", () => {
     expect(
       response.body.data.fetchInstructorDataHydration.classMemberships
     ).to.have.lengthOf(0);
+  });
+
+  it("includes classrooms shared with instructor", async () => {
+    // Create classroom shared with other instructor
+    await createClassroom(class3Id, instructorUserId, [otherInstructorUserId]);
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${otherInstructorAccessToken}`)
+      .send({
+        query: fetchInstructorDataHydrationQuery,
+      });
+    expect(response.status).to.equal(200);
+    expect(response.body.data.fetchInstructorDataHydration).to.exist;
+    expect(
+      response.body.data.fetchInstructorDataHydration.classes
+    ).to.have.lengthOf(2);
+    const classIds =
+      response.body.data.fetchInstructorDataHydration.classes.map(
+        (c: any) => c._id
+      );
+    expect(classIds).to.include(otherInstructorClassId);
+    expect(classIds).to.include(class3Id);
   });
 });

@@ -73,7 +73,11 @@ export function createUser(
   });
 }
 
-export function createClassroom(classroomId: string, teacherId: string) {
+export function createClassroom(
+  classroomId: string,
+  teacherId: string,
+  sharedWithInstructorIds: string[] = []
+) {
   return ClassModel.create({
     _id: classroomId,
     name: "New Class",
@@ -81,6 +85,7 @@ export function createClassroom(classroomId: string, teacherId: string) {
     inviteCodes: [],
     createdAt: Date.now(),
     archivedAt: null,
+    sharedWithInstructorIds: sharedWithInstructorIds,
   });
 }
 

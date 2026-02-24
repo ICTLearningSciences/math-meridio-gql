@@ -4,26 +4,22 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-import { GraphQLList, GraphQLObjectType, GraphQLString } from "graphql";
+import { GraphQLObjectType, GraphQLString } from "graphql";
 import { EducationalRole } from "../models/Player";
 import ClassModel, { Class, ClassType } from "../models/classes/Class";
-import ClassMembershipModel, {
-  ClassMembership,
-  ClassMembershipInputType,
-} from "../models/classes/ClassMembership";
 import { canModifyClassroom } from "../../helpers";
 
-export const assignClassGroupsAndStart = {
+export const shareClassroomWithInstructor = {
   type: ClassType,
   args: {
     classId: { type: GraphQLString },
-    groups: { type: new GraphQLList(ClassMembershipInputType) },
+    instructorId: { type: GraphQLString },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
       classId: string;
-      groups: ClassMembership[];
+      instructorId: string;
     },
     context: {
       userId: string;
@@ -32,7 +28,7 @@ export const assignClassGroupsAndStart = {
   ): Promise<Class> => {
     try {
       const userId = context.userId;
-      const { classId, groups } = args;
+      const { classId, instructorId } = args;
 
       // Get classroom document
       const classroom = await ClassModel.findById(classId);
@@ -45,28 +41,8 @@ export const assignClassGroupsAndStart = {
         throw new Error("User is not the teacher of this classroom");
       }
 
-      // Ensure the class has not already started
-      if (classroom.startedAt !== undefined) {
-        throw new Error("Classroom is already in session");
-      }
-
-      // Update group assignments
-      const classMemberships = await ClassMembershipModel.find({
-        classId: classId,
-        userId: { $in: groups.map((g) => g.userId) },
-      });
-      for (const member of classMemberships) {
-        const updatedMember = groups.find(
-          (g) => `${g.userId}` === `${member.userId}`
-        );
-        if (updatedMember) {
-          member.groupId = updatedMember.groupId;
-          member.save();
-        }
-      }
-
-      // Update start date
-      classroom.startedAt = new Date();
+      // Add instructor to sharedWithInstructorIds
+      classroom.sharedWithInstructorIds.push(instructorId);
       const updatedClassroom = await classroom.save();
 
       // Return updated classroom
@@ -77,4 +53,4 @@ export const assignClassGroupsAndStart = {
   },
 };
 
-export default assignClassGroupsAndStart;
+export default shareClassroomWithInstructor;

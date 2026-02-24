@@ -18,6 +18,7 @@ import ClassModel, {
   InviteCode,
 } from "../models/classes/Class";
 import DateType from "../types/date";
+import { canModifyClassroom } from "../../helpers";
 
 function generateInviteCode(): string {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -57,8 +58,8 @@ export const createNewClassInviteCode = {
         throw new Error("Classroom not found");
       }
 
-      // Ensure requesting userId is the teacherId of the classroom document
-      if (classroom.teacherId !== userId) {
+      // Ensure requesting userId is the teacherId or sharedWithInstructorIds of the classroom document
+      if (!canModifyClassroom(userId, classroom)) {
         throw new Error("User is not the teacher of this classroom");
       }
 

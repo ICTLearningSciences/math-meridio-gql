@@ -14,6 +14,7 @@ dotenv.config();
 import jwt from "jsonwebtoken";
 import { PlayerComputedState } from "./schemas/types/types";
 import { PlayerStatusData } from "./schemas/types/types";
+import { Class } from "./schemas/models/classes/Class";
 
 const queryPayloadSchema = {
   type: "object",
@@ -121,4 +122,11 @@ export function getPlayerComputedState(
     return PlayerComputedState.INACTIVE;
   }
   return PlayerComputedState.ACTIVE;
+}
+
+export function canModifyClassroom(userId: string, classroom: Class): boolean {
+  return (
+    classroom.teacherId === userId ||
+    classroom.sharedWithInstructorIds.includes(userId)
+  );
 }

@@ -7,6 +7,7 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLObjectType, GraphQLString } from "graphql";
 import { EducationalRole } from "../models/Player";
 import ClassModel, { Class, ClassType } from "../models/classes/Class";
+import { canModifyClassroom } from "../../helpers";
 
 export const revokeClassInviteCode = {
   type: ClassType,
@@ -35,8 +36,8 @@ export const revokeClassInviteCode = {
         throw new Error("Classroom not found");
       }
 
-      // Ensure requesting userId is the teacherId of the classroom document
-      if (classroom.teacherId !== userId) {
+      // Ensure requesting userId is the teacherId or sharedWithInstructorIds of the classroom document
+      if (!canModifyClassroom(userId, classroom)) {
         throw new Error("User is not the teacher of this classroom");
       }
 

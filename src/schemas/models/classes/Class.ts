@@ -31,6 +31,7 @@ export interface Class extends Document {
   name: string;
   description: string;
   teacherId: string; // ref User
+  sharedWithInstructorIds: string[];
   inviteCodes: InviteCode[];
   createdAt: Date;
   startedAt?: Date;
@@ -52,6 +53,7 @@ export const ClassSchema = new Schema<Class, ClassModel>(
     name: { type: String },
     description: { type: String },
     teacherId: { type: String, ref: "Player" },
+    sharedWithInstructorIds: { type: [String], default: [] },
     inviteCodes: { type: [InviteCodeSchema], default: [] },
     createdAt: { type: Date },
     startedAt: { type: Date },
@@ -89,6 +91,7 @@ export const ClassType = new GraphQLObjectType({
     name: { type: GraphQLString },
     description: { type: GraphQLString },
     teacherId: { type: GraphQLString },
+    sharedWithInstructorIds: { type: new GraphQLList(GraphQLString) },
     inviteCodes: { type: new GraphQLList(InviteCodeType) },
     createdAt: { type: DateType },
     startedAt: { type: DateType },
