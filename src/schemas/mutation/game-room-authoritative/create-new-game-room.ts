@@ -57,6 +57,7 @@ export function initializeGameRoom(
       },
       persistTruthGlobalStateData: game.persistTruthGlobalStateData,
       playersGameStateData: {},
+      mathStandardsCompleted: {},
       globalStateData: {
         curStageId: firstStage.stage.clientId,
         curStepId: firstStepId,

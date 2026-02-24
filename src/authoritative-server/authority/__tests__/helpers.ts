@@ -60,6 +60,7 @@ export function createBaseRoom(): Room {
 
 export function createBaseGameData(): GameData {
   return {
+    mathStandardsCompleted: {},
     playersStatusRecord: {},
     persistTruthGlobalStateData: [],
     curGameState: {

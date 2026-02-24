@@ -9,7 +9,11 @@ import {
   DiscussionStage,
   IStage,
 } from "../../schemas/models/DiscussionStage/types";
-import { AbstractGameData, SimulationStage } from "../llm-request/types";
+import {
+  AbstractGameData,
+  MathStandardsCompletionRequirements,
+  SimulationStage,
+} from "../llm-request/types";
 import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "./game-helpers";
 
 const introductionDiscussionStage = "de0b94b9-1fc2-4ea1-995e-21a75670c16d";
@@ -39,6 +43,24 @@ export class BasketballStateHandler extends AbstractGameData {
     "understands_shot_points",
     "best_strategy_found",
   ];
+
+  mathStandardsCompletedRequirements: MathStandardsCompletionRequirements = {
+    "Understands Addition": {
+      understands_addition: true,
+    },
+    "Understands Multiplication": {
+      understands_multiplication: true,
+    },
+    "Understands Success Shots": {
+      understands_success_shots: true,
+    },
+    "Understands Shot Points": {
+      understands_shot_points: true,
+    },
+    "Understands Algorithm": {
+      understands_algorithm: true,
+    },
+  };
 
   constructor(discussionStages: DiscussionStage[], skipStages?: boolean) {
     super();

@@ -11,7 +11,7 @@ import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { nonExistentId, player1Id } from "../../fixtures/mongodb/data";
-import { room1Id } from "../../fixtures/mongodb/data";
+import { room1Id, room4Id } from "../../fixtures/mongodb/data";
 import { UserRole } from "../../../src/schemas/types/types";
 import { EducationalRole } from "../../../src/schemas/models/Player";
 import { getToken } from "../../helpers";
@@ -108,6 +108,42 @@ describe("fetch room", () => {
         },
       },
       deletedRoom: false,
+    });
+  });
+
+  it(`can fetch existing room by id with math standards completed correctly`, async () => {
+    const token = await getToken(
+      player1Id,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const response = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        query: `
+        query FetchRoom($roomId: ID!) {
+          fetchRoom(roomId: $roomId) {
+            gameData {
+              mathStandardsCompleted
+            }
+          }
+        }`,
+        variables: {
+          roomId: room4Id,
+        },
+      });
+    expect(response.status).to.equal(200);
+    expect(response.body.data.fetchRoom).to.eql({
+      gameData: {
+        mathStandardsCompleted: {
+          "Understands Addition": true,
+          "Understands Multiplication": true,
+          "Understands Success Shots": false,
+          "Understands Shot Points": false,
+          "Understands Algorithm": false,
+        },
+      },
     });
   });
 

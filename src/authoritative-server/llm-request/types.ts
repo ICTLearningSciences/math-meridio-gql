@@ -132,11 +132,21 @@ export interface JsonResponseData {
   additionalInfo?: string;
   subData?: JsonResponseData[];
 }
+
+/**
+ * Record<StandardName, Record<GlobalStateDataKey, RequiredValueForCompletion>>
+ */
+export type MathStandardsCompletionRequirements = Record<
+  string,
+  Record<string, any>
+>;
+
 export abstract class AbstractGameData {
   abstract id: string;
   abstract name: string;
   abstract stageList: CurrentStage<IStage>[];
   abstract persistTruthGlobalStateData: string[];
+  abstract mathStandardsCompletedRequirements: MathStandardsCompletionRequirements;
 }
 
 export interface SimulationStage extends IStage {

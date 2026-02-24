@@ -17,13 +17,14 @@ export const WAIT_FOR_SIMULATION_STAGE_CLIENT_ID = "wait-for-simulation";
 
 export function getGameById(
   gameId: string,
-  discussionStages: DiscussionStage[]
+  discussionStages: DiscussionStage[],
+  skipStages?: boolean
 ): AbstractGameData {
   switch (gameId) {
     case "basketball":
-      return new BasketballStateHandler(discussionStages);
+      return new BasketballStateHandler(discussionStages, skipStages);
     case "concert-ticket-sales":
-      return new ConcertTicketSalesStateHandler(discussionStages);
+      return new ConcertTicketSalesStateHandler(discussionStages, skipStages);
     case "unit-test":
       return new UnitTestGame(discussionStages);
     case "unit-test-multiple-users":

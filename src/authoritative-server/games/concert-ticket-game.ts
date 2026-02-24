@@ -4,7 +4,10 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-import { AbstractGameData } from "../llm-request/types";
+import {
+  AbstractGameData,
+  MathStandardsCompletionRequirements,
+} from "../llm-request/types";
 
 import {
   CurrentStage,
@@ -56,6 +59,24 @@ export class ConcertTicketSalesStateHandler extends AbstractGameData {
     UNDERSTANDS_TICKET_PRICES_KEY,
     BEST_STRATEGY_FOUND_KEY,
   ];
+
+  mathStandardsCompletedRequirements: MathStandardsCompletionRequirements = {
+    "Understands Addition": {
+      understands_addition: true,
+    },
+    "Understands Multiplication": {
+      understands_multiplication: true,
+    },
+    "Understands Conversion Rate": {
+      understands_conversion_rate: true,
+    },
+    "Understands Ticket Prices": {
+      understands_ticket_prices: true,
+    },
+    "Understands Algorithm": {
+      understands_algorithm: true,
+    },
+  };
 
   constructor(discussionStages: DiscussionStage[], skipStages?: boolean) {
     super();

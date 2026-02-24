@@ -13,6 +13,7 @@ const { ObjectId } = mongoose.Types;
 const player1Id = "5f748650f4b3f1b9f1f1f1f1";
 const room1Id = "5f748650f4b3f2b2f1f1f1f2";
 const room3Id = "5f748650f4b3f2b2f1f1f1f4";
+const room4Id = "5f748650f4b3f2b2f1f1f1f5";
 module.exports = {
   players: [
     {
@@ -88,6 +89,28 @@ module.exports = {
           roomOwnerId: player1Id,
           discussionData: {},
           gameStateData: {},
+        },
+        playersGameStateData: {},
+      },
+      deletedRoom: false,
+    },
+
+    {
+      _id: new ObjectId(room4Id),
+      name: "Basketball Room Test Math Standards Completed",
+      gameData: {
+        gameId: "basketball",
+        players: [player1Id],
+        chat: [],
+        globalStateData: {
+          curStageId: "Stage 1",
+          curStepId: "Step 1",
+          roomOwnerId: player1Id,
+          discussionData: {},
+          gameStateData: {
+            understands_addition: true,
+            understands_multiplication: true,
+          },
         },
         playersGameStateData: {},
       },

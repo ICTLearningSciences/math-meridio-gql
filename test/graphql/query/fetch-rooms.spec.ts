@@ -75,7 +75,7 @@ describe("fetch rooms", () => {
         },
       });
     expect(response.status).to.equal(200);
-    expect(response.body.data.fetchRooms).to.eql([
+    expect(response.body.data.fetchRooms).to.deep.include.members([
       {
         _id: room1Id,
         name: "Basketball Room 1",
@@ -167,7 +167,7 @@ describe("fetch rooms", () => {
       });
 
     expect(response.status).to.equal(200);
-    expect(response.body.data.fetchRooms).to.eql([
+    expect(response.body.data.fetchRooms).to.deep.include.members([
       {
         _id: room1Id,
         name: "Basketball Room 1",

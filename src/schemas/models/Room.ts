@@ -32,6 +32,7 @@ import {
 import { EndOfPhaseReflectionStep } from "./DiscussionStage/types";
 import { PlayerStatusRecord } from "../../schemas/types/types";
 import { getPlayerComputedState } from "../../helpers";
+import { getGameById } from "authoritative-server/games/game-helpers";
 
 /** mongoose */
 
@@ -87,6 +88,7 @@ export interface GameData {
   persistTruthGlobalStateData: string[];
   playersStatusRecord: PlayerStatusRecord; // keyed by player ID
   playersGameStateData: Record<string, GameStateData>; // keyed by player ID
+  mathStandardsCompleted: Record<string, boolean>; // keyed by standard name
 }
 
 export interface GameDataDocument extends GameData, Document {}
@@ -161,6 +163,7 @@ export const GameSchema = new Schema<GameDataDocument>(
   {
     gameId: { type: String },
     players: [{ type: String }], // keyed by player Id
+    mathStandardsCompleted: { type: Schema.Types.Mixed, default: {} },
     chat: [{ type: ChatMessageSchema }],
     curGameState: {
       type: CurGameStateSchema,
@@ -302,6 +305,23 @@ export const GameDataType = new GraphQLObjectType({
     curGameState: { type: CurGameStateType },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
+    mathStandardsCompleted: {
+      type: GraphQLScalarType,
+      resolve: function (gameData: GameDataDocument) {
+        const game = getGameById(gameData.gameId, [], true);
+        return Object.entries(game.mathStandardsCompletedRequirements).reduce(
+          (acc, [standardName, requiredKeyValuePairs]) => {
+            acc[standardName] = Object.entries(requiredKeyValuePairs).every(
+              ([key, value]) => {
+                return gameData.globalStateData.gameStateData[key] === value;
+              }
+            );
+            return acc;
+          },
+          {} as Record<string, boolean>
+        );
+      },
+    },
     globalStateData: { type: GlobalStateDataType },
     playersGameStateData: { type: GraphQLScalarType }, // keyed by player ID
   }),
