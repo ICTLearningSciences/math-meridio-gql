@@ -8,18 +8,19 @@ import { GraphQLObjectType, GraphQLString } from "graphql";
 import { EducationalRole } from "../models/Player";
 import ClassModel, { Class, ClassType } from "../models/classes/Class";
 import { canModifyClassroom } from "../../helpers";
+import PlayerModel from "../models/Player";
 
 export const shareClassroomWithInstructor = {
   type: ClassType,
   args: {
     classId: { type: GraphQLString },
-    instructorId: { type: GraphQLString },
+    instructorEmail: { type: GraphQLString },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
       classId: string;
-      instructorId: string;
+      instructorEmail: string;
     },
     context: {
       userId: string;
@@ -28,7 +29,7 @@ export const shareClassroomWithInstructor = {
   ): Promise<Class> => {
     try {
       const userId = context.userId;
-      const { classId, instructorId } = args;
+      const { classId, instructorEmail } = args;
 
       // Get classroom document
       const classroom = await ClassModel.findById(classId);
@@ -41,8 +42,14 @@ export const shareClassroomWithInstructor = {
         throw new Error("User is not the teacher of this classroom");
       }
 
+      // Get instructor document
+      const instructor = await PlayerModel.findOne({ email: instructorEmail });
+      if (!instructor) {
+        throw new Error("Instructor not found");
+      }
+
       // Add instructor to sharedWithInstructorIds
-      classroom.sharedWithInstructorIds.push(instructorId);
+      classroom.sharedWithInstructorIds.push(instructor._id.toString());
       const updatedClassroom = await classroom.save();
 
       // Return updated classroom

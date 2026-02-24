@@ -41,8 +41,18 @@ describe("share classroom with instructor", () => {
     );
     instructor2Id = new ObjectId().toString();
 
-    await createUser(instructor1Id, UserRole.USER, EducationalRole.INSTRUCTOR);
-    await createUser(instructor2Id, UserRole.USER, EducationalRole.INSTRUCTOR);
+    await createUser(
+      instructor1Id,
+      UserRole.USER,
+      EducationalRole.INSTRUCTOR,
+      "instructor1@example.com"
+    );
+    await createUser(
+      instructor2Id,
+      UserRole.USER,
+      EducationalRole.INSTRUCTOR,
+      "instructor2@example.com"
+    );
 
     await createClassroom(classId1, instructor1Id);
   });
@@ -60,7 +70,7 @@ describe("share classroom with instructor", () => {
         query: shareClassroomWithInstructorMutation,
         variables: {
           classId: classId1,
-          instructorId: instructor2Id,
+          instructorEmail: "instructor2@example.com",
         },
       });
     expect(response1.status).to.equal(200);
