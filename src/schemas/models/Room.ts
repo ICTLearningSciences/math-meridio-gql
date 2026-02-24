@@ -32,7 +32,7 @@ import {
 import { EndOfPhaseReflectionStep } from "./DiscussionStage/types";
 import { PlayerStatusRecord } from "../../schemas/types/types";
 import { getPlayerComputedState } from "../../helpers";
-import { getGameById } from "authoritative-server/games/game-helpers";
+import { getGameById } from "../../authoritative-server/games/game-helpers";
 
 /** mongoose */
 
