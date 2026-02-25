@@ -462,7 +462,7 @@ module.exports = {
               stepId: "2",
               stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
               phaseTitle: "End of Phase Reflection",
-              skipReflectionPopup: false,
+              skipReflectionCollection: false,
               message: "Thank you for participating!",
               questions: [
                 "What did you think of the activity?",

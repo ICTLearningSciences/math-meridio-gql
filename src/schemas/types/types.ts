@@ -51,6 +51,10 @@ export const fullRoomData = `
       name
       classId
       gameData {
+        phaseProgression {
+          phasesStarted
+          totalPhases
+        }
         gameId
         players {
           _id

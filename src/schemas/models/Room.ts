@@ -64,6 +64,11 @@ export interface GlobalStateData {
 
 export interface GlobalStateDataDocument extends GlobalStateData, Document {}
 
+export interface PhaseProgression {
+  phasesStarted: string[];
+  totalPhases: number;
+}
+
 export interface CurGameState {
   curState:
     | RequireInputType
@@ -89,6 +94,7 @@ export interface GameData {
   playersStatusRecord: PlayerStatusRecord; // keyed by player ID
   playersGameStateData: Record<string, GameStateData>; // keyed by player ID
   mathStandardsCompleted: Record<string, boolean>; // keyed by standard name
+  phaseProgression: PhaseProgression;
 }
 
 export interface GameDataDocument extends GameData, Document {}
@@ -132,6 +138,15 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
+
+export const PhaseProgressionSchema = new Schema<PhaseProgression>(
+  {
+    phasesStarted: [{ type: String }],
+    totalPhases: { type: Number },
+  },
+  { collation: { locale: "en", strength: 2 } }
+);
+
 export const CurGameStateSchema = new Schema<CurGameStateDocument>(
   {
     curState: { type: String },
@@ -164,6 +179,10 @@ export const GameSchema = new Schema<GameDataDocument>(
     gameId: { type: String },
     players: [{ type: String }], // keyed by player Id
     mathStandardsCompleted: { type: Schema.Types.Mixed, default: {} },
+    phaseProgression: {
+      type: PhaseProgressionSchema,
+      default: { phasesStarted: [], totalPhases: 0 },
+    },
     chat: [{ type: ChatMessageSchema }],
     curGameState: {
       type: CurGameStateSchema,
@@ -264,6 +283,14 @@ export const GlobalStateDataType = new GraphQLObjectType({
 //  - studentReflections (just for frontend display)
 //  - roundNumber (how many times this phase has been run)
 
+export const PhaseProgressionType = new GraphQLObjectType({
+  name: "PhaseProgressionType",
+  fields: () => ({
+    phasesStarted: { type: new GraphQLList(GraphQLString) },
+    totalPhases: { type: GraphQLInt },
+  }),
+});
+
 export const CurGameStateType = new GraphQLObjectType({
   name: "CurGameStateType",
   fields: () => ({
@@ -305,6 +332,7 @@ export const GameDataType = new GraphQLObjectType({
     curGameState: { type: CurGameStateType },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
+    phaseProgression: { type: PhaseProgressionType },
     mathStandardsCompleted: {
       type: GraphQLScalarType,
       resolve: function (gameData: GameDataDocument) {

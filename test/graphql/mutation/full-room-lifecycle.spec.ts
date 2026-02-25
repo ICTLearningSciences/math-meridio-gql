@@ -48,6 +48,7 @@ import { AiServicesResponseTypes } from "../../../src/authoritative-server/llm-r
 import { SenderType } from "../../../src/authoritative-server/llm-request/types";
 import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../../src/authoritative-server/games/game-helpers";
 import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
+import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 
 const submitGamePhaseReflectionMutation = `
   mutation SubmitGamePhaseReflection($roomId: ID!, $reflection: String!) {
@@ -1687,9 +1688,16 @@ describe("full room lifecycle", () => {
       currentRoom?.gameData.curGameState.endOfPhaseStep?.phaseTitle
     ).to.equal("End of Phase Reflection");
     expect(
-      currentRoom?.gameData.curGameState.endOfPhaseStep?.skipReflectionPopup
+      currentRoom?.gameData.curGameState.endOfPhaseStep
+        ?.skipReflectionCollection
     ).to.be.false;
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // ENSURE phaseProgression is set correctly
+    expect(currentRoom?.gameData.phaseProgression.phasesStarted).to.deep.equal([
+      "2",
+    ]);
+    expect(currentRoom?.gameData.phaseProgression.totalPhases).to.equal(1);
 
     // 3. submit phase reflection from owner + ping process
     const submitReflectionResponse = await request(app)
@@ -2168,5 +2176,84 @@ describe("full room lifecycle", () => {
     );
     // StudentTwo didn't submit a reflection for round 3, so it shouldn't exist
     expect(gamePhaseReflection?.reflections[studentTwoId]).to.be.undefined;
+  });
+
+  it("end of phase is properly skipped if skipReflectionCollection is true", async () => {
+    // 0. Update reflection step to have skipReflectionCollection step to true
+    await DiscussionStageModel.updateOne(
+      { clientId: TEST_END_OF_PHASE_REFLECTION_CLIENT_ID },
+      {
+        $set: {
+          "flowsList.0.steps.1.skipReflectionCollection": true,
+        },
+      }
+    );
+
+    // 1. Create new room for gameId: unit-test-end-of-phase
+    const ownerStudentId = new ObjectId().toString();
+
+    await createUser(ownerStudentId, UserRole.USER, EducationalRole.STUDENT);
+
+    const ownerStudentToken = await getToken(
+      ownerStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+
+    const createNewGameRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test-end-of-phase",
+        },
+      });
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
+
+    // ENSURE at request user input step
+    let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      TEST_END_OF_PHASE_REFLECTION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.SINGLE_RESPONSE_REQUIRED
+    );
+    expect(currentRoom?.gameData.chat).to.have.length(1);
+    expect(currentRoom?.gameData.chat[0].message).to.equal(
+      "Ready for reflection?"
+    );
+
+    // 2. send message from owner + ping
+    const sendMessageResponse = await sendMessageToGameRoom(
+      newRoomId,
+      "Yes, ready!",
+      "session1",
+      ownerStudentToken
+    );
+    expect(sendMessageResponse.status).to.equal(200);
+    expect(sendMessageResponse.body.data.sendMessageToGameRoom).to.exist;
+
+    const pingAfterFirstMessage = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterFirstMessage.status).to.equal(200);
+
+    // ENSURE the room is back to the request user input step, but added messages
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.SINGLE_RESPONSE_REQUIRED
+    );
+    expect(currentRoom?.gameData.chat).to.have.length(5);
+    const allMessages = currentRoom?.gameData.chat.map((msg) => msg.message);
+    expect(allMessages).to.include("Ready for reflection?");
+    expect(allMessages).to.include("Yes, ready!");
+    expect(allMessages).to.include("Thank you for participating!");
+    expect(allMessages).to.include("Ready for reflection?");
   });
 });

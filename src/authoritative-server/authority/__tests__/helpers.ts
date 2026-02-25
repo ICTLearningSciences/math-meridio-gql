@@ -61,6 +61,7 @@ export function createBaseRoom(): Room {
 export function createBaseGameData(): GameData {
   return {
     mathStandardsCompleted: {},
+    phaseProgression: { phasesStarted: [], totalPhases: 0 },
     playersStatusRecord: {},
     persistTruthGlobalStateData: [],
     curGameState: {

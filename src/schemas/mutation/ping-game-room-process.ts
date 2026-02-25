@@ -9,6 +9,7 @@ import { Room, RoomPhase, RoomType } from "../models/Room";
 import RoomModel from "../../schemas/models/Room";
 import {
   isDiscussionStage as _isDiscussionStage,
+  DiscussionStage,
   EndOfPhaseReflectionStep,
   RequestUserInputStageStep,
 } from "../../schemas/models/DiscussionStage/types";
@@ -30,7 +31,10 @@ import GamePhaseReflectionsModel, {
   GamePhaseReflections,
 } from "../../schemas/models/GamePhaseReflections";
 import { getCurStageAndStep } from "../../authoritative-server/authority/user-action-pure-functions";
-import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../authoritative-server/games/game-helpers";
+import {
+  getGameById,
+  WAIT_FOR_SIMULATION_STAGE_CLIENT_ID,
+} from "../../authoritative-server/games/game-helpers";
 import { PlayerComputedState } from "../../schemas/types/types";
 import { EducationalRole } from "../../schemas/models/Player";
 import { updatePlayersHeartbeat } from "../../authoritative-server/authority/step-process-pure-functions";
@@ -77,8 +81,36 @@ export const pingGameRoomProcess = {
       console.log("no gameId selected for room, returning room as is");
       return room;
     }
+
     const _discussionStages = await DiscussionStageModel.find();
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
+
+    if (!room.gameData.phaseProgression.totalPhases && room.gameData.gameId) {
+      const game = getGameById(room.gameData.gameId, discussionStages);
+      const allDiscussionStages: DiscussionStage[] = game.stageList
+        .map((s) => s.stage)
+        .filter((s) => _isDiscussionStage(s)) as any[];
+      const allDiscussionSteps = allDiscussionStages
+        .flatMap((stage) => stage.flowsList)
+        .flatMap((flowItem) => flowItem.steps);
+      const allEndOfPhaseSteps = allDiscussionSteps.filter(
+        (step) =>
+          step.stepType === DiscussionStageStepType.END_OF_PHASE_REFLECTION
+      );
+      room = (
+        await RoomModel.findOneAndUpdate(
+          { _id: args.roomId },
+          {
+            $set: {
+              "gameData.phaseProgression.totalPhases":
+                allEndOfPhaseSteps.length,
+            },
+          },
+          { new: true }
+        )
+      ).toObject();
+    }
+
     const _roomGamePhaseReflections = await GamePhaseReflectionsModel.find({
       roomId: roomId,
     });

@@ -58,6 +58,7 @@ export function initializeGroupGameRoomWithoutGameId(
       persistTruthGlobalStateData: [],
       playersGameStateData: {},
       mathStandardsCompleted: {},
+      phaseProgression: { phasesStarted: [], totalPhases: 0 },
       globalStateData: {
         curStageId: "",
         curStepId: "",
@@ -106,6 +107,7 @@ export function initializeGameRoom(
       persistTruthGlobalStateData: game.persistTruthGlobalStateData,
       playersGameStateData: {},
       mathStandardsCompleted: {},
+      phaseProgression: { phasesStarted: [], totalPhases: 0 },
       globalStateData: {
         curStageId: firstStage.stage.clientId,
         curStepId: firstStepId,

@@ -69,6 +69,7 @@ export enum RoomModificationEnum {
   ADD_TO_DISCUSSION_DATA = "ADD_TO_DISCUSSION_DATA",
   ADD_PLAYER_TO_ROOM = "ADD_PLAYER_TO_ROOM",
   NO_OP = "NO_OP",
+  ADD_TO_PHASE_PROGRESSION = "ADD_TO_PHASE_PROGRESSION",
 }
 
 export interface AtomicRoomModiticationAction {
@@ -112,6 +113,12 @@ export interface AddPlayerToRoomAtomicAction
   playerStateData: GameStateData;
 }
 
+export interface UpdatePhaseProgressionRoomAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.ADD_TO_PHASE_PROGRESSION;
+  phaseToAdd: string;
+}
+
 export async function applyAtomicRoomModificationActions(
   _gameData: GameData,
   atomicRoomModificationActions: AtomicRoomModiticationAction[],
@@ -129,6 +136,8 @@ export async function applyAtomicRoomModificationActions(
   // Aggregate discussion data updates
   let discussionDataUpdate: DiscussionData = {};
 
+  const phasesToAddToPhaseProgression: string[] = [];
+
   // Process all actions in order, aggregating updates
   for (const action of atomicRoomModificationActions) {
     if (action.actionType === RoomModificationEnum.NO_OP) {
@@ -138,6 +147,11 @@ export async function applyAtomicRoomModificationActions(
       case RoomModificationEnum.ADD_MESSAGE:
         const addMessageAction = action as AddMessageRoomAtomicAction;
         messagesToAdd.push(addMessageAction.newMessage);
+        break;
+
+      case RoomModificationEnum.ADD_TO_PHASE_PROGRESSION:
+        const addPhaseAction = action as UpdatePhaseProgressionRoomAtomicAction;
+        phasesToAddToPhaseProgression.push(addPhaseAction.phaseToAdd);
         break;
 
       case RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA:
@@ -216,6 +230,14 @@ export async function applyAtomicRoomModificationActions(
     updateOperations.$set = setOperations;
   }
 
+  if (phasesToAddToPhaseProgression.length > 0) {
+    updateOperations.$addToSet = {
+      "gameData.phaseProgression.phasesStarted": {
+        $each: phasesToAddToPhaseProgression,
+      },
+    };
+  }
+
   console.log("updateOperations: ", updateOperations);
 
   // Execute atomic update operation
@@ -236,17 +258,26 @@ export function startEndOfPhaseReflectionStep(
   _gameData: GameData,
   curStep: EndOfPhaseReflectionStep,
   sessionId: string
-): AddMessageRoomAtomicAction {
+): AtomicRoomModiticationAction[] {
+  const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
   const newMessage = buildSystemMessage(
     _gameData,
     curStep.message,
     sessionId,
     curStep.stepId
   );
-  return {
+
+  atomicRoomModificationActions.push({
     actionType: RoomModificationEnum.ADD_MESSAGE,
     newMessage: newMessage,
-  };
+  } as AddMessageRoomAtomicAction);
+
+  atomicRoomModificationActions.push({
+    actionType: RoomModificationEnum.ADD_TO_PHASE_PROGRESSION,
+    phaseToAdd: curStep.stepId,
+  } as UpdatePhaseProgressionRoomAtomicAction);
+
+  return atomicRoomModificationActions;
 }
 
 export function startRequestUserInputStep(
@@ -540,9 +571,6 @@ export async function processCurStep(
   playerIdToUpdate: string,
   sessionId: string
 ): Promise<Room> {
-  console.log("PROCESS CUR STEP CHECK 3");
-  console.log(room);
-  console.log("PROCESS CUR STEP CHECK 4");
   let gameData = getGameDataCopy(room.gameData);
   const { curStage, curStep } = getCurStageAndStep(gameData, discussionStages);
   if (!isDiscussionStage(curStage)) {
@@ -553,11 +581,11 @@ export async function processCurStep(
   }
   switch (curStep.stepType) {
     case DiscussionStageStepType.END_OF_PHASE_REFLECTION:
-      const endOfPhaseReflectionStepAction: AtomicRoomModiticationAction =
+      const endOfPhaseReflectionStepActions: AtomicRoomModiticationAction[] =
         startEndOfPhaseReflectionStep(gameData, curStep, sessionId);
       gameData = await applyAtomicRoomModificationActions(
         gameData,
-        [endOfPhaseReflectionStepAction],
+        endOfPhaseReflectionStepActions,
         room._id
       );
       break;
@@ -875,9 +903,12 @@ export async function processStepsUntilNextStallingPhase(
   } while (
     stepAndStage.curStep?.stepType !==
       DiscussionStageStepType.REQUEST_USER_INPUT &&
-    stepAndStage.curStep?.stepType !==
-      DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
-    stepAndStage.curStage.clientId !== WAIT_FOR_SIMULATION_STAGE_CLIENT_ID
+    stepAndStage.curStage.clientId !== WAIT_FOR_SIMULATION_STAGE_CLIENT_ID &&
+    !(
+      stepAndStage.curStep?.stepType ===
+        DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
+      !stepAndStage.curStep?.skipReflectionCollection
+    )
   );
 
   return latestRoom;
