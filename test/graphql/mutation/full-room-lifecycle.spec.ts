@@ -1686,6 +1686,9 @@ describe("full room lifecycle", () => {
     expect(
       currentRoom?.gameData.curGameState.endOfPhaseStep?.phaseTitle
     ).to.equal("End of Phase Reflection");
+    expect(
+      currentRoom?.gameData.curGameState.endOfPhaseStep?.skipReflectionPopup
+    ).to.be.false;
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
     // 3. submit phase reflection from owner + ping process

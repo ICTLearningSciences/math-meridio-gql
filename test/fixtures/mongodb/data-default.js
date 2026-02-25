@@ -108,8 +108,8 @@ module.exports = {
           roomOwnerId: player1Id,
           discussionData: {},
           gameStateData: {
-            understands_addition: true,
-            understands_multiplication: true,
+            understands_addition: "true",
+            understands_multiplication: "true",
           },
         },
         playersGameStateData: {},
@@ -462,6 +462,7 @@ module.exports = {
               stepId: "2",
               stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
               phaseTitle: "End of Phase Reflection",
+              skipReflectionPopup: false,
               message: "Thank you for participating!",
               questions: [
                 "What did you think of the activity?",

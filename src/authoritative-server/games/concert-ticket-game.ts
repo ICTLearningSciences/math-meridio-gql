@@ -61,21 +61,22 @@ export class ConcertTicketSalesStateHandler extends AbstractGameData {
   ];
 
   mathStandardsCompletedRequirements: MathStandardsCompletionRequirements = {
-    "Understands Addition": {
-      understands_addition: true,
+    "Understands Addition of Revenue from Multiple Ticket Types": {
+      understands_addition: "true",
     },
-    "Understands Multiplication": {
-      understands_multiplication: true,
+    "Understands Multiplication to Calculate Revenue from Tickets Sold": {
+      understands_multiplication: "true",
     },
-    "Understands Conversion Rate": {
-      understands_conversion_rate: true,
+    "Understands Rates as Price per Ticket": {
+      understands_conversion_rate: "true",
     },
-    "Understands Ticket Prices": {
-      understands_ticket_prices: true,
+    "Understands How Ticket Price and Quantity Affect Total Revenue": {
+      understands_ticket_prices: "true",
     },
-    "Understands Algorithm": {
-      understands_algorithm: true,
-    },
+    "Understands How to Apply a Multi-Step Formula to Calculate Total Revenue":
+      {
+        understands_algorithm: "true",
+      },
   };
 
   constructor(discussionStages: DiscussionStage[], skipStages?: boolean) {

@@ -127,6 +127,7 @@ export interface ConditionalActivityStep extends StageBuilderStep {
 export interface EndOfPhaseReflectionStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION;
   phaseTitle: string;
+  skipReflectionPopup: boolean;
   message: string;
   questions: string[];
 }

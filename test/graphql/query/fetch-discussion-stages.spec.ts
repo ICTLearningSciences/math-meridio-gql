@@ -37,6 +37,7 @@ export const fullDiscussionStageQueryData = `
                               stepId
                               stepType
                               phaseTitle
+                              skipReflectionPopup
                               message
                               questions
                           }

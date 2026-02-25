@@ -223,6 +223,7 @@ export const EndOfPhaseReflectionStepType = new GraphQLObjectType({
       value: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
     },
     phaseTitle: { type: GraphQLString },
+    skipReflectionPopup: { type: GraphQLBoolean },
     message: { type: GraphQLString },
     questions: { type: GraphQLList(GraphQLString) },
   }),
@@ -238,6 +239,7 @@ export const EndOfPhaseReflectionStepTypeInput = new GraphQLInputObjectType({
       value: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
     },
     phaseTitle: { type: GraphQLString },
+    skipReflectionPopup: { type: GraphQLBoolean },
     message: { type: GraphQLString },
     questions: { type: GraphQLList(GraphQLString) },
   }),
@@ -310,6 +312,7 @@ export const EndOfPhaseReflectionStepSchema = new Schema({
     default: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
   },
   phaseTitle: { type: String },
+  skipReflectionPopup: { type: Boolean },
   message: { type: String },
   questions: { type: [String] },
 });

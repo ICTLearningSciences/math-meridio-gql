@@ -45,20 +45,20 @@ export class BasketballStateHandler extends AbstractGameData {
   ];
 
   mathStandardsCompletedRequirements: MathStandardsCompletionRequirements = {
-    "Understands Addition": {
-      understands_addition: true,
+    "Understands Adding Results from Different Shot Types": {
+      understands_addition: "true",
     },
-    "Understands Multiplication": {
-      understands_multiplication: true,
+    "Understands Multiplying Attempts, Points, and Chance": {
+      understands_multiplication: "true",
     },
-    "Understands Success Shots": {
-      understands_success_shots: true,
+    "Understands Points per Shot as a Rate": {
+      understands_success_shots: "true",
     },
-    "Understands Shot Points": {
-      understands_shot_points: true,
+    "Understands Unit Rates in Word Problems": {
+      understands_shot_points: "true",
     },
-    "Understands Algorithm": {
-      understands_algorithm: true,
+    "Understands How to Follow a Step-by-Step Formula": {
+      understands_algorithm: "true",
     },
   };
 

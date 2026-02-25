@@ -137,11 +137,11 @@ describe("fetch room", () => {
     expect(response.body.data.fetchRoom).to.eql({
       gameData: {
         mathStandardsCompleted: {
-          "Understands Addition": true,
-          "Understands Multiplication": true,
-          "Understands Success Shots": false,
-          "Understands Shot Points": false,
-          "Understands Algorithm": false,
+          "Understands Adding Results from Different Shot Types": true,
+          "Understands How to Follow a Step-by-Step Formula": false,
+          "Understands Multiplying Attempts, Points, and Chance": true,
+          "Understands Points per Shot as a Rate": false,
+          "Understands Unit Rates in Word Problems": false,
         },
       },
     });

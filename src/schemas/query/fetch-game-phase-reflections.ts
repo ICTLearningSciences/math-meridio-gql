@@ -33,6 +33,7 @@ export const FetchGamePhaseReflectionDataType = new GraphQLObjectType({
 });
 
 export interface FetchGamePhaseReflectionData {
+  skipReflectionPopup: boolean;
   question: string;
   roomId: string;
   gameId: string;
@@ -90,6 +91,9 @@ export const fetchGamePhaseReflections = {
           gameId: room.gameData.gameId,
           phaseName: (endOfPhaseReflectionStage as EndOfPhaseReflectionStep)
             .phaseTitle,
+          skipReflectionPopup: (
+            endOfPhaseReflectionStage as EndOfPhaseReflectionStep
+          ).skipReflectionPopup,
           question: gamePhaseReflection.question,
           endOfPhaseStepId: gamePhaseReflection.stepId,
           roundNumber: gamePhaseReflection.roundNumber,
