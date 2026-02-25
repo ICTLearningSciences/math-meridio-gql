@@ -66,6 +66,7 @@ export interface GlobalStateDataDocument extends GlobalStateData, Document {}
 
 export interface PhaseProgression {
   phasesStarted: string[];
+  phasesCompleted: string[];
   totalPhases: number;
 }
 
@@ -142,6 +143,7 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
 export const PhaseProgressionSchema = new Schema<PhaseProgression>(
   {
     phasesStarted: [{ type: String }],
+    phasesCompleted: [{ type: String }],
     totalPhases: { type: Number },
   },
   { collation: { locale: "en", strength: 2 } }
@@ -181,7 +183,7 @@ export const GameSchema = new Schema<GameDataDocument>(
     mathStandardsCompleted: { type: Schema.Types.Mixed, default: {} },
     phaseProgression: {
       type: PhaseProgressionSchema,
-      default: { phasesStarted: [], totalPhases: 0 },
+      default: { phasesStarted: [], phasesCompleted: [], totalPhases: 0 },
     },
     chat: [{ type: ChatMessageSchema }],
     curGameState: {
@@ -287,6 +289,7 @@ export const PhaseProgressionType = new GraphQLObjectType({
   name: "PhaseProgressionType",
   fields: () => ({
     phasesStarted: { type: new GraphQLList(GraphQLString) },
+    phasesCompleted: { type: new GraphQLList(GraphQLString) },
     totalPhases: { type: GraphQLInt },
   }),
 });

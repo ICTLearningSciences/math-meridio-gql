@@ -38,6 +38,7 @@ import {
 import { PlayerComputedState } from "../../schemas/types/types";
 import { EducationalRole } from "../../schemas/models/Player";
 import { updatePlayersHeartbeat } from "../../authoritative-server/authority/step-process-pure-functions";
+import { getTotalPhasesForGame } from "../../helpers";
 
 export const pingGameRoomProcess = {
   type: RoomType,
@@ -86,24 +87,16 @@ export const pingGameRoomProcess = {
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
 
     if (!room.gameData.phaseProgression.totalPhases && room.gameData.gameId) {
-      const game = getGameById(room.gameData.gameId, discussionStages);
-      const allDiscussionStages: DiscussionStage[] = game.stageList
-        .map((s) => s.stage)
-        .filter((s) => _isDiscussionStage(s)) as any[];
-      const allDiscussionSteps = allDiscussionStages
-        .flatMap((stage) => stage.flowsList)
-        .flatMap((flowItem) => flowItem.steps);
-      const allEndOfPhaseSteps = allDiscussionSteps.filter(
-        (step) =>
-          step.stepType === DiscussionStageStepType.END_OF_PHASE_REFLECTION
+      const totalPhases = getTotalPhasesForGame(
+        room.gameData.gameId,
+        discussionStages
       );
       room = (
         await RoomModel.findOneAndUpdate(
           { _id: args.roomId },
           {
             $set: {
-              "gameData.phaseProgression.totalPhases":
-                allEndOfPhaseSteps.length,
+              "gameData.phaseProgression.totalPhases": totalPhases,
             },
           },
           { new: true }
@@ -196,6 +189,10 @@ export const pingGameRoomProcess = {
       room = await RoomModel.findOneAndUpdate(
         { _id: args.roomId },
         {
+          $addToSet: {
+            "gameData.phaseProgression.phasesCompleted":
+              stageAndStep.curStep.stepId,
+          },
           $set: {
             "gameData.curGameState.curState":
               "WAITING_FOR_STUDENT_READY_TO_CONTINUE",

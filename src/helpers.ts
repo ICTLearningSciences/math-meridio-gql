@@ -15,6 +15,12 @@ import jwt from "jsonwebtoken";
 import { PlayerComputedState } from "./schemas/types/types";
 import { PlayerStatusData } from "./schemas/types/types";
 import { Class } from "./schemas/models/classes/Class";
+import { getGameById } from "./authoritative-server/games/game-helpers";
+import {
+  DiscussionStage,
+  DiscussionStageStepType,
+  isDiscussionStage,
+} from "./schemas/models/DiscussionStage/types";
 
 const queryPayloadSchema = {
   type: "object",
@@ -129,4 +135,21 @@ export function canModifyClassroom(userId: string, classroom: Class): boolean {
     classroom.teacherId === userId ||
     classroom.sharedWithInstructorIds.includes(userId)
   );
+}
+
+export function getTotalPhasesForGame(
+  gameId: string,
+  discussionStages: DiscussionStage[]
+): number {
+  const game = getGameById(gameId, discussionStages);
+  const allDiscussionStages: DiscussionStage[] = game.stageList
+    .map((s) => s.stage)
+    .filter((s) => isDiscussionStage(s)) as any[];
+  const allDiscussionSteps = allDiscussionStages
+    .flatMap((stage) => stage.flowsList)
+    .flatMap((flowItem) => flowItem.steps);
+  const allEndOfPhaseSteps = allDiscussionSteps.filter(
+    (step) => step.stepType === DiscussionStageStepType.END_OF_PHASE_REFLECTION
+  );
+  return allEndOfPhaseSteps.length;
 }

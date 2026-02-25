@@ -1697,6 +1697,9 @@ describe("full room lifecycle", () => {
     expect(currentRoom?.gameData.phaseProgression.phasesStarted).to.deep.equal([
       "2",
     ]);
+    expect(
+      currentRoom?.gameData.phaseProgression.phasesCompleted
+    ).to.deep.equal([]);
     expect(currentRoom?.gameData.phaseProgression.totalPhases).to.equal(1);
 
     // 3. submit phase reflection from owner + ping process
@@ -1738,6 +1741,9 @@ describe("full room lifecycle", () => {
         [ownerStudentId]: "This was a great activity!",
       }
     );
+    expect(
+      currentRoom?.gameData.phaseProgression.phasesCompleted
+    ).to.deep.equal(["2"]);
 
     // 3.75 a student submits that they are ready to continue
     const submitReadyToContinueResponse = await request(app)
