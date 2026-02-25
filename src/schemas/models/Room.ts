@@ -308,6 +308,9 @@ export const GameDataType = new GraphQLObjectType({
     mathStandardsCompleted: {
       type: GraphQLScalarType,
       resolve: function (gameData: GameDataDocument) {
+        if (!gameData.gameId) {
+          return {};
+        }
         const game = getGameById(gameData.gameId, [], true);
         return Object.entries(game.mathStandardsCompletedRequirements).reduce(
           (acc, [standardName, requiredKeyValuePairs]) => {

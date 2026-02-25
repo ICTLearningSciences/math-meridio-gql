@@ -10,6 +10,16 @@ import RoomModel, { Room, RoomType } from "../models/Room";
 import DiscussionStageModel from "../models/DiscussionStage/DiscussionStage";
 import { getGameById } from "../../authoritative-server/games/game-helpers";
 import { getFirstStepId } from "../../authoritative-server/authority/helpers/helpers";
+import {
+  processCurStep,
+  processStepsUntilNextStallingPhase,
+} from "../../authoritative-server/authority/step-process-pure-functions";
+import { getCurStageAndStep } from "../../authoritative-server/authority/user-action-pure-functions";
+import { AiServiceNames } from "../../authoritative-server/llm-request/types";
+import {
+  DiscussionStageStepType,
+  isDiscussionStage,
+} from "../models/DiscussionStage/types";
 
 export const assignGameToGameRoom = {
   type: RoomType,
@@ -32,12 +42,10 @@ export const assignGameToGameRoom = {
       const userId = context.userId;
       const { roomId, gameId } = args;
 
-      const _room = await RoomModel.findById(roomId);
-      if (!_room) {
-        throw new Error("Room not found");
-      }
-
-      const discussionStages = await DiscussionStageModel.find({});
+      const _discussionStages = await DiscussionStageModel.find();
+      const discussionStages = _discussionStages.map((stage) =>
+        stage.toObject()
+      );
 
       const game = getGameById(gameId, discussionStages);
       const persistTruthGlobalStateData = game.persistTruthGlobalStateData;
@@ -45,7 +53,7 @@ export const assignGameToGameRoom = {
       const firstStepId = getFirstStepId(firstStage.stage);
 
       // Return updated classroom
-      return await RoomModel.findByIdAndUpdate(
+      const room = await RoomModel.findByIdAndUpdate(
         roomId,
         {
           $set: {
@@ -58,6 +66,51 @@ export const assignGameToGameRoom = {
         },
         { new: true }
       );
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      // Process the first step.
+      const roomWithFirstStepProcessed = await processCurStep(
+        room.toObject(),
+        discussionStages,
+        {
+          serviceName: AiServiceNames.OPEN_AI,
+          model: "gpt-4o-mini",
+        },
+        context.userId,
+        "assign-game-to-game-room"
+      );
+      const curStageAndStep = getCurStageAndStep(
+        roomWithFirstStepProcessed.gameData,
+        discussionStages
+      );
+      if (
+        isDiscussionStage(curStageAndStep.curStage) &&
+        curStageAndStep.curStep?.stepType !==
+          DiscussionStageStepType.REQUEST_USER_INPUT
+      ) {
+        // Now process all other steps until we reach a request user input step or simulation stage or end of phase reflection step.
+        console.log("PROCESS STEPS UNTIL NEXT STALLING PHASE CHECK 1");
+        console.log(roomWithFirstStepProcessed);
+        console.log("PROCESS STEPS UNTIL NEXT STALLING PHASE CHECK 2");
+        const roomWithProcessedSteps: Room =
+          await processStepsUntilNextStallingPhase(
+            roomWithFirstStepProcessed,
+            discussionStages,
+            {
+              serviceName: AiServiceNames.OPEN_AI,
+              model: "gpt-4o-mini",
+            },
+            context.userId,
+            "assign-game-to-game-room"
+          );
+        return await RoomModel.findOneAndUpdate(
+          { _id: roomWithProcessedSteps._id },
+          { $set: { gameData: roomWithProcessedSteps.gameData } },
+          { new: true }
+        );
+      }
     } catch (error) {
       throw new Error(error);
     }

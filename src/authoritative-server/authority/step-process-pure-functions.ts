@@ -540,6 +540,9 @@ export async function processCurStep(
   playerIdToUpdate: string,
   sessionId: string
 ): Promise<Room> {
+  console.log("PROCESS CUR STEP CHECK 3");
+  console.log(room);
+  console.log("PROCESS CUR STEP CHECK 4");
   let gameData = getGameDataCopy(room.gameData);
   const { curStage, curStep } = getCurStageAndStep(gameData, discussionStages);
   if (!isDiscussionStage(curStage)) {

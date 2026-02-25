@@ -75,7 +75,6 @@ describe("assign game to game room", () => {
           gameId: "unit-test",
         },
       });
-
     expect(response.status).to.equal(200);
     expect(response.body.data.assignGameToGameRoom).to.have.property("_id");
     expect(response.body.data.assignGameToGameRoom._id).to.equal(roomId);
