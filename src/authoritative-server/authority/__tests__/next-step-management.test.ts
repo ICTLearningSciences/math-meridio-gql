@@ -96,7 +96,7 @@ describe("next-step-management", () => {
         nextStage.flowsList[0].steps[0].stepId
       );
       // Should have called getNextStage
-      expect(curStage.getNextStage({})).toBe(nextStage);
+      expect(curStage.getNextStage({}, {})).toBe(nextStage);
     });
 
     it("should use jumpToStepId when present (non-conditional, non-lastStep)", async () => {

@@ -52,7 +52,6 @@ export class ConcertTicketSalesStateHandler extends AbstractGameData {
   name = "Concert Ticket Sales";
   stageList: CurrentStage<IStage>[] = [];
   persistTruthGlobalStateData = [
-    UNDERSTANDS_ALGORITHM_KEY,
     UNDERSTANDS_MULTIPLICATION_KEY,
     UNDERSTANDS_ADDITION_KEY,
     UNDERSTANDS_CONVERSION_RATE_KEY,
@@ -75,7 +74,10 @@ export class ConcertTicketSalesStateHandler extends AbstractGameData {
     },
     "Understands How to Apply a Multi-Step Formula to Calculate Total Revenue":
       {
-        understands_algorithm: "true",
+        understands_addition: "true",
+        understands_multiplication: "true",
+        understands_conversion_rate: "true",
+        understands_ticket_prices: "true",
       },
   };
 

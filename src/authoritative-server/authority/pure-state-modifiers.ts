@@ -231,7 +231,10 @@ export async function updateRoomWithNextStep(
       throw new Error("No step found for discussion stage");
     }
     if (curStep.lastStep) {
-      const nextStage = curStage.getNextStage(collectedDiscussionData);
+      const nextStage = curStage.getNextStage(
+        collectedDiscussionData,
+        room.gameData.globalStateData.gameStateData
+      );
       const nextStepId = getFirstStepId(nextStage);
       return await updateRoomStageAndOrStep(
         room,
@@ -291,7 +294,10 @@ export async function updateRoomWithNextStep(
     }
   } else {
     // Is a simulation stage, just need to get the next stage id
-    const nextStage = curStage.getNextStage(collectedDiscussionData);
+    const nextStage = curStage.getNextStage(
+      collectedDiscussionData,
+      room.gameData.globalStateData.gameStateData
+    );
     let nextStepId = nextStage.clientId;
     if (isDiscussionStage(nextStage)) {
       nextStepId = getFirstStepId(nextStage);

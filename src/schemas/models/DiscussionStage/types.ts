@@ -5,6 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
+import { GameStateData } from "../Room";
 import { RequireInputType } from "./objects";
 
 export interface IStage {
@@ -142,7 +143,10 @@ export interface CurrentStage<T extends IStage> {
   stage: T;
   action?: () => void;
   beforeStart?: () => void;
-  getNextStage: (collectedData: CollectedDiscussionData) => IStage;
+  getNextStage: (
+    collectedData: CollectedDiscussionData,
+    globalGameStateData: GameStateData
+  ) => IStage;
 }
 
 export type DiscussionCurrentStage = CurrentStage<DiscussionStage>;
