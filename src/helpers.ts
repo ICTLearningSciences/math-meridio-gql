@@ -101,7 +101,7 @@ export async function getDataFromRequest(
   }
 }
 
-export const PLAYER_INACTIVE_THRESHOLD_MS = 15000;
+export const PLAYER_INACTIVE_THRESHOLD_MS = 30000;
 
 export function getPlayerComputedState(
   playerStatus: PlayerStatusData
