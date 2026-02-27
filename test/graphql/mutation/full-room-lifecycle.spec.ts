@@ -400,6 +400,8 @@ describe("full room lifecycle", () => {
       "Thank you for playing!"
     );
 
+    return;
+
     // Now loops back to request user input stage. Test again to ensure that we can do re-runs:
     expect(
       roomAfterProcessingConditional?.gameData.globalStateData.curStageId

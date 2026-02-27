@@ -108,17 +108,25 @@ export function getNextStepFromConditionalStage(
   step: ConditionalActivityStep,
   gameData: GameData
 ): string {
-  const collectedDiscussionData: CollectedDiscussionData =
+  const _collectedDiscussionData: CollectedDiscussionData =
     gameData.globalStateData.discussionData || {};
-  const hydratedConditionals = step.conditionals.map((c) => ({
+  const globalGameStateData: GameStateData =
+    gameData.globalStateData.gameStateData;
+  const collectedDiscussionData = {
+    ...globalGameStateData,
+    ..._collectedDiscussionData,
+  };
+  const hydratedConditionals = step.conditionalsToMeet.map((c) => ({
     ...c,
     expectedValue: replaceStoredDataInString(
       c.expectedValue,
       collectedDiscussionData
     ),
   }));
+  let allConditionalsMet = true;
   for (let i = 0; i < hydratedConditionals.length; i++) {
     const condition = hydratedConditionals[i];
+
     let stateValue = collectedDiscussionData[condition.stateDataKey];
     if (!stateValue) {
       throw new Error(`failed to find state value ${condition.stateDataKey}`);
@@ -140,8 +148,9 @@ export function getNextStepFromConditionalStage(
         condition.operation,
         condition.expectedValue
       );
-      if (conditionTrue) {
-        return condition.targetStepId;
+      if (!conditionTrue) {
+        allConditionalsMet = false;
+        break;
       }
     } else if (condition.checking === Checking.LENGTH) {
       if (!Array.isArray(stateValue) && typeof stateValue !== "string") {
@@ -153,18 +162,23 @@ export function getNextStepFromConditionalStage(
       }
       const expression = `${stateValue.length} ${condition.operation} ${condition.expectedValue}`;
       const conditionTrue = new Function(`return ${expression};`)();
-      if (conditionTrue) {
-        return condition.targetStepId;
+      if (!conditionTrue) {
+        allConditionalsMet = false;
+        break;
       }
     } else {
       // Checking if array or string contains value
       const conditionTrue = Array.isArray(stateValue)
         ? stateValue.find((a) => String(a) === condition.expectedValue)
         : (stateValue as string).includes(String(condition.expectedValue));
-      if (conditionTrue) {
-        return condition.targetStepId;
+      if (!conditionTrue) {
+        allConditionalsMet = false;
+        break;
       }
     }
+  }
+  if (allConditionalsMet) {
+    return step.targetStepId;
   }
   // No conditions met, get next ordered step
   const flowList = (curStage.stage as DiscussionStage).flowsList.find((flow) =>

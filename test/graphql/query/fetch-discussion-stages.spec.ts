@@ -78,12 +78,12 @@ export const fullDiscussionStageQueryData = `
                               stepType
                               lastStep
                               jumpToStepId
-                              conditionals{
+                              targetStepId
+                              conditionalsToMeet{
                                   stateDataKey
                                   checking
                                   operation
                                   expectedValue
-                                  targetStepId
                               }
                           }
                       }
@@ -144,13 +144,13 @@ describe("fetch discussion stages", () => {
       stepType: DiscussionStageStepType.CONDITIONAL,
       jumpToStepId: "6",
       lastStep: false,
-      conditionals: [
+      targetStepId: "6",
+      conditionalsToMeet: [
         {
           stateDataKey: "nickname",
           checking: "is",
           operation: "equal",
           expectedValue: "John",
-          targetStepId: "6",
         },
       ],
     });

@@ -162,13 +162,13 @@ module.exports = {
               stepId: "5",
               stepType: DiscussionStageStepType.CONDITIONAL,
               jumpToStepId: "6",
-              conditionals: [
+              targetStepId: "6",
+              conditionalsToMeet: [
                 {
                   stateDataKey: "nickname",
                   checking: "is",
                   operation: "equal",
                   expectedValue: "John",
-                  targetStepId: "6",
                 },
               ],
             },
@@ -313,38 +313,46 @@ module.exports = {
               stepType: DiscussionStageStepType.CONDITIONAL,
               lastStep: false,
               jumpToStepId: "",
-              conditionals: [
+              targetStepId: "5",
+              conditionalsToMeet: [
                 {
                   stateDataKey: "user_input_number",
                   checking: "VALUE",
                   operation: "==",
                   expectedValue: "1",
-                  targetStepId: "4",
-                },
-                {
-                  stateDataKey: "user_input_number",
-                  checking: "VALUE",
-                  operation: "==",
-                  expectedValue: "2",
-                  targetStepId: "5",
                 },
               ],
             },
             {
               stepId: "4",
-              stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
-              message: "You entered number 1",
-              jumpToStepId: "6",
+              stepType: DiscussionStageStepType.CONDITIONAL,
               lastStep: false,
+              jumpToStepId: "",
+              targetStepId: "6",
+              conditionalsToMeet: [
+                {
+                  stateDataKey: "user_input_number",
+                  checking: "VALUE",
+                  operation: "==",
+                  expectedValue: "2",
+                },
+              ],
             },
             {
               stepId: "5",
+              stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
+              message: "You entered number 1",
+              jumpToStepId: "7",
+              lastStep: false,
+            },
+            {
+              stepId: "6",
               stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
               message: "You entered number 2",
               lastStep: false,
             },
             {
-              stepId: "6",
+              stepId: "7",
               stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
               message: "Thank you for playing!",
               lastStep: true,

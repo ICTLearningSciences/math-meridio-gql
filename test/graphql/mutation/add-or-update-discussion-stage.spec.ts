@@ -235,14 +235,14 @@ describe("update discussion stage", () => {
             stepId: "5",
             stepType: DiscussionStageStepType.CONDITIONAL,
             jumpToStepId: "6",
+            targetStepId: "6",
             lastStep: false,
-            conditionals: [
+            conditionalsToMeet: [
               {
                 stateDataKey: "nickname",
                 checking: Checking.VALUE,
                 operation: NumericOperations.EQUALS,
                 expectedValue: "John",
-                targetStepId: "6",
               },
             ],
           },

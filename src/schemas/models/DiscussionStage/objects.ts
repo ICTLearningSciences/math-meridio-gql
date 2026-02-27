@@ -132,25 +132,23 @@ export const RequestUserInputStageStepTypeInput = new GraphQLInputObjectType({
   }),
 });
 
-export const LogicStepConditionalType = new GraphQLObjectType({
-  name: "LogicStepConditionalType",
+export const SingleConditionalType = new GraphQLObjectType({
+  name: "SingleConditionalType",
   fields: () => ({
     stateDataKey: { type: GraphQLString },
     checking: { type: GraphQLString },
     operation: { type: GraphQLString },
     expectedValue: { type: GraphQLString },
-    targetStepId: { type: GraphQLString },
   }),
 });
 
-export const LogicStepConditionalTypeInput = new GraphQLInputObjectType({
-  name: "LogicStepConditionalTypeInput",
+export const SingleConditionalTypeInput = new GraphQLInputObjectType({
+  name: "SingleConditionalTypeInput",
   fields: () => ({
     stateDataKey: { type: GraphQLString },
     checking: { type: GraphQLString },
     operation: { type: GraphQLString },
     expectedValue: { type: GraphQLString },
-    targetStepId: { type: GraphQLString },
   }),
 });
 
@@ -164,7 +162,8 @@ export const ConditionalActivityStepType = new GraphQLObjectType({
       type: GraphQLString,
       value: DiscussionStageStepType.CONDITIONAL,
     },
-    conditionals: { type: GraphQLList(LogicStepConditionalType) },
+    targetStepId: { type: GraphQLString },
+    conditionalsToMeet: { type: GraphQLList(SingleConditionalType) },
   }),
 });
 
@@ -177,7 +176,8 @@ export const ConditionalActivityStepTypeInput = new GraphQLInputObjectType({
       type: GraphQLString,
       value: DiscussionStageStepType.CONDITIONAL,
     },
-    conditionals: { type: GraphQLList(LogicStepConditionalTypeInput) },
+    targetStepId: { type: GraphQLString },
+    conditionalsToMeet: { type: GraphQLList(SingleConditionalTypeInput) },
   }),
 });
 
@@ -280,18 +280,18 @@ export const RequestUserInputStageStepSchema = new Schema({
   },
 });
 
-export const LogicStepConditionalSchema = new Schema({
+export const SingleConditionalSchema = new Schema({
   stateDataKey: { type: String },
   checking: { type: String },
   operation: { type: String },
   expectedValue: { type: String },
-  targetStepId: { type: String },
 });
 
 export const LogicOperationActivityStepSchema = new Schema({
   ...StageBuilderStepSchema.obj,
   stepType: { type: String, default: DiscussionStageStepType.CONDITIONAL },
-  conditionals: [LogicStepConditionalSchema],
+  targetStepId: { type: String },
+  conditionalsToMeet: [SingleConditionalSchema],
 });
 
 export const PromptStageStepSchema = new Schema({
