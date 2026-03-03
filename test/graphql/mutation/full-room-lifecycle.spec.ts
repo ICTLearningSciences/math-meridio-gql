@@ -1640,6 +1640,11 @@ describe("full room lifecycle", () => {
       "Ready for reflection?"
     );
 
+    // ENSURE curPhaseTitle  was set properly
+    expect(currentRoom?.gameData.phaseProgression.curPhaseTitle).to.equal(
+      "Start of Phase"
+    );
+
     // 2. send message from owner + ping
     const sendMessageResponse = await request(app)
       .post("/graphql")

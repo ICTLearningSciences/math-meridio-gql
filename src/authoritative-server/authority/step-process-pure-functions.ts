@@ -233,11 +233,13 @@ export async function applyAtomicRoomModificationActions(
   if (phasesToAddToPhaseProgression.length > 0) {
     const mostRecentPhaseToAdd =
       phasesToAddToPhaseProgression[phasesToAddToPhaseProgression.length - 1];
-    updateOperations.$set = {
-      ...updateOperations.$set,
-      "gameData.phaseProgression.curPhaseTitle":
-        mostRecentPhaseToAdd.phaseTitle,
-    };
+    if (mostRecentPhaseToAdd?.phaseTitle) {
+      updateOperations.$set = {
+        ...updateOperations.$set,
+        "gameData.phaseProgression.curPhaseTitle":
+          mostRecentPhaseToAdd.phaseTitle,
+      };
+    }
     updateOperations.$addToSet = {
       "gameData.phaseProgression.phasesStarted": {
         $each: phasesToAddToPhaseProgression.map((p) => p.phaseToAdd),
