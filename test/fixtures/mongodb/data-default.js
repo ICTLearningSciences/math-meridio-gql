@@ -457,6 +457,12 @@ module.exports = {
           name: "Test End of Phase Reflection Flow",
           steps: [
             {
+              stepId: "0",
+              stepType: DiscussionStageStepType.START_OF_PHASE,
+              phaseTitle: "Start of Phase",
+              lastStep: false,
+            },
+            {
               stepId: "1",
               stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
               message: "Ready for reflection?",
@@ -469,7 +475,7 @@ module.exports = {
             {
               stepId: "2",
               stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
-              phaseTitle: "End of Phase Reflection",
+              parentStartOfPhaseStepId: "0",
               skipReflectionCollection: false,
               message: "Thank you for participating!",
               questions: [

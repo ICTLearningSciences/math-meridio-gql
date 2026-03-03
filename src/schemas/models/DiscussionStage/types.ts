@@ -26,6 +26,7 @@ export interface FlowItem {
     | PromptStageStep
     | ConditionalActivityStep
     | EndOfPhaseReflectionStep
+    | StartOfPhaseStep
   )[];
 }
 
@@ -43,13 +44,15 @@ export type DiscussionStageStep =
   | RequestUserInputStageStep
   | PromptStageStep
   | ConditionalActivityStep
-  | EndOfPhaseReflectionStep;
+  | EndOfPhaseReflectionStep
+  | StartOfPhaseStep;
 
 export enum DiscussionStageStepType {
   SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
   REQUEST_USER_INPUT = "REQUEST_USER_INPUT",
   PROMPT = "PROMPT",
   CONDITIONAL = "CONDITIONAL",
+  START_OF_PHASE = "START_OF_PHASE",
   END_OF_PHASE_REFLECTION = "END_OF_PHASE_REFLECTION",
   NONE = "NONE",
 }
@@ -93,6 +96,11 @@ export interface PromptStageStep extends StageBuilderStep {
   jsonResponseData?: string;
   customSystemRole: string;
 }
+
+export interface StartOfPhaseStep extends StageBuilderStep {
+  stepType: DiscussionStageStepType.START_OF_PHASE;
+  phaseTitle: string;
+}
 // LogicOperation
 export enum NumericOperations {
   GREATER_THAN = ">",
@@ -127,7 +135,7 @@ export interface ConditionalActivityStep extends StageBuilderStep {
 
 export interface EndOfPhaseReflectionStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION;
-  phaseTitle: string;
+  parentStartOfPhaseStepId: string;
   skipReflectionCollection: boolean;
   message: string;
   questions: string[];

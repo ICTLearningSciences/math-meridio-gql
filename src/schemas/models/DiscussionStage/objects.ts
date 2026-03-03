@@ -222,10 +222,36 @@ export const EndOfPhaseReflectionStepType = new GraphQLObjectType({
       type: GraphQLString,
       value: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
     },
-    phaseTitle: { type: GraphQLString },
+    parentStartOfPhaseStepId: { type: GraphQLString },
     skipReflectionCollection: { type: GraphQLBoolean },
     message: { type: GraphQLString },
     questions: { type: GraphQLList(GraphQLString) },
+  }),
+});
+
+export const StartOfPhaseStepType = new GraphQLObjectType({
+  name: "StartOfPhaseStepType",
+  fields: () => ({
+    stepId: { type: GraphQLString },
+    stepType: {
+      type: GraphQLString,
+      value: DiscussionStageStepType.START_OF_PHASE,
+    },
+    phaseTitle: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
+  }),
+});
+
+export const StartOfPhaseStepTypeInput = new GraphQLInputObjectType({
+  name: "StartOfPhaseStepTypeInput",
+  fields: () => ({
+    stepId: { type: GraphQLString },
+    stepType: {
+      type: GraphQLString,
+      value: DiscussionStageStepType.START_OF_PHASE,
+    },
+    phaseTitle: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
   }),
 });
 
@@ -233,12 +259,12 @@ export const EndOfPhaseReflectionStepTypeInput = new GraphQLInputObjectType({
   name: "EndOfPhaseReflectionStepTypeInput",
   fields: () => ({
     stepId: { type: GraphQLString },
+    parentStartOfPhaseStepId: { type: GraphQLString },
     lastStep: { type: GraphQLBoolean },
     stepType: {
       type: GraphQLString,
       value: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
     },
-    phaseTitle: { type: GraphQLString },
     skipReflectionCollection: { type: GraphQLBoolean },
     message: { type: GraphQLString },
     questions: { type: GraphQLList(GraphQLString) },
@@ -305,8 +331,15 @@ export const PromptStageStepSchema = new Schema({
   customSystemRole: { type: String },
 });
 
+export const StartOfPhaseStepSchema = new Schema({
+  ...StageBuilderStepSchema.obj,
+  stepType: { type: String, default: DiscussionStageStepType.START_OF_PHASE },
+  phaseTitle: { type: String },
+});
+
 export const EndOfPhaseReflectionStepSchema = new Schema({
   ...StageBuilderStepSchema.obj,
+  parentStartOfPhaseStepId: { type: String },
   stepType: {
     type: String,
     default: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
@@ -323,5 +356,6 @@ export const StageBuilderStepUnionSchema = new Schema({
   ...RequestUserInputStageStepSchema.obj,
   ...PromptStageStepSchema.obj,
   ...LogicOperationActivityStepSchema.obj,
+  ...StartOfPhaseStepSchema.obj,
   ...EndOfPhaseReflectionStepSchema.obj,
 });

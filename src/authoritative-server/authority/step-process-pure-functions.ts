@@ -23,6 +23,7 @@ import {
   isDiscussionStage,
   PromptStageStep,
   RequestUserInputStageStep,
+  StartOfPhaseStep,
   SystemMessageStageStep,
 } from "../../schemas/models/DiscussionStage/types";
 import {
@@ -225,19 +226,18 @@ export async function applyAtomicRoomModificationActions(
     setOperations[`gameData.globalStateData.discussionData.${key}`] = value;
   }
 
-  if (
-    !Object.keys(updateOperations).length &&
-    !Object.keys(setOperations).length
-  ) {
-    console.log("No updates to apply to room, returning original game data");
-    return _gameData;
-  }
-
   if (Object.keys(setOperations).length > 0) {
     updateOperations.$set = setOperations;
   }
 
   if (phasesToAddToPhaseProgression.length > 0) {
+    const mostRecentPhaseToAdd =
+      phasesToAddToPhaseProgression[phasesToAddToPhaseProgression.length - 1];
+    updateOperations.$set = {
+      ...updateOperations.$set,
+      "gameData.phaseProgression.curPhaseTitle":
+        mostRecentPhaseToAdd.phaseTitle,
+    };
     updateOperations.$addToSet = {
       "gameData.phaseProgression.phasesStarted": {
         $each: phasesToAddToPhaseProgression.map((p) => p.phaseToAdd),
@@ -245,7 +245,18 @@ export async function applyAtomicRoomModificationActions(
     };
   }
 
-  console.log("updateOperations: ", updateOperations);
+  console.log(
+    "updateOperations in applyAtomicRoomModificationActions: ",
+    updateOperations
+  );
+
+  if (
+    !Object.keys(updateOperations).length &&
+    !Object.keys(setOperations).length
+  ) {
+    console.log("No updates to apply to room, returning original game data");
+    return _gameData;
+  }
 
   // Execute atomic update operation
   const updatedRoom = await RoomModel.findByIdAndUpdate(
@@ -261,7 +272,21 @@ export async function applyAtomicRoomModificationActions(
   return updatedRoom.gameData;
 }
 
-export function startEndOfPhaseReflectionStep(
+export function startOfPhaseStep(
+  _gameData: GameData,
+  curStep: StartOfPhaseStep
+): AtomicRoomModiticationAction[] {
+  console.log(`startOfPhaseStep: ${JSON.stringify(curStep, null, 2)}`);
+  const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
+  atomicRoomModificationActions.push({
+    actionType: RoomModificationEnum.STARTING_PHASE,
+    phaseToAdd: curStep.stepId,
+    phaseTitle: curStep.phaseTitle,
+  } as StartPhaseAtomicAction);
+  return atomicRoomModificationActions;
+}
+
+export function endOfPhaseReflectionStep(
   _gameData: GameData,
   curStep: EndOfPhaseReflectionStep,
   sessionId: string
@@ -278,12 +303,6 @@ export function startEndOfPhaseReflectionStep(
     actionType: RoomModificationEnum.ADD_MESSAGE,
     newMessage: newMessage,
   } as AddMessageRoomAtomicAction);
-
-  atomicRoomModificationActions.push({
-    actionType: RoomModificationEnum.STARTING_PHASE,
-    phaseToAdd: curStep.stepId,
-    phaseTitle: curStep.phaseTitle,
-  } as StartPhaseAtomicAction);
 
   return atomicRoomModificationActions;
 }
@@ -588,9 +607,18 @@ export async function processCurStep(
     return room;
   }
   switch (curStep.stepType) {
+    case DiscussionStageStepType.START_OF_PHASE:
+      const startOfPhaseStepActions: AtomicRoomModiticationAction[] =
+        startOfPhaseStep(gameData, curStep);
+      gameData = await applyAtomicRoomModificationActions(
+        gameData,
+        startOfPhaseStepActions,
+        room._id
+      );
+      break;
     case DiscussionStageStepType.END_OF_PHASE_REFLECTION:
       const endOfPhaseReflectionStepActions: AtomicRoomModiticationAction[] =
-        startEndOfPhaseReflectionStep(gameData, curStep, sessionId);
+        endOfPhaseReflectionStep(gameData, curStep, sessionId);
       gameData = await applyAtomicRoomModificationActions(
         gameData,
         endOfPhaseReflectionStepActions,

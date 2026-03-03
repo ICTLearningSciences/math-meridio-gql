@@ -1685,9 +1685,9 @@ describe("full room lifecycle", () => {
     expect(currentRoom?.gameData.curGameState.endOfPhaseStep?.stepId).to.equal(
       "2"
     );
-    expect(
-      currentRoom?.gameData.curGameState.endOfPhaseStep?.phaseTitle
-    ).to.equal("End of Phase Reflection");
+    expect(currentRoom?.gameData.phaseProgression.curPhaseTitle).to.equal(
+      "Start of Phase"
+    );
     expect(
       currentRoom?.gameData.curGameState.endOfPhaseStep
         ?.skipReflectionCollection
@@ -1696,7 +1696,7 @@ describe("full room lifecycle", () => {
 
     // ENSURE phaseProgression is set correctly
     expect(currentRoom?.gameData.phaseProgression.phasesStarted).to.deep.equal([
-      "2",
+      "0",
     ]);
     expect(
       currentRoom?.gameData.phaseProgression.phasesCompleted
@@ -2191,7 +2191,7 @@ describe("full room lifecycle", () => {
       { clientId: TEST_END_OF_PHASE_REFLECTION_CLIENT_ID },
       {
         $set: {
-          "flowsList.0.steps.1.skipReflectionCollection": true,
+          "flowsList.0.steps.2.skipReflectionCollection": true,
         },
       }
     );

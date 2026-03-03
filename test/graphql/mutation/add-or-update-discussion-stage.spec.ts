@@ -194,6 +194,12 @@ describe("update discussion stage", () => {
         name: "flow 1",
         steps: [
           {
+            stepId: "0",
+            stepType: DiscussionStageStepType.START_OF_PHASE,
+            phaseTitle: "phase title 0",
+            lastStep: false,
+          },
+          {
             stepId: "123",
             jumpToStepId: "456",
             stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
@@ -249,7 +255,7 @@ describe("update discussion stage", () => {
           {
             stepId: "6",
             stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
-            phaseTitle: "phase title 1",
+            parentStartOfPhaseStepId: "0",
             skipReflectionCollection: false,
             message: "message 1",
             questions: ["question 1", "question 2", "question 3"],
@@ -279,6 +285,7 @@ describe("update discussion stage", () => {
           stage: discussionStage,
         },
       });
+    console.log(JSON.stringify(response.body, null, 2));
     expect(response.body.data.addOrUpdateDiscussionStage).to.eql(
       discussionStage
     );

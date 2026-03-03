@@ -61,6 +61,7 @@ export function initializeGroupGameRoomWithoutGameId(
       phaseProgression: {
         phasesStarted: [],
         phasesCompleted: [],
+        curPhaseTitle: "",
         totalPhases: 0,
       },
       globalStateData: {
@@ -114,6 +115,7 @@ export function initializeGameRoom(
       phaseProgression: {
         phasesStarted: [],
         phasesCompleted: [],
+        curPhaseTitle: "",
         totalPhases: 0,
       },
       globalStateData: {

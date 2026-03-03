@@ -32,11 +32,18 @@ export const fullDiscussionStageQueryData = `
                               message
                           }
 
-                          ... on EndOfPhaseReflectionStepType {
+                          ... on StartOfPhaseStepType {
                               lastStep
                               stepId
                               stepType
                               phaseTitle
+                          }
+
+                          ... on EndOfPhaseReflectionStepType {
+                              lastStep
+                              stepId
+                              stepType
+                              parentStartOfPhaseStepId
                               skipReflectionCollection
                               message
                               questions
