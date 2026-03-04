@@ -1622,6 +1622,7 @@ describe("full room lifecycle", () => {
           gameId: "unit-test-end-of-phase",
         },
       });
+    console.log(JSON.stringify(createNewGameRoomResponse.body, null, 2));
     expect(createNewGameRoomResponse.status).to.equal(200);
     expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
     const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
@@ -1637,6 +1638,7 @@ describe("full room lifecycle", () => {
     expect(currentRoom?.gameData.phaseProgression.curPhaseTitle).to.equal(
       "Start of Phase"
     );
+    expect(currentRoom?.gameData.phaseProgression.curPhaseStepId).to.equal("0");
 
     // ENSURE at request user input step
     expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
@@ -1712,7 +1714,9 @@ describe("full room lifecycle", () => {
     expect(
       currentRoom?.gameData.phaseProgression.phasesCompleted
     ).to.deep.equal(["0"]);
-    expect(currentRoom?.gameData.phaseProgression.totalPhases).to.equal(1);
+    expect(
+      currentRoom?.gameData.phaseProgression.startingPhaseStepsOrdered
+    ).to.deep.equal(["0"]);
 
     // 3. submit phase reflection from owner + ping process
     const submitReflectionResponse = await request(app)

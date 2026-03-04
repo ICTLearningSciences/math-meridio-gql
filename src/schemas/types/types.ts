@@ -55,7 +55,8 @@ export const fullRoomData = `
           phasesStarted
           phasesCompleted
           curPhaseTitle
-          totalPhases
+          curPhaseStepId
+          startingPhaseStepsOrdered
         }
         gameId
         players {

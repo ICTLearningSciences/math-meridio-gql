@@ -34,7 +34,7 @@ import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../authoritative-server/
 import { PlayerComputedState } from "../../schemas/types/types";
 import { EducationalRole } from "../../schemas/models/Player";
 import { updatePlayersHeartbeat } from "../../authoritative-server/authority/step-process-pure-functions";
-import { getTotalPhasesForGame } from "../../helpers";
+import { getStartingPhasesInOrderForGame } from "../../helpers";
 
 export const pingGameRoomProcess = {
   type: RoomType,
@@ -82,8 +82,11 @@ export const pingGameRoomProcess = {
     const _discussionStages = await DiscussionStageModel.find();
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
 
-    if (!room.gameData.phaseProgression.totalPhases && room.gameData.gameId) {
-      const totalPhases = getTotalPhasesForGame(
+    if (
+      !room.gameData.phaseProgression.startingPhaseStepsOrdered.length &&
+      room.gameData.gameId
+    ) {
+      const startingPhases = getStartingPhasesInOrderForGame(
         room.gameData.gameId,
         discussionStages
       );
@@ -92,7 +95,8 @@ export const pingGameRoomProcess = {
           { _id: args.roomId },
           {
             $set: {
-              "gameData.phaseProgression.totalPhases": totalPhases,
+              "gameData.phaseProgression.startingPhaseStepsOrdered":
+                startingPhases,
             },
           },
           { new: true }

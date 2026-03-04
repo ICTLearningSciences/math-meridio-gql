@@ -62,7 +62,8 @@ export function initializeGroupGameRoomWithoutGameId(
         phasesStarted: [],
         phasesCompleted: [],
         curPhaseTitle: "",
-        totalPhases: 0,
+        curPhaseStepId: "",
+        startingPhaseStepsOrdered: [],
       },
       globalStateData: {
         curStageId: "",
@@ -116,7 +117,8 @@ export function initializeGameRoom(
         phasesStarted: [],
         phasesCompleted: [],
         curPhaseTitle: "",
-        totalPhases: 0,
+        curPhaseStepId: "",
+        startingPhaseStepsOrdered: [],
       },
       globalStateData: {
         curStageId: firstStage.stage.clientId,

@@ -68,7 +68,8 @@ export interface PhaseProgression {
   phasesStarted: string[];
   phasesCompleted: string[];
   curPhaseTitle: string;
-  totalPhases: number;
+  curPhaseStepId: string;
+  startingPhaseStepsOrdered: string[];
 }
 
 export interface CurGameState {
@@ -146,7 +147,8 @@ export const PhaseProgressionSchema = new Schema<PhaseProgression>(
     phasesStarted: [{ type: String }],
     phasesCompleted: [{ type: String }],
     curPhaseTitle: { type: String },
-    totalPhases: { type: Number },
+    curPhaseStepId: { type: String },
+    startingPhaseStepsOrdered: [{ type: String }],
   },
   { collation: { locale: "en", strength: 2 } }
 );
@@ -189,7 +191,8 @@ export const GameSchema = new Schema<GameDataDocument>(
         phasesStarted: [],
         phasesCompleted: [],
         curPhaseTitle: "",
-        totalPhases: 0,
+        curPhaseStepId: "",
+        startingPhaseStepsOrdered: [],
       },
     },
     chat: [{ type: ChatMessageSchema }],
@@ -297,8 +300,9 @@ export const PhaseProgressionType = new GraphQLObjectType({
   fields: () => ({
     phasesStarted: { type: new GraphQLList(GraphQLString) },
     phasesCompleted: { type: new GraphQLList(GraphQLString) },
+    curPhaseStepId: { type: GraphQLString },
     curPhaseTitle: { type: GraphQLString },
-    totalPhases: { type: GraphQLInt },
+    startingPhaseStepsOrdered: { type: new GraphQLList(GraphQLString) },
   }),
 });
 

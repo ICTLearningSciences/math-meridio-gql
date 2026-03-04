@@ -118,7 +118,7 @@ export interface AddPlayerToRoomAtomicAction
 export interface StartPhaseAtomicAction
   extends Omit<AtomicRoomModiticationAction, "actionType"> {
   actionType: RoomModificationEnum.STARTING_PHASE;
-  startingPhase: string;
+  startingPhaseStepId: string;
   phaseTitle: string;
 }
 
@@ -145,10 +145,10 @@ export async function applyAtomicRoomModificationActions(
   // Aggregate discussion data updates
   let discussionDataUpdate: DiscussionData = {};
 
-  const phasesToAddToPhaseProgression: {
-    startingPhase: string;
+  let phaseStarting: null | {
+    startingPhaseStepId: string;
     phaseTitle: string;
-  }[] = [];
+  } = null;
 
   const phasesToComplete: string[] = [];
 
@@ -165,10 +165,10 @@ export async function applyAtomicRoomModificationActions(
 
       case RoomModificationEnum.STARTING_PHASE:
         const addPhaseAction = action as StartPhaseAtomicAction;
-        phasesToAddToPhaseProgression.push({
-          startingPhase: addPhaseAction.startingPhase,
+        phaseStarting = {
+          startingPhaseStepId: addPhaseAction.startingPhaseStepId,
           phaseTitle: addPhaseAction.phaseTitle,
-        });
+        };
         break;
 
       case RoomModificationEnum.COMPLETE_PHASE:
@@ -257,21 +257,17 @@ export async function applyAtomicRoomModificationActions(
     updateOperations.$set = setOperations;
   }
 
-  if (phasesToAddToPhaseProgression.length > 0) {
-    const mostRecentPhaseToAdd =
-      phasesToAddToPhaseProgression[phasesToAddToPhaseProgression.length - 1];
-    if (mostRecentPhaseToAdd?.phaseTitle) {
-      updateOperations.$set = {
-        ...updateOperations.$set,
-        "gameData.phaseProgression.curPhaseTitle":
-          mostRecentPhaseToAdd.phaseTitle,
-      };
-    }
+  if (phaseStarting) {
+    updateOperations.$set = {
+      ...updateOperations.$set,
+      "gameData.phaseProgression.curPhaseTitle": phaseStarting.phaseTitle,
+      "gameData.phaseProgression.curPhaseStepId":
+        phaseStarting.startingPhaseStepId,
+    };
     updateOperations.$addToSet = {
       ...(updateOperations.$addToSet || {}),
-      "gameData.phaseProgression.phasesStarted": {
-        $each: phasesToAddToPhaseProgression.map((p) => p.startingPhase),
-      },
+      "gameData.phaseProgression.phasesStarted":
+        phaseStarting.startingPhaseStepId,
     };
   }
 
@@ -310,7 +306,7 @@ export function startOfPhaseStep(
   const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
   atomicRoomModificationActions.push({
     actionType: RoomModificationEnum.STARTING_PHASE,
-    startingPhase: curStep.stepId,
+    startingPhaseStepId: curStep.stepId,
     phaseTitle: curStep.phaseTitle,
   } as StartPhaseAtomicAction);
   return atomicRoomModificationActions;

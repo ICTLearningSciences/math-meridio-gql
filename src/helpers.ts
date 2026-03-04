@@ -137,10 +137,10 @@ export function canModifyClassroom(userId: string, classroom: Class): boolean {
   );
 }
 
-export function getTotalPhasesForGame(
+export function getStartingPhasesInOrderForGame(
   gameId: string,
   discussionStages: DiscussionStage[]
-): number {
+): string[] {
   const game = getGameById(gameId, discussionStages);
   const allDiscussionStages: DiscussionStage[] = game.stageList
     .map((s) => s.stage)
@@ -148,8 +148,8 @@ export function getTotalPhasesForGame(
   const allDiscussionSteps = allDiscussionStages
     .flatMap((stage) => stage.flowsList)
     .flatMap((flowItem) => flowItem.steps);
-  const allEndOfPhaseSteps = allDiscussionSteps.filter(
-    (step) => step.stepType === DiscussionStageStepType.END_OF_PHASE_REFLECTION
+  const allStartOfPhaseSteps = allDiscussionSteps.filter(
+    (step) => step.stepType === DiscussionStageStepType.START_OF_PHASE
   );
-  return allEndOfPhaseSteps.length;
+  return allStartOfPhaseSteps.map((step) => step.stepId);
 }
