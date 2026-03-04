@@ -746,13 +746,13 @@ export interface EndOfPhaseReflectionStepCompletionStatus {
 export async function transitionToEndOfPhaseReflectionState(
   room: Room,
   curStep: EndOfPhaseReflectionStep,
-  curStepGamePhaseReflections: GamePhaseReflections[]
+  numStepGamePhaseReflections: number
 ) {
   if (room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION") {
     console.log("already transitioned to end of phase reflection state");
     return room;
   }
-  const roundNumber = curStepGamePhaseReflections.length + 1;
+  const roundNumber = numStepGamePhaseReflections + 1;
 
   const selectedQuestion =
     curStep.questions[Math.floor(Math.random() * curStep.questions.length)];
@@ -805,6 +805,10 @@ export function endOfPhaseReflectionStepStatus(
   room: Room,
   curRoundGameReflections: GamePhaseReflections
 ): EndOfPhaseReflectionStepCompletionStatus {
+  console.log(
+    "curRoundGameReflections going into endOfPhaseReflectionStepStatus",
+    curRoundGameReflections
+  );
   if (room.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION") {
     console.log("not in end of phase reflection state, will not check status");
     return {
