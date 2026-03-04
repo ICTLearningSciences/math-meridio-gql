@@ -58,7 +58,10 @@ export class BasketballStateHandler extends AbstractGameData {
       understands_shot_points: "true",
     },
     "Understands How to Follow a Step-by-Step Formula": {
-      understands_algorithm: "true",
+      understands_addition: "true",
+      understands_multiplication: "true",
+      understands_success_shots: "true",
+      understands_shot_points: "true",
     },
   };
 
