@@ -9,7 +9,6 @@ import { Room, RoomPhase, RoomType } from "../models/Room";
 import RoomModel from "../../schemas/models/Room";
 import {
   isDiscussionStage as _isDiscussionStage,
-  DiscussionStage,
   EndOfPhaseReflectionStep,
   RequestUserInputStageStep,
 } from "../../schemas/models/DiscussionStage/types";
@@ -32,7 +31,6 @@ import GamePhaseReflectionsModel, {
 } from "../../schemas/models/GamePhaseReflections";
 import { getCurStageAndStep } from "../../authoritative-server/authority/user-action-pure-functions";
 import {
-  getGameById,
   WAIT_FOR_SIMULATION_STAGE_CLIENT_ID,
 } from "../../authoritative-server/games/game-helpers";
 import { PlayerComputedState } from "../../schemas/types/types";
@@ -189,10 +187,6 @@ export const pingGameRoomProcess = {
       room = await RoomModel.findOneAndUpdate(
         { _id: args.roomId },
         {
-          $addToSet: {
-            "gameData.phaseProgression.phasesCompleted":
-              stageAndStep.curStep.stepId,
-          },
           $set: {
             "gameData.curGameState.curState":
               "WAITING_FOR_STUDENT_READY_TO_CONTINUE",

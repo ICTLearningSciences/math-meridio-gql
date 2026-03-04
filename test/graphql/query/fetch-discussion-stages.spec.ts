@@ -143,7 +143,7 @@ describe("fetch discussion stages", () => {
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps[1]
         .requireInputType
-    ).to.equal(RequireInputType.SINGLE_RESPONSE_REQUIRED);
+    ).to.equal(RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL);
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps[4]
     ).to.deep.equal({

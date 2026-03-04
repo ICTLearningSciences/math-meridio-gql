@@ -1626,8 +1626,19 @@ describe("full room lifecycle", () => {
     expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
     const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
 
-    // ENSURE at request user input step
+    // ENSURE phaseProgression is set correctly
     let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.phaseProgression.phasesStarted).to.deep.equal([
+      "0",
+    ]);
+    expect(
+      currentRoom?.gameData.phaseProgression.phasesCompleted
+    ).to.deep.equal([]);
+    expect(currentRoom?.gameData.phaseProgression.curPhaseTitle).to.equal(
+      "Start of Phase"
+    );
+
+    // ENSURE at request user input step
     expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
       TEST_END_OF_PHASE_REFLECTION_CLIENT_ID
     );
@@ -1638,11 +1649,6 @@ describe("full room lifecycle", () => {
     expect(currentRoom?.gameData.chat).to.have.length(1);
     expect(currentRoom?.gameData.chat[0].message).to.equal(
       "Ready for reflection?"
-    );
-
-    // ENSURE curPhaseTitle  was set properly
-    expect(currentRoom?.gameData.phaseProgression.curPhaseTitle).to.equal(
-      "Start of Phase"
     );
 
     // 2. send message from owner + ping
@@ -1690,9 +1696,6 @@ describe("full room lifecycle", () => {
     expect(currentRoom?.gameData.curGameState.endOfPhaseStep?.stepId).to.equal(
       "2"
     );
-    expect(currentRoom?.gameData.phaseProgression.curPhaseTitle).to.equal(
-      "Start of Phase"
-    );
     expect(
       currentRoom?.gameData.curGameState.endOfPhaseStep
         ?.skipReflectionCollection
@@ -1700,12 +1703,15 @@ describe("full room lifecycle", () => {
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
     // ENSURE phaseProgression is set correctly
+    expect(currentRoom?.gameData.phaseProgression.curPhaseTitle).to.equal(
+      "Start of Phase"
+    );
     expect(currentRoom?.gameData.phaseProgression.phasesStarted).to.deep.equal([
       "0",
     ]);
     expect(
       currentRoom?.gameData.phaseProgression.phasesCompleted
-    ).to.deep.equal([]);
+    ).to.deep.equal(["0"]);
     expect(currentRoom?.gameData.phaseProgression.totalPhases).to.equal(1);
 
     // 3. submit phase reflection from owner + ping process
@@ -1749,7 +1755,7 @@ describe("full room lifecycle", () => {
     );
     expect(
       currentRoom?.gameData.phaseProgression.phasesCompleted
-    ).to.deep.equal(["2"]);
+    ).to.deep.equal(["0"]);
 
     // 3.75 a student submits that they are ready to continue
     const submitReadyToContinueResponse = await request(app)

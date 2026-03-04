@@ -71,6 +71,7 @@ export enum RoomModificationEnum {
   ADD_PLAYER_TO_ROOM = "ADD_PLAYER_TO_ROOM",
   NO_OP = "NO_OP",
   STARTING_PHASE = "STARTING_PHASE",
+  COMPLETE_PHASE = "COMPLETE_PHASE",
 }
 
 export interface AtomicRoomModiticationAction {
@@ -117,8 +118,14 @@ export interface AddPlayerToRoomAtomicAction
 export interface StartPhaseAtomicAction
   extends Omit<AtomicRoomModiticationAction, "actionType"> {
   actionType: RoomModificationEnum.STARTING_PHASE;
-  phaseToAdd: string;
+  startingPhase: string;
   phaseTitle: string;
+}
+
+export interface CompletePhaseAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.COMPLETE_PHASE;
+  phaseToComplete: string;
 }
 
 export async function applyAtomicRoomModificationActions(
@@ -139,9 +146,11 @@ export async function applyAtomicRoomModificationActions(
   let discussionDataUpdate: DiscussionData = {};
 
   const phasesToAddToPhaseProgression: {
-    phaseToAdd: string;
+    startingPhase: string;
     phaseTitle: string;
   }[] = [];
+
+  const phasesToComplete: string[] = [];
 
   // Process all actions in order, aggregating updates
   for (const action of atomicRoomModificationActions) {
@@ -157,9 +166,14 @@ export async function applyAtomicRoomModificationActions(
       case RoomModificationEnum.STARTING_PHASE:
         const addPhaseAction = action as StartPhaseAtomicAction;
         phasesToAddToPhaseProgression.push({
-          phaseToAdd: addPhaseAction.phaseToAdd,
+          startingPhase: addPhaseAction.startingPhase,
           phaseTitle: addPhaseAction.phaseTitle,
         });
+        break;
+
+      case RoomModificationEnum.COMPLETE_PHASE:
+        const completePhaseAction = action as CompletePhaseAtomicAction;
+        phasesToComplete.push(completePhaseAction.phaseToComplete);
         break;
 
       case RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA:
@@ -205,6 +219,19 @@ export async function applyAtomicRoomModificationActions(
     };
   }
 
+  if (phasesToComplete.length > 0) {
+    console.log(
+      "phasesToComplete in applyAtomicRoomModificationActions: ",
+      phasesToComplete
+    );
+    updateOperations.$addToSet = {
+      ...(updateOperations.$addToSet || {}),
+      "gameData.phaseProgression.phasesCompleted": {
+        $each: phasesToComplete,
+      },
+    };
+  }
+
   // Update player state data, global state data, and discussion data using $set with dot notation
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const setOperations: Record<string, any> = {};
@@ -241,8 +268,9 @@ export async function applyAtomicRoomModificationActions(
       };
     }
     updateOperations.$addToSet = {
+      ...(updateOperations.$addToSet || {}),
       "gameData.phaseProgression.phasesStarted": {
-        $each: phasesToAddToPhaseProgression.map((p) => p.phaseToAdd),
+        $each: phasesToAddToPhaseProgression.map((p) => p.startingPhase),
       },
     };
   }
@@ -282,7 +310,7 @@ export function startOfPhaseStep(
   const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
   atomicRoomModificationActions.push({
     actionType: RoomModificationEnum.STARTING_PHASE,
-    phaseToAdd: curStep.stepId,
+    startingPhase: curStep.stepId,
     phaseTitle: curStep.phaseTitle,
   } as StartPhaseAtomicAction);
   return atomicRoomModificationActions;
@@ -305,6 +333,11 @@ export function endOfPhaseReflectionStep(
     actionType: RoomModificationEnum.ADD_MESSAGE,
     newMessage: newMessage,
   } as AddMessageRoomAtomicAction);
+
+  atomicRoomModificationActions.push({
+    actionType: RoomModificationEnum.COMPLETE_PHASE,
+    phaseToComplete: curStep.parentStartOfPhaseStepId,
+  } as CompletePhaseAtomicAction);
 
   return atomicRoomModificationActions;
 }

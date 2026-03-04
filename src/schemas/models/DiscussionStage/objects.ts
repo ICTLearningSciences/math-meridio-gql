@@ -302,7 +302,7 @@ export const RequestUserInputStageStepSchema = new Schema({
   predefinedResponses: [PredefinedResponseSchema],
   requireInputType: {
     type: GraphQLString,
-    default: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+    default: RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
   },
 });
 
