@@ -110,7 +110,7 @@ export const pingGameRoomProcess = {
     const roomGamePhaseReflections: GamePhaseReflections[] =
       _roomGamePhaseReflections?.map((reflection) => reflection.toObject()) ||
       [];
-    const curRoundGamePhaseReflection = roomGamePhaseReflections.find(
+    let curRoundGamePhaseReflection = roomGamePhaseReflections.find(
       (reflection) =>
         reflection.roundNumber === room.gameData.curGameState.curRoundNumber
     );
@@ -274,6 +274,10 @@ export const pingGameRoomProcess = {
     endOfPhaseReflectionStepStatus =
       isEndOfPhaseReflectionStep &&
       _endOfPhaseReflectionStepStatus(room, curRoundGamePhaseReflection);
+    curRoundGamePhaseReflection = roomGamePhaseReflections.find(
+      (reflection) =>
+        reflection.roundNumber === room.gameData.curGameState.curRoundNumber
+    );
 
     console.log("----- RECHECKING VARS -----");
     console.log("isDiscussionStage", isDiscussionStage);

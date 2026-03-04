@@ -1622,7 +1622,6 @@ describe("full room lifecycle", () => {
           gameId: "unit-test-end-of-phase",
         },
       });
-    console.log(JSON.stringify(createNewGameRoomResponse.body, null, 2));
     expect(createNewGameRoomResponse.status).to.equal(200);
     expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
     const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
@@ -1760,6 +1759,13 @@ describe("full room lifecycle", () => {
     expect(
       currentRoom?.gameData.phaseProgression.phasesCompleted
     ).to.deep.equal(["0"]);
+
+    // ENSURE the owners reflection is set correctly in the curGameState
+    expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
+      {
+        [ownerStudentId]: "This was a great activity!",
+      }
+    );
 
     // 3.75 a student submits that they are ready to continue
     const submitReadyToContinueResponse = await request(app)
@@ -1906,6 +1912,13 @@ describe("full room lifecycle", () => {
       currentRoom?.gameData.curGameState.playersLeftToRespond
     ).to.deep.equal([studentTwoId]);
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+    expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
+      {
+        [ownerStudentId]: "Round 2 was even better!",
+      }
+    );
+
+    // ENSURE owners studentReflection is set correctly
     expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
       {
         [ownerStudentId]: "Round 2 was even better!",
