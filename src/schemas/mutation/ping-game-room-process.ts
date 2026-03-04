@@ -30,9 +30,7 @@ import GamePhaseReflectionsModel, {
   GamePhaseReflections,
 } from "../../schemas/models/GamePhaseReflections";
 import { getCurStageAndStep } from "../../authoritative-server/authority/user-action-pure-functions";
-import {
-  WAIT_FOR_SIMULATION_STAGE_CLIENT_ID,
-} from "../../authoritative-server/games/game-helpers";
+import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../authoritative-server/games/game-helpers";
 import { PlayerComputedState } from "../../schemas/types/types";
 import { EducationalRole } from "../../schemas/models/Player";
 import { updatePlayersHeartbeat } from "../../authoritative-server/authority/step-process-pure-functions";
