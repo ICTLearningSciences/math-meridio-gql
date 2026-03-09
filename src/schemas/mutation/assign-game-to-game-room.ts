@@ -20,7 +20,7 @@ import {
   DiscussionStageStepType,
   isDiscussionStage,
 } from "../models/DiscussionStage/types";
-
+import PlayerModel from "../models/Player";
 export const assignGameToGameRoom = {
   type: RoomType,
   args: {
@@ -70,6 +70,11 @@ export const assignGameToGameRoom = {
       if (!room) {
         throw new Error("Room not found");
       }
+
+      const playerDocuments = await PlayerModel.find({
+        _id: { $in: room.gameData.players },
+      });
+
       // Process the first step.
       const roomWithFirstStepProcessed = await processCurStep(
         room.toObject(),
@@ -79,7 +84,8 @@ export const assignGameToGameRoom = {
           model: "gpt-4o-mini",
         },
         context.userId,
-        "assign-game-to-game-room"
+        "assign-game-to-game-room",
+        playerDocuments
       );
       const curStageAndStep = getCurStageAndStep(
         roomWithFirstStepProcessed.gameData,
@@ -91,9 +97,6 @@ export const assignGameToGameRoom = {
           DiscussionStageStepType.REQUEST_USER_INPUT
       ) {
         // Now process all other steps until we reach a request user input step or simulation stage or end of phase reflection step.
-        console.log("PROCESS STEPS UNTIL NEXT STALLING PHASE CHECK 1");
-        console.log(roomWithFirstStepProcessed);
-        console.log("PROCESS STEPS UNTIL NEXT STALLING PHASE CHECK 2");
         const roomWithProcessedSteps: Room =
           await processStepsUntilNextStallingPhase(
             roomWithFirstStepProcessed,
@@ -103,7 +106,8 @@ export const assignGameToGameRoom = {
               model: "gpt-4o-mini",
             },
             context.userId,
-            "assign-game-to-game-room"
+            "assign-game-to-game-room",
+            playerDocuments
           );
         return await RoomModel.findOneAndUpdate(
           { _id: roomWithProcessedSteps._id },

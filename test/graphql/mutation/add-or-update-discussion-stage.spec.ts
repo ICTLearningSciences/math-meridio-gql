@@ -20,7 +20,10 @@ import {
 } from "../../../src/schemas/models/DiscussionStage/types";
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 import { fullDiscussionStageQueryData } from "../query/fetch-discussion-stages.spec";
-import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
+import {
+  ProcessPromptAs,
+  RequireInputType,
+} from "../../../src/schemas/models/DiscussionStage/objects";
 
 describe("update discussion stage", () => {
   let app: Express;
@@ -71,14 +74,19 @@ describe("update discussion stage", () => {
           {
             stepId: "789",
             stepType: DiscussionStageStepType.PROMPT,
-            promptText: "prompt 1",
-            jumpToStepId: "123",
-            jsonResponseData: "stringified_json_response_data",
-            responseFormat: "response format 1",
-            includeChatLogContext: true,
-            outputDataType: "JSON",
-            customSystemRole: "custom system role 1",
             lastStep: true,
+            jumpToStepId: "123",
+            prompts: [
+              {
+                promptText: "prompt 1",
+                processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                jsonResponseData: "stringified_json_response_data",
+                responseFormat: "response format 1",
+                includeChatLogContext: true,
+                outputDataType: "JSON",
+                customSystemRole: "custom system role 1",
+              },
+            ],
           },
         ],
       },
@@ -145,14 +153,19 @@ describe("update discussion stage", () => {
           {
             stepId: "789",
             stepType: DiscussionStageStepType.PROMPT,
-            promptText: "prompt 1",
-            jumpToStepId: "123",
-            jsonResponseData: "stringified_json_response_data",
-            responseFormat: "response format 1",
-            includeChatLogContext: true,
-            outputDataType: "JSON",
-            customSystemRole: "custom system role 1",
             lastStep: true,
+            jumpToStepId: "123",
+            prompts: [
+              {
+                promptText: "prompt 1",
+                processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                jsonResponseData: "stringified_json_response_data",
+                responseFormat: "response format 1",
+                includeChatLogContext: true,
+                outputDataType: "JSON",
+                customSystemRole: "custom system role 1",
+              },
+            ],
           },
         ],
       },
@@ -228,14 +241,19 @@ describe("update discussion stage", () => {
           {
             stepId: "789",
             stepType: DiscussionStageStepType.PROMPT,
-            promptText: "prompt 1",
-            jumpToStepId: "123",
-            jsonResponseData: "stringified_json_response_data",
-            responseFormat: "response format 1",
-            includeChatLogContext: true,
-            outputDataType: "JSON",
-            customSystemRole: "custom system role 1",
             lastStep: true,
+            jumpToStepId: "123",
+            prompts: [
+              {
+                promptText: "prompt 1",
+                processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                jsonResponseData: "stringified_json_response_data",
+                responseFormat: "response format 1",
+                includeChatLogContext: true,
+                outputDataType: "JSON",
+                customSystemRole: "custom system role 1",
+              },
+            ],
           },
           {
             stepId: "5",
@@ -285,7 +303,6 @@ describe("update discussion stage", () => {
           stage: discussionStage,
         },
       });
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.body.data.addOrUpdateDiscussionStage).to.eql(
       discussionStage
     );
@@ -372,7 +389,15 @@ describe("update discussion stage", () => {
                                 lastStep
                                 stepId
                                 stepType
-                                promptText
+                                prompts{
+                                  promptText
+                                  processPromptAs
+                                  responseFormat
+                                  includeChatLogContext
+                                  outputDataType
+                                  jsonResponseData
+                                  customSystemRole
+                                }
                             }
                         }
                         }

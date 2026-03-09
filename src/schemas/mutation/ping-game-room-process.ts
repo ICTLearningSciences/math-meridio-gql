@@ -35,6 +35,7 @@ import { PlayerComputedState } from "../../schemas/types/types";
 import { EducationalRole } from "../../schemas/models/Player";
 import { updatePlayersHeartbeat } from "../../authoritative-server/authority/step-process-pure-functions";
 import { getStartingPhasesInOrderForGame } from "../../helpers";
+import PlayerModel from "../../schemas/models/Player";
 
 export const pingGameRoomProcess = {
   type: RoomType,
@@ -64,16 +65,23 @@ export const pingGameRoomProcess = {
       context.userId,
       RoomModel
     );
-    const activePlayers = Object.values(
+    const activePlayers = Object.entries(
       room.gameData.playersStatusRecord
     ).filter(
-      (playerStatus) =>
+      ([_, playerStatus]) =>
         playerStatus.computedState === PlayerComputedState.ACTIVE
     );
     if (activePlayers.length === 0) {
       console.log("no active players in room, returning room as is");
       return room;
     }
+
+    const activePlayerDocuments = (
+      await PlayerModel.find({
+        _id: { $in: activePlayers.map(([playerId, _]) => playerId) },
+      })
+    ).map((player) => player.toObject());
+
     if (!room.gameData.gameId) {
       console.log("no gameId selected for room, returning room as is");
       return room;
@@ -227,7 +235,8 @@ export const pingGameRoomProcess = {
           model: "gpt-4o-mini",
         },
         room.gameData.globalStateData.roomOwnerId,
-        sessionId
+        sessionId,
+        activePlayerDocuments
       );
       room = await RoomModel.findOneAndUpdate(
         { _id: args.roomId },

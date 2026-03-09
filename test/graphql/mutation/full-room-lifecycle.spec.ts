@@ -320,6 +320,8 @@ describe("full room lifecycle", () => {
     // ENSURE that prompt_response gets added to the global state data.
     const globalGameStateData =
       roomAfterProcessingPrompt?.gameData.globalStateData.gameStateData;
+
+    console.log(JSON.stringify(globalGameStateData, null, 2));
     const promptResponse = globalGameStateData?.["prompt_response"];
     expect(promptResponse).to.equal("Mocked analysis of the prompt");
 
@@ -1158,7 +1160,6 @@ describe("full room lifecycle", () => {
       instructorToken
     );
     expect(pingAfterPauseStudentTwo.status).to.equal(200);
-    console.log(JSON.stringify(pingAfterPauseStudentTwo.body, null, 2));
 
     // ENSURE has moved on to next require user input step since studentTwo is paused, ignores requiring their message.
     currentRoom = await RoomModel.findById(newRoomId);
@@ -1552,7 +1553,6 @@ describe("full room lifecycle", () => {
           roomId: roomId,
         },
       });
-    console.log(JSON.stringify(viewSimulationResponse.body, null, 2));
     expect(viewSimulationResponse.status).to.equal(200);
 
     console.log("pinging room process");
@@ -1567,10 +1567,7 @@ describe("full room lifecycle", () => {
           sessionId: "session1",
         },
       });
-    console.log(JSON.stringify(pingAfterSimulationResponse.body, null, 2));
     assertSuccessfullGqlResponse(pingAfterSimulationResponse);
-
-    console.log("after ping room");
 
     // ENSURE getSimulationViewedKey in the playersGameStateData exists and is set to "true"
     currentRoom = await RoomModel.findById(roomId);
@@ -2711,5 +2708,258 @@ describe("full room lifecycle", () => {
     );
     // StudentTwo didn't submit a reflection for round 3, so it shouldn't exist
     expect(gamePhaseReflection?.reflections[studentTwoId]).to.be.undefined;
+  });
+
+  it("multiple prompt room with group and individual prompt processes", async () => {
+    // 1. Create a room for game "unit-test-multiple-prompt", add two students, ping process
+    const ownerStudentId = new ObjectId().toString();
+    const studentTwoId = new ObjectId().toString();
+
+    await createUser(ownerStudentId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(studentTwoId, UserRole.USER, EducationalRole.STUDENT);
+
+    const ownerStudentToken = await getToken(
+      ownerStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const studentTwoToken = await getToken(
+      studentTwoId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+
+    const createNewGameRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test-multiple-prompt",
+        },
+      });
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
+    const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
+
+    // Add studentTwo to the room
+    const joinStudentTwoResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: joinGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(joinStudentTwoResponse.status).to.equal(200);
+    expect(joinStudentTwoResponse.body.data.joinGameRoom).to.exist;
+
+    // Ping to ensure room is initialized
+    const initialPingResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(initialPingResponse.status).to.equal(200);
+
+    // ENSURE we are at the first request user input step
+    let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+    expect(currentRoom?.gameData.chat[0].message).to.equal(
+      "What is your single user message?"
+    );
+
+    // GROUP prompt portion
+    // Setup llm mock to respond with group_prompt_response json data
+    syncLlmRequestStub.onFirstCall().resolves({
+      answer: JSON.stringify({
+        group_prompt_response: "Mocked group response for all users",
+      }),
+    } as AiServicesResponseTypes);
+
+    // 2. Send messages from both users (ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL)
+    const ownerFirstMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Owner's first input",
+          sessionId: "session1",
+        },
+      });
+    expect(ownerFirstMessageResponse.status).to.equal(200);
+
+    const studentTwoFirstMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Student Two's first input",
+          sessionId: "session2",
+        },
+      });
+    expect(studentTwoFirstMessageResponse.status).to.equal(200);
+
+    // Ping to process the GROUP prompt
+    const pingAfterFirstMessages = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterFirstMessages.status).to.equal(200);
+
+    // ENSURE we are now at the second request user input step (stepId 3)
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("3");
+    expect(
+      currentRoom?.gameData.chat.find(
+        (c: any) => c.message === "Provide the single user response."
+      )
+    ).to.exist;
+
+    // ENSURE the prompt request was called ONCE, should contain both users messages in the prompt text with format "Name: Message"
+    expect(syncLlmRequestStub.callCount).to.equal(1);
+    const firstCallArgs = syncLlmRequestStub.getCall(0).args[0];
+    expect(firstCallArgs.prompts).to.exist;
+    expect(firstCallArgs.prompts.length).to.be.greaterThan(0);
+
+    // The prompt text should contain both users' inputs formatted with their names
+    const groupPromptText = firstCallArgs.prompts.find((p: any) =>
+      p.promptText.includes("Here are each students responses")
+    )?.promptText;
+    expect(groupPromptText).to.exist;
+    expect(groupPromptText).to.include("Owner's first input");
+    expect(groupPromptText).to.include("Student Two's first input");
+
+    // ENSURE the global state data has the group_prompt_response field set
+    expect(
+      currentRoom?.gameData.globalStateData.gameStateData.group_prompt_response
+    ).to.equal("Mocked group response for all users");
+
+    // INDIVIDUALLY prompt portion
+    // Setup the llm mock so that there are 2 distinct llm responses
+    syncLlmRequestStub.reset();
+
+    // Configure stub to return different responses based on the prompt text
+    syncLlmRequestStub.callsFake((request: any) => {
+      const promptText = request.prompts.find((p: any) =>
+        p.promptText.includes("Process the single user second response")
+      )?.promptText;
+
+      if (promptText?.includes("Owner's second input")) {
+        return Promise.resolve({
+          answer: JSON.stringify({
+            individually_prompt_response: "Owner's individual response",
+          }),
+        } as AiServicesResponseTypes);
+      } else if (promptText?.includes("Student Two's second input")) {
+        return Promise.resolve({
+          answer: JSON.stringify({
+            individually_prompt_response: "Student Two's individual response",
+          }),
+        } as AiServicesResponseTypes);
+      }
+
+      // Default fallback
+      return Promise.resolve({
+        answer: JSON.stringify({
+          individually_prompt_response: "Default individual response",
+        }),
+      } as AiServicesResponseTypes);
+    });
+
+    // 3. Send a message from both students
+    const ownerSecondMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Owner's second input",
+          sessionId: "session1",
+        },
+      });
+    expect(ownerSecondMessageResponse.status).to.equal(200);
+
+    const studentTwoSecondMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Student Two's second input",
+          sessionId: "session2",
+        },
+      });
+    expect(studentTwoSecondMessageResponse.status).to.equal(200);
+
+    // Ping to process the INDIVIDUALLY prompts
+    const pingAfterSecondMessages = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterSecondMessages.status).to.equal(200);
+
+    // ENSURE we are now back at the first request user input step
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+
+    // ENSURE the prompt request was called twice (once per user)
+    expect(syncLlmRequestStub.callCount).to.equal(2);
+
+    // ENSURE each call had one of the users messages
+    const secondCallArgs = syncLlmRequestStub.getCall(0).args[0];
+    const thirdCallArgs = syncLlmRequestStub.getCall(1).args[0];
+
+    const secondCallPromptText = secondCallArgs.prompts.find((p: any) =>
+      p.promptText.includes("Process the single user second response")
+    )?.promptText;
+    const thirdCallPromptText = thirdCallArgs.prompts.find((p: any) =>
+      p.promptText.includes("Process the single user second response")
+    )?.promptText;
+
+    // One should have owner's message, the other should have student two's message
+    const hasOwnerMessage =
+      secondCallPromptText?.includes("Owner's second input") ||
+      thirdCallPromptText?.includes("Owner's second input");
+    const hasStudentTwoMessage =
+      secondCallPromptText?.includes("Student Two's second input") ||
+      thirdCallPromptText?.includes("Student Two's second input");
+
+    expect(hasOwnerMessage).to.be.true;
+    expect(hasStudentTwoMessage).to.be.true;
+
+    // ENSURE each user has their distinct llm response in their player state data
+    expect(
+      currentRoom?.gameData.playersGameStateData[ownerStudentId]
+        .individually_prompt_response
+    ).to.equal("Owner's individual response");
+    expect(
+      currentRoom?.gameData.playersGameStateData[studentTwoId]
+        .individually_prompt_response
+    ).to.equal("Student Two's individual response");
   });
 });

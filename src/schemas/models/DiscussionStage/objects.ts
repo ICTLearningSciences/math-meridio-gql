@@ -181,6 +181,19 @@ export const ConditionalActivityStepTypeInput = new GraphQLInputObjectType({
   }),
 });
 
+export const PromptConfigurationType = new GraphQLObjectType({
+  name: "PromptConfigurationType",
+  fields: () => ({
+    processPromptAs: { type: GraphQLString },
+    promptText: { type: GraphQLString },
+    responseFormat: { type: GraphQLString },
+    includeChatLogContext: { type: GraphQLBoolean },
+    outputDataType: { type: GraphQLString },
+    jsonResponseData: { type: GraphQLString },
+    customSystemRole: { type: GraphQLString },
+  }),
+});
+
 export const PromptStageStepType = new GraphQLObjectType({
   name: "PromptStageStepType",
   fields: () => ({
@@ -188,6 +201,14 @@ export const PromptStageStepType = new GraphQLObjectType({
     jumpToStepId: { type: GraphQLString },
     lastStep: { type: GraphQLBoolean },
     stepType: { type: GraphQLString, value: DiscussionStageStepType.PROMPT },
+    prompts: { type: GraphQLList(PromptConfigurationType) },
+  }),
+});
+
+export const PromptConfigurationTypeInput = new GraphQLInputObjectType({
+  name: "PromptConfigurationTypeInput",
+  fields: () => ({
+    processPromptAs: { type: GraphQLString },
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
@@ -204,12 +225,7 @@ export const PromptStageStepTypeInput = new GraphQLInputObjectType({
     lastStep: { type: GraphQLBoolean },
     jumpToStepId: { type: GraphQLString },
     stepType: { type: GraphQLString, value: DiscussionStageStepType.PROMPT },
-    promptText: { type: GraphQLString },
-    responseFormat: { type: GraphQLString },
-    includeChatLogContext: { type: GraphQLBoolean },
-    outputDataType: { type: GraphQLString },
-    jsonResponseData: { type: GraphQLString },
-    customSystemRole: { type: GraphQLString },
+    prompts: { type: GraphQLList(PromptConfigurationTypeInput) },
   }),
 });
 
@@ -320,15 +336,25 @@ export const LogicOperationActivityStepSchema = new Schema({
   conditionalsToMeet: [SingleConditionalSchema],
 });
 
-export const PromptStageStepSchema = new Schema({
-  ...StageBuilderStepSchema.obj,
-  stepType: { type: String, default: DiscussionStageStepType.PROMPT },
+export enum ProcessPromptAs {
+  GROUP = "GROUP",
+  INDIVIDUALLY = "INDIVIDUALLY",
+}
+
+export const PromptConfigurationSchema = new Schema({
+  processPromptAs: { type: String, default: ProcessPromptAs.INDIVIDUALLY },
   promptText: { type: String },
   responseFormat: { type: String },
   includeChatLogContext: { type: Boolean },
   outputDataType: { type: String },
   jsonResponseData: { type: String },
   customSystemRole: { type: String },
+});
+
+export const PromptStageStepSchema = new Schema({
+  ...StageBuilderStepSchema.obj,
+  stepType: { type: String, default: DiscussionStageStepType.PROMPT },
+  prompts: [PromptConfigurationSchema],
 });
 
 export const StartOfPhaseStepSchema = new Schema({

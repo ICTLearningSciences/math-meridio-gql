@@ -61,7 +61,7 @@ export function syncGlobalTruthDataToPlayers(
     if (!globalTruthData) {
       continue;
     }
-    for (const [playerId, playerData] of Object.entries(
+    for (const [_, playerData] of Object.entries(
       gameData.playersGameStateData
     )) {
       const existingPlayerGameStateData = playerData[persistTruthFieldKey];
@@ -85,7 +85,7 @@ export function syncGlobalGameStateKeysToPlayers(
   for (const [key, value] of Object.entries(
     gameData.globalStateData.gameStateData
   )) {
-    for (const [playerId, playerData] of Object.entries(
+    for (const [_, playerData] of Object.entries(
       gameData.playersGameStateData
     )) {
       const existingPlayerGameStateData = playerData[key];

@@ -6,7 +6,7 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import { GameStateData } from "../Room";
-import { RequireInputType } from "./objects";
+import { ProcessPromptAs, RequireInputType } from "./objects";
 
 export interface IStage {
   stageType: "discussion" | "simulation";
@@ -87,14 +87,19 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
   requireInputType: RequireInputType;
 }
 
-export interface PromptStageStep extends StageBuilderStep {
-  stepType: DiscussionStageStepType.PROMPT;
+export interface PromptConfiguration {
   promptText: string;
+  processPromptAs: ProcessPromptAs;
   responseFormat: string;
   includeChatLogContext: boolean;
   outputDataType: string;
   jsonResponseData?: string;
   customSystemRole: string;
+}
+
+export interface PromptStageStep extends StageBuilderStep {
+  stepType: DiscussionStageStepType.PROMPT;
+  prompts: PromptConfiguration[];
 }
 
 export interface StartOfPhaseStep extends StageBuilderStep {

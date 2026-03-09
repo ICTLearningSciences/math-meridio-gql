@@ -173,6 +173,10 @@ export const createNewGameRoom = {
       player
     );
 
+    const playerDocuments = await PlayerModel.find({
+      _id: { $in: roomWithPlayerAdded.gameData.players },
+    });
+
     // Process the first step.
     const roomWithFirstStepProcessed: Room = await processCurStep(
       roomWithPlayerAdded,
@@ -182,7 +186,8 @@ export const createNewGameRoom = {
         model: "gpt-4o-mini",
       },
       context.userId,
-      args.sessionId
+      args.sessionId,
+      playerDocuments
     );
 
     const curStageAndStep = getCurStageAndStep(
@@ -204,7 +209,8 @@ export const createNewGameRoom = {
             model: "gpt-4o-mini",
           },
           context.userId,
-          args.sessionId
+          args.sessionId,
+          playerDocuments
         );
       return await RoomModel.findOneAndUpdate(
         { _id: roomWithProcessedSteps._id },
