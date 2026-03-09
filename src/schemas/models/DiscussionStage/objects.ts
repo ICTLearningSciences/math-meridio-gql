@@ -184,6 +184,7 @@ export const ConditionalActivityStepTypeInput = new GraphQLInputObjectType({
 export const PromptConfigurationType = new GraphQLObjectType({
   name: "PromptConfigurationType",
   fields: () => ({
+    processPromptAs: { type: GraphQLString },
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
@@ -207,6 +208,7 @@ export const PromptStageStepType = new GraphQLObjectType({
 export const PromptConfigurationTypeInput = new GraphQLInputObjectType({
   name: "PromptConfigurationTypeInput",
   fields: () => ({
+    processPromptAs: { type: GraphQLString },
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
@@ -334,7 +336,13 @@ export const LogicOperationActivityStepSchema = new Schema({
   conditionalsToMeet: [SingleConditionalSchema],
 });
 
+export enum ProcessPromptAs {
+  GROUP = "GROUP",
+  INDIVIDUALLY = "INDIVIDUALLY",
+}
+
 export const PromptConfigurationSchema = new Schema({
+  processPromptAs: { type: String, default: ProcessPromptAs.INDIVIDUALLY },
   promptText: { type: String },
   responseFormat: { type: String },
   includeChatLogContext: { type: Boolean },

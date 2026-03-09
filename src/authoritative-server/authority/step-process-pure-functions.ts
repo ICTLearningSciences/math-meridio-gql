@@ -5,39 +5,30 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { CancelToken } from "axios";
+import { getSimulationViewedKey } from "./helpers/helpers";
 import {
-  getSimulationViewedKey,
-  receivedExpectedData,
-  recursivelyConvertExpectedDataToAiPromptString,
-  recursiveUpdateAdditionalInfo,
-  replaceStoredDataInString,
-  chatLogToString,
-  isJsonString,
-} from "./helpers/helpers";
-import {
-  CollectedDiscussionData,
   DiscussionStage,
   DiscussionStageStepType,
   EndOfPhaseReflectionStep,
   isDiscussionStage,
-  PromptStageStep,
   RequestUserInputStageStep,
   StartOfPhaseStep,
   SystemMessageStageStep,
 } from "../../schemas/models/DiscussionStage/types";
 import {
-  GenericLlmRequest,
-  JsonResponseData,
-  PromptOutputTypes,
-  PromptRoles,
+  AddMessageRoomAtomicAction,
+  AtomicRoomModiticationAction,
+  CompletePhaseAtomicAction,
+  NoOpRoomAtomicAction,
+  RoomModificationEnum,
   SenderType,
+  StartPhaseAtomicAction,
   TargetAiModelServiceType,
+  UpdateDiscussionDataRoomAtomicAction,
+  UpdateGlobalGameStateDataRoomAtomicAction,
+  UpdatePlayerGameStateDataRoomAtomicAction,
 } from "../llm-request/types";
-import {
-  removePersistTruthDataFromNewData,
-  updateRoomWithNextStep,
-} from "./pure-state-modifiers";
+import { updateRoomWithNextStep } from "./pure-state-modifiers";
 import { buildSystemMessage, getGameDataCopy } from "./state-modifier-helpers";
 import { getCurStageAndStep } from "./user-action-pure-functions";
 import {
@@ -47,14 +38,13 @@ import {
   GameStateData,
   Room,
 } from "../../schemas/models/Room";
-import { AiServicesResponseTypes } from "../llm-request/ai-services/ai-service-types";
 import { syncLlmRequest } from "../llm-request/llm-request";
 import {
   getGameById,
   WAIT_FOR_SIMULATION_STAGE_CLIENT_ID,
 } from "../../authoritative-server/games/game-helpers";
 import RoomModel from "../../schemas/models/Room";
-import { PlayerDocument } from "../../schemas/models/Player";
+import { Player, PlayerDocument } from "../../schemas/models/Player";
 import { RequireInputType } from "../../schemas/models/DiscussionStage/objects";
 import { GamePhaseReflections } from "../../schemas/models/GamePhaseReflections";
 import GamePhaseReflectionsModel from "../../schemas/models/GamePhaseReflections";
@@ -62,77 +52,17 @@ import {
   PlayerComputedState,
   PlayerStatusData,
 } from "../../schemas/types/types";
-
-export enum RoomModificationEnum {
-  ADD_MESSAGE = "ADD_MESSAGE",
-  ADD_TO_PLAYER_STATE_DATA = "ADD_TO_PLAYER_STATE_DATA",
-  ADD_TO_GLOBAL_STATE_DATA = "ADD_TO_GLOBAL_STATE_DATA",
-  ADD_TO_DISCUSSION_DATA = "ADD_TO_DISCUSSION_DATA",
-  ADD_PLAYER_TO_ROOM = "ADD_PLAYER_TO_ROOM",
-  NO_OP = "NO_OP",
-  STARTING_PHASE = "STARTING_PHASE",
-  COMPLETE_PHASE = "COMPLETE_PHASE",
-}
-
-export interface AtomicRoomModiticationAction {
-  actionType: RoomModificationEnum;
-}
-
-export interface NoOpRoomAtomicAction
-  extends Omit<AtomicRoomModiticationAction, "actionType"> {
-  actionType: RoomModificationEnum.NO_OP;
-}
-
-export interface AddMessageRoomAtomicAction
-  extends Omit<AtomicRoomModiticationAction, "actionType"> {
-  actionType: RoomModificationEnum.ADD_MESSAGE;
-  newMessage: ChatMessage;
-}
-
-export interface UpdatePlayerGameStateDataRoomAtomicAction
-  extends Omit<AtomicRoomModiticationAction, "actionType"> {
-  actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA;
-  playerId: string;
-  newData: GameStateData;
-}
-
-export interface UpdateGlobalGameStateDataRoomAtomicAction
-  extends Omit<AtomicRoomModiticationAction, "actionType"> {
-  actionType: RoomModificationEnum.ADD_TO_GLOBAL_STATE_DATA;
-  newData: GameStateData;
-}
-
-export interface UpdateDiscussionDataRoomAtomicAction
-  extends Omit<AtomicRoomModiticationAction, "actionType"> {
-  actionType: RoomModificationEnum.ADD_TO_DISCUSSION_DATA;
-  newData: DiscussionData;
-}
-
-export interface AddPlayerToRoomAtomicAction
-  extends Omit<AtomicRoomModiticationAction, "actionType"> {
-  actionType: RoomModificationEnum.ADD_PLAYER_TO_ROOM;
-  playerId: string;
-  playerStateData: GameStateData;
-}
-
-export interface StartPhaseAtomicAction
-  extends Omit<AtomicRoomModiticationAction, "actionType"> {
-  actionType: RoomModificationEnum.STARTING_PHASE;
-  startingPhaseStepId: string;
-  phaseTitle: string;
-}
-
-export interface CompletePhaseAtomicAction
-  extends Omit<AtomicRoomModiticationAction, "actionType"> {
-  actionType: RoomModificationEnum.COMPLETE_PHASE;
-  phaseToComplete: string;
-}
+import { processPromptStep } from "./prompt-process-pure-functions";
 
 export async function applyAtomicRoomModificationActions(
   _gameData: GameData,
   atomicRoomModificationActions: AtomicRoomModiticationAction[],
   roomId: string
 ): Promise<GameData> {
+  console.log(
+    "reached applyAtomicRoomModificationActions with actions: ",
+    JSON.stringify(atomicRoomModificationActions, null, 2)
+  );
   // Aggregate messages to add
   const messagesToAdd: ChatMessage[] = [];
 
@@ -379,143 +309,6 @@ export function processConditionalStep(): NoOpRoomAtomicAction {
   };
 }
 
-export async function processPromptStep(
-  gameData: GameData,
-  curStep: PromptStageStep,
-  targetAiServiceModel: TargetAiModelServiceType,
-  executePrompt: (
-    llmRequest: GenericLlmRequest,
-    cancelToken?: CancelToken
-  ) => Promise<AiServicesResponseTypes>,
-  playerIdToUpdate: string,
-  sessionId: string
-): Promise<AtomicRoomModiticationAction[]> {
-  const collectedDiscussionData: CollectedDiscussionData =
-    gameData.globalStateData.discussionData || {};
-
-  // Execute all prompts in parallel
-  const promptResults = await Promise.all(
-    curStep.prompts.map(async (promptConfig) => {
-      const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
-
-      // handle replacing promptText with stored data
-      const promptText = replaceStoredDataInString(
-        promptConfig.promptText,
-        collectedDiscussionData
-      );
-      // handle replacing responseFormat with stored data
-      const responseFormat = replaceStoredDataInString(
-        promptConfig.responseFormat,
-        collectedDiscussionData
-      );
-      // handle replacing customSystemRole with stored data
-      const customSystemRole = replaceStoredDataInString(
-        promptConfig.customSystemRole,
-        collectedDiscussionData
-      );
-
-      const llmRequest: GenericLlmRequest = {
-        prompts: [],
-        outputDataType: promptConfig.outputDataType as PromptOutputTypes,
-        targetAiServiceModel: targetAiServiceModel,
-        responseFormat: responseFormat,
-        systemRole: customSystemRole,
-      };
-
-      if (promptConfig.includeChatLogContext) {
-        llmRequest.prompts.push({
-          promptText: `Current state of chat log between user and system: ${chatLogToString(
-            gameData.chat
-          )}`,
-          promptRole: PromptRoles.SYSTEM,
-        });
-      }
-
-      llmRequest.prompts.push({
-        promptText: promptText,
-        promptRole: PromptRoles.SYSTEM,
-      });
-
-      if (
-        promptConfig.jsonResponseData &&
-        promptConfig.outputDataType === PromptOutputTypes.JSON
-      ) {
-        const jsonResponseData: JsonResponseData[] = JSON.parse(
-          promptConfig.jsonResponseData || "[]"
-        );
-        llmRequest.responseFormat +=
-          recursivelyConvertExpectedDataToAiPromptString(
-            recursiveUpdateAdditionalInfo(
-              jsonResponseData,
-              collectedDiscussionData
-            )
-          );
-      }
-
-      const _response = await executePrompt(llmRequest);
-      const response = _response.answer;
-
-      if (promptConfig.outputDataType === PromptOutputTypes.JSON) {
-        if (!isJsonString(response)) {
-          throw new Error(`Did not receive valid JSON data: ${response}`);
-        }
-        const jsonResponseData: JsonResponseData[] = JSON.parse(
-          promptConfig.jsonResponseData || "[]"
-        );
-        if (
-          promptConfig.jsonResponseData &&
-          promptConfig.jsonResponseData.length > 0
-        ) {
-          if (!receivedExpectedData(jsonResponseData, response)) {
-            throw new Error(
-              `Did not receive expected JSON data: ${response}. \n Expected: ${JSON.stringify(
-                jsonResponseData
-              )}`
-            );
-          }
-        }
-        const resData: Record<string, any> = JSON.parse(response);
-        const newDataToAdd = removePersistTruthDataFromNewData(
-          gameData,
-          resData
-        );
-
-        if (Object.keys(newDataToAdd).length > 0) {
-          atomicRoomModificationActions.push({
-            actionType: RoomModificationEnum.ADD_TO_DISCUSSION_DATA,
-            newData: newDataToAdd,
-          } as UpdateDiscussionDataRoomAtomicAction);
-
-          atomicRoomModificationActions.push({
-            actionType: RoomModificationEnum.ADD_TO_GLOBAL_STATE_DATA,
-            newData: newDataToAdd,
-          } as UpdateGlobalGameStateDataRoomAtomicAction);
-
-          atomicRoomModificationActions.push({
-            actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
-            playerId: playerIdToUpdate,
-            newData: newDataToAdd,
-          } as UpdatePlayerGameStateDataRoomAtomicAction);
-        }
-      } else {
-        atomicRoomModificationActions.push({
-          actionType: RoomModificationEnum.ADD_MESSAGE,
-          newMessage: buildSystemMessage(
-            gameData,
-            response,
-            sessionId,
-            curStep.stepId
-          ),
-        } as AddMessageRoomAtomicAction);
-      }
-
-      return atomicRoomModificationActions;
-    })
-  );
-
-  // Flatten all actions from all prompts into a single array
-  return promptResults.flat();
-}
 export const defaultPlayerStatusRecord: PlayerStatusData = {
   lastHeartbeatAt: new Date(),
   reportedAwayStatus: {
@@ -643,7 +436,8 @@ export async function processCurStep(
   discussionStages: DiscussionStage[],
   targetAiServiceModel: TargetAiModelServiceType,
   playerIdToUpdate: string,
-  sessionId: string
+  sessionId: string,
+  activePlayerData: PlayerDocument[]
 ): Promise<Room> {
   let gameData = getGameDataCopy(room.gameData);
   const { curStage, curStep } = getCurStageAndStep(gameData, discussionStages);
@@ -717,7 +511,8 @@ export async function processCurStep(
           targetAiServiceModel,
           syncLlmRequest,
           playerIdToUpdate,
-          sessionId
+          sessionId,
+          activePlayerData
         );
       gameData = await applyAtomicRoomModificationActions(
         gameData,
@@ -955,7 +750,8 @@ export async function processStepsUntilNextStallingPhase(
   discussionStages: DiscussionStage[],
   targetAiServiceModel: TargetAiModelServiceType,
   playerIdToUpdate: string,
-  sessionId: string
+  sessionId: string,
+  activePlayerData: PlayerDocument[]
 ): Promise<Room> {
   let latestRoom = room;
   let stepAndStage = getCurStageAndStep(latestRoom.gameData, discussionStages);
@@ -981,7 +777,8 @@ export async function processStepsUntilNextStallingPhase(
         discussionStages,
         targetAiServiceModel,
         playerIdToUpdate,
-        sessionId
+        sessionId,
+        activePlayerData
       );
     } else {
       // is simulation stage

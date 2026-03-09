@@ -7,7 +7,10 @@ The full terms of this copyright and license should always be found in the root 
 
 import mongoose from "mongoose";
 import { DiscussionStageStepType } from "../../../src/schemas/models/DiscussionStage/types";
-import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
+import {
+  ProcessPromptAs,
+  RequireInputType,
+} from "../../../src/schemas/models/DiscussionStage/objects";
 const { ObjectId } = mongoose.Types;
 
 const player1Id = "5f748650f4b3f1b9f1f1f1f1";
@@ -153,6 +156,7 @@ module.exports = {
               stepType: DiscussionStageStepType.PROMPT,
               prompts: [
                 {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
                   promptText:
                     "Please generate a nickname for {{user_input_name}}",
                   responseFormat: "",
@@ -261,6 +265,7 @@ module.exports = {
               jumpToStepId: "",
               prompts: [
                 {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
                   promptText: "Process the users prompt: {{user_input_prompt}}",
                   responseFormat: "",
                   includeChatLogContext: false,

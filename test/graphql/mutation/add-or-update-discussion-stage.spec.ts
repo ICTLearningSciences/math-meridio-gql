@@ -20,7 +20,10 @@ import {
 } from "../../../src/schemas/models/DiscussionStage/types";
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 import { fullDiscussionStageQueryData } from "../query/fetch-discussion-stages.spec";
-import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
+import {
+  ProcessPromptAs,
+  RequireInputType,
+} from "../../../src/schemas/models/DiscussionStage/objects";
 
 describe("update discussion stage", () => {
   let app: Express;
@@ -76,6 +79,7 @@ describe("update discussion stage", () => {
             prompts: [
               {
                 promptText: "prompt 1",
+                processPromptAs: ProcessPromptAs.INDIVIDUALLY,
                 jsonResponseData: "stringified_json_response_data",
                 responseFormat: "response format 1",
                 includeChatLogContext: true,
@@ -154,6 +158,7 @@ describe("update discussion stage", () => {
             prompts: [
               {
                 promptText: "prompt 1",
+                processPromptAs: ProcessPromptAs.INDIVIDUALLY,
                 jsonResponseData: "stringified_json_response_data",
                 responseFormat: "response format 1",
                 includeChatLogContext: true,
@@ -241,6 +246,7 @@ describe("update discussion stage", () => {
             prompts: [
               {
                 promptText: "prompt 1",
+                processPromptAs: ProcessPromptAs.INDIVIDUALLY,
                 jsonResponseData: "stringified_json_response_data",
                 responseFormat: "response format 1",
                 includeChatLogContext: true,
@@ -297,7 +303,6 @@ describe("update discussion stage", () => {
           stage: discussionStage,
         },
       });
-    console.log(JSON.stringify(response.body, null, 2));
     expect(response.body.data.addOrUpdateDiscussionStage).to.eql(
       discussionStage
     );
@@ -386,6 +391,7 @@ describe("update discussion stage", () => {
                                 stepType
                                 prompts{
                                   promptText
+                                  processPromptAs
                                   responseFormat
                                   includeChatLogContext
                                   outputDataType

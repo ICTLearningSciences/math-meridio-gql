@@ -91,8 +91,6 @@ describe("join a game room", () => {
       )
     ).to.include(studentUserId);
 
-    console.log(JSON.stringify(response.body, null, 2));
-
     expect(
       response.body.data.joinGameRoom.gameData.playersStatusRecord[
         studentUserId

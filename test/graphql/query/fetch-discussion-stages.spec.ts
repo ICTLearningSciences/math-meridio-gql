@@ -74,6 +74,7 @@ export const fullDiscussionStageQueryData = `
                               jumpToStepId
                               prompts{
                                 promptText
+                                processPromptAs
                                 responseFormat
                                 includeChatLogContext
                                 outputDataType

@@ -320,6 +320,8 @@ describe("full room lifecycle", () => {
     // ENSURE that prompt_response gets added to the global state data.
     const globalGameStateData =
       roomAfterProcessingPrompt?.gameData.globalStateData.gameStateData;
+
+    console.log(JSON.stringify(globalGameStateData, null, 2));
     const promptResponse = globalGameStateData?.["prompt_response"];
     expect(promptResponse).to.equal("Mocked analysis of the prompt");
 
@@ -1158,7 +1160,6 @@ describe("full room lifecycle", () => {
       instructorToken
     );
     expect(pingAfterPauseStudentTwo.status).to.equal(200);
-    console.log(JSON.stringify(pingAfterPauseStudentTwo.body, null, 2));
 
     // ENSURE has moved on to next require user input step since studentTwo is paused, ignores requiring their message.
     currentRoom = await RoomModel.findById(newRoomId);
@@ -1552,7 +1553,6 @@ describe("full room lifecycle", () => {
           roomId: roomId,
         },
       });
-    console.log(JSON.stringify(viewSimulationResponse.body, null, 2));
     expect(viewSimulationResponse.status).to.equal(200);
 
     console.log("pinging room process");
@@ -1567,10 +1567,7 @@ describe("full room lifecycle", () => {
           sessionId: "session1",
         },
       });
-    console.log(JSON.stringify(pingAfterSimulationResponse.body, null, 2));
     assertSuccessfullGqlResponse(pingAfterSimulationResponse);
-
-    console.log("after ping room");
 
     // ENSURE getSimulationViewedKey in the playersGameStateData exists and is set to "true"
     currentRoom = await RoomModel.findById(roomId);
