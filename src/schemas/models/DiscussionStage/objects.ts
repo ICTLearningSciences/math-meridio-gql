@@ -132,25 +132,23 @@ export const RequestUserInputStageStepTypeInput = new GraphQLInputObjectType({
   }),
 });
 
-export const LogicStepConditionalType = new GraphQLObjectType({
-  name: "LogicStepConditionalType",
+export const SingleConditionalType = new GraphQLObjectType({
+  name: "SingleConditionalType",
   fields: () => ({
     stateDataKey: { type: GraphQLString },
     checking: { type: GraphQLString },
     operation: { type: GraphQLString },
     expectedValue: { type: GraphQLString },
-    targetStepId: { type: GraphQLString },
   }),
 });
 
-export const LogicStepConditionalTypeInput = new GraphQLInputObjectType({
-  name: "LogicStepConditionalTypeInput",
+export const SingleConditionalTypeInput = new GraphQLInputObjectType({
+  name: "SingleConditionalTypeInput",
   fields: () => ({
     stateDataKey: { type: GraphQLString },
     checking: { type: GraphQLString },
     operation: { type: GraphQLString },
     expectedValue: { type: GraphQLString },
-    targetStepId: { type: GraphQLString },
   }),
 });
 
@@ -164,7 +162,8 @@ export const ConditionalActivityStepType = new GraphQLObjectType({
       type: GraphQLString,
       value: DiscussionStageStepType.CONDITIONAL,
     },
-    conditionals: { type: GraphQLList(LogicStepConditionalType) },
+    targetStepId: { type: GraphQLString },
+    conditionalsToMeet: { type: GraphQLList(SingleConditionalType) },
   }),
 });
 
@@ -177,7 +176,21 @@ export const ConditionalActivityStepTypeInput = new GraphQLInputObjectType({
       type: GraphQLString,
       value: DiscussionStageStepType.CONDITIONAL,
     },
-    conditionals: { type: GraphQLList(LogicStepConditionalTypeInput) },
+    targetStepId: { type: GraphQLString },
+    conditionalsToMeet: { type: GraphQLList(SingleConditionalTypeInput) },
+  }),
+});
+
+export const PromptConfigurationType = new GraphQLObjectType({
+  name: "PromptConfigurationType",
+  fields: () => ({
+    processPromptAs: { type: GraphQLString },
+    promptText: { type: GraphQLString },
+    responseFormat: { type: GraphQLString },
+    includeChatLogContext: { type: GraphQLBoolean },
+    outputDataType: { type: GraphQLString },
+    jsonResponseData: { type: GraphQLString },
+    customSystemRole: { type: GraphQLString },
   }),
 });
 
@@ -188,6 +201,14 @@ export const PromptStageStepType = new GraphQLObjectType({
     jumpToStepId: { type: GraphQLString },
     lastStep: { type: GraphQLBoolean },
     stepType: { type: GraphQLString, value: DiscussionStageStepType.PROMPT },
+    prompts: { type: GraphQLList(PromptConfigurationType) },
+  }),
+});
+
+export const PromptConfigurationTypeInput = new GraphQLInputObjectType({
+  name: "PromptConfigurationTypeInput",
+  fields: () => ({
+    processPromptAs: { type: GraphQLString },
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
@@ -204,12 +225,7 @@ export const PromptStageStepTypeInput = new GraphQLInputObjectType({
     lastStep: { type: GraphQLBoolean },
     jumpToStepId: { type: GraphQLString },
     stepType: { type: GraphQLString, value: DiscussionStageStepType.PROMPT },
-    promptText: { type: GraphQLString },
-    responseFormat: { type: GraphQLString },
-    includeChatLogContext: { type: GraphQLBoolean },
-    outputDataType: { type: GraphQLString },
-    jsonResponseData: { type: GraphQLString },
-    customSystemRole: { type: GraphQLString },
+    prompts: { type: GraphQLList(PromptConfigurationTypeInput) },
   }),
 });
 
@@ -222,9 +238,36 @@ export const EndOfPhaseReflectionStepType = new GraphQLObjectType({
       type: GraphQLString,
       value: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
     },
-    phaseTitle: { type: GraphQLString },
+    parentStartOfPhaseStepId: { type: GraphQLString },
+    skipReflectionCollection: { type: GraphQLBoolean },
     message: { type: GraphQLString },
     questions: { type: GraphQLList(GraphQLString) },
+  }),
+});
+
+export const StartOfPhaseStepType = new GraphQLObjectType({
+  name: "StartOfPhaseStepType",
+  fields: () => ({
+    stepId: { type: GraphQLString },
+    stepType: {
+      type: GraphQLString,
+      value: DiscussionStageStepType.START_OF_PHASE,
+    },
+    phaseTitle: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
+  }),
+});
+
+export const StartOfPhaseStepTypeInput = new GraphQLInputObjectType({
+  name: "StartOfPhaseStepTypeInput",
+  fields: () => ({
+    stepId: { type: GraphQLString },
+    stepType: {
+      type: GraphQLString,
+      value: DiscussionStageStepType.START_OF_PHASE,
+    },
+    phaseTitle: { type: GraphQLString },
+    lastStep: { type: GraphQLBoolean },
   }),
 });
 
@@ -232,12 +275,13 @@ export const EndOfPhaseReflectionStepTypeInput = new GraphQLInputObjectType({
   name: "EndOfPhaseReflectionStepTypeInput",
   fields: () => ({
     stepId: { type: GraphQLString },
+    parentStartOfPhaseStepId: { type: GraphQLString },
     lastStep: { type: GraphQLBoolean },
     stepType: {
       type: GraphQLString,
       value: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
     },
-    phaseTitle: { type: GraphQLString },
+    skipReflectionCollection: { type: GraphQLBoolean },
     message: { type: GraphQLString },
     questions: { type: GraphQLList(GraphQLString) },
   }),
@@ -274,27 +318,31 @@ export const RequestUserInputStageStepSchema = new Schema({
   predefinedResponses: [PredefinedResponseSchema],
   requireInputType: {
     type: GraphQLString,
-    default: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+    default: RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
   },
 });
 
-export const LogicStepConditionalSchema = new Schema({
+export const SingleConditionalSchema = new Schema({
   stateDataKey: { type: String },
   checking: { type: String },
   operation: { type: String },
   expectedValue: { type: String },
-  targetStepId: { type: String },
 });
 
 export const LogicOperationActivityStepSchema = new Schema({
   ...StageBuilderStepSchema.obj,
   stepType: { type: String, default: DiscussionStageStepType.CONDITIONAL },
-  conditionals: [LogicStepConditionalSchema],
+  targetStepId: { type: String },
+  conditionalsToMeet: [SingleConditionalSchema],
 });
 
-export const PromptStageStepSchema = new Schema({
-  ...StageBuilderStepSchema.obj,
-  stepType: { type: String, default: DiscussionStageStepType.PROMPT },
+export enum ProcessPromptAs {
+  GROUP = "GROUP",
+  INDIVIDUALLY = "INDIVIDUALLY",
+}
+
+export const PromptConfigurationSchema = new Schema({
+  processPromptAs: { type: String, default: ProcessPromptAs.INDIVIDUALLY },
   promptText: { type: String },
   responseFormat: { type: String },
   includeChatLogContext: { type: Boolean },
@@ -303,13 +351,27 @@ export const PromptStageStepSchema = new Schema({
   customSystemRole: { type: String },
 });
 
+export const PromptStageStepSchema = new Schema({
+  ...StageBuilderStepSchema.obj,
+  stepType: { type: String, default: DiscussionStageStepType.PROMPT },
+  prompts: [PromptConfigurationSchema],
+});
+
+export const StartOfPhaseStepSchema = new Schema({
+  ...StageBuilderStepSchema.obj,
+  stepType: { type: String, default: DiscussionStageStepType.START_OF_PHASE },
+  phaseTitle: { type: String },
+});
+
 export const EndOfPhaseReflectionStepSchema = new Schema({
   ...StageBuilderStepSchema.obj,
+  parentStartOfPhaseStepId: { type: String },
   stepType: {
     type: String,
     default: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
   },
   phaseTitle: { type: String },
+  skipReflectionCollection: { type: Boolean },
   message: { type: String },
   questions: { type: [String] },
 });
@@ -320,5 +382,6 @@ export const StageBuilderStepUnionSchema = new Schema({
   ...RequestUserInputStageStepSchema.obj,
   ...PromptStageStepSchema.obj,
   ...LogicOperationActivityStepSchema.obj,
+  ...StartOfPhaseStepSchema.obj,
   ...EndOfPhaseReflectionStepSchema.obj,
 });

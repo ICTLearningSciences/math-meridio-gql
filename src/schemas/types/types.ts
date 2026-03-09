@@ -51,6 +51,13 @@ export const fullRoomData = `
       name
       classId
       gameData {
+        phaseProgression {
+          phasesStarted
+          phasesCompleted
+          curPhaseTitle
+          curPhaseStepId
+          startingPhaseStepsOrdered
+        }
         gameId
         players {
           _id
@@ -161,6 +168,7 @@ export const fullClassroomData = `
         name
         teacherId
         sharedWithInstructorIds
+        startedAt
         inviteCodes {
             code
             validUntil

@@ -4,6 +4,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
+import { GameStateData } from "../../schemas/models/Room";
 import {
   CurrentStage,
   DiscussionStage,
@@ -36,7 +37,6 @@ export class BasketballStateHandler extends AbstractGameData {
     "Points per outside shot",
     "Points per inside shot",
     "Points per mid shot",
-    "understands_algorithm",
     "understands_multiplication",
     "understands_addition",
     "understands_success_shots",
@@ -45,20 +45,23 @@ export class BasketballStateHandler extends AbstractGameData {
   ];
 
   mathStandardsCompletedRequirements: MathStandardsCompletionRequirements = {
-    "Understands Addition": {
-      understands_addition: true,
+    "Understands Adding Results from Different Shot Types": {
+      understands_addition: "true",
     },
-    "Understands Multiplication": {
-      understands_multiplication: true,
+    "Understands Multiplying Attempts, Points, and Chance": {
+      understands_multiplication: "true",
     },
-    "Understands Success Shots": {
-      understands_success_shots: true,
+    "Understands Points per Shot as a Rate": {
+      understands_success_shots: "true",
     },
-    "Understands Shot Points": {
-      understands_shot_points: true,
+    "Understands Unit Rates in Word Problems": {
+      understands_shot_points: "true",
     },
-    "Understands Algorithm": {
-      understands_algorithm: true,
+    "Understands How to Follow a Step-by-Step Formula": {
+      understands_addition: "true",
+      understands_multiplication: "true",
+      understands_success_shots: "true",
+      understands_shot_points: "true",
     },
   };
 
@@ -111,6 +114,23 @@ export class BasketballStateHandler extends AbstractGameData {
       stageType: "simulation",
     } as SimulationStage;
 
+    function understandsAlgorithm(globalGameStateData: GameStateData) {
+      const understandsAddition =
+        globalGameStateData["understands_addition"] === "true";
+      const understandsMultiplication =
+        globalGameStateData["understands_multiplication"] === "true";
+      const understandsSuccessShots =
+        globalGameStateData["understands_success_shots"] === "true";
+      const understandsShotPoints =
+        globalGameStateData["understands_shot_points"] === "true";
+      return (
+        understandsAddition &&
+        understandsMultiplication &&
+        understandsSuccessShots &&
+        understandsShotPoints
+      );
+    }
+
     const stageList: CurrentStage<IStage>[] = [
       {
         id: "intro-discussion",
@@ -129,8 +149,8 @@ export class BasketballStateHandler extends AbstractGameData {
       {
         id: "explain-concepts",
         stage: explainConceptsStage,
-        getNextStage: (data) => {
-          if (data["understands_algorithm"] !== "true") {
+        getNextStage: (discussionData, globalGameStateData) => {
+          if (!understandsAlgorithm(globalGameStateData)) {
             return keyConceptsConvoStage;
           } else {
             return selectStrategyStage;
@@ -150,9 +170,9 @@ export class BasketballStateHandler extends AbstractGameData {
             "WARNING: beforeStart called, doing nothing, used to exit early if player didn't understand algorithm"
           );
         },
-        getNextStage: (data) => {
+        getNextStage: (discussionData, globalGameStateData) => {
           // this.discussionStageHandler.exitEarlyCondition = undefined;
-          if (data["understands_algorithm"] !== "true") {
+          if (!understandsAlgorithm(globalGameStateData)) {
             return keyConceptsConvoStage;
           } else {
             return selectStrategyStage;

@@ -152,3 +152,14 @@ export function createRoom(
     deletedRoom: false,
   });
 }
+
+export function assertSuccessfullGqlResponse(response: any) {
+  if (response.body.errors) {
+    throw new Error(
+      `GQL response errors: ${JSON.stringify(response.body.errors)}`
+    );
+  }
+  if (response.status !== 200) {
+    throw new Error(`GQL response status is not 200: ${response.status}`);
+  }
+}

@@ -64,6 +64,14 @@ export interface GlobalStateData {
 
 export interface GlobalStateDataDocument extends GlobalStateData, Document {}
 
+export interface PhaseProgression {
+  phasesStarted: string[];
+  phasesCompleted: string[];
+  curPhaseTitle: string;
+  curPhaseStepId: string;
+  startingPhaseStepsOrdered: string[];
+}
+
 export interface CurGameState {
   curState:
     | RequireInputType
@@ -89,6 +97,7 @@ export interface GameData {
   playersStatusRecord: PlayerStatusRecord; // keyed by player ID
   playersGameStateData: Record<string, GameStateData>; // keyed by player ID
   mathStandardsCompleted: Record<string, boolean>; // keyed by standard name
+  phaseProgression: PhaseProgression;
 }
 
 export interface GameDataDocument extends GameData, Document {}
@@ -132,6 +141,18 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
+
+export const PhaseProgressionSchema = new Schema<PhaseProgression>(
+  {
+    phasesStarted: [{ type: String }],
+    phasesCompleted: [{ type: String }],
+    curPhaseTitle: { type: String },
+    curPhaseStepId: { type: String },
+    startingPhaseStepsOrdered: [{ type: String }],
+  },
+  { collation: { locale: "en", strength: 2 } }
+);
+
 export const CurGameStateSchema = new Schema<CurGameStateDocument>(
   {
     curState: { type: String },
@@ -164,6 +185,16 @@ export const GameSchema = new Schema<GameDataDocument>(
     gameId: { type: String },
     players: [{ type: String }], // keyed by player Id
     mathStandardsCompleted: { type: Schema.Types.Mixed, default: {} },
+    phaseProgression: {
+      type: PhaseProgressionSchema,
+      default: {
+        phasesStarted: [],
+        phasesCompleted: [],
+        curPhaseTitle: "",
+        curPhaseStepId: "",
+        startingPhaseStepsOrdered: [],
+      },
+    },
     chat: [{ type: ChatMessageSchema }],
     curGameState: {
       type: CurGameStateSchema,
@@ -264,6 +295,17 @@ export const GlobalStateDataType = new GraphQLObjectType({
 //  - studentReflections (just for frontend display)
 //  - roundNumber (how many times this phase has been run)
 
+export const PhaseProgressionType = new GraphQLObjectType({
+  name: "PhaseProgressionType",
+  fields: () => ({
+    phasesStarted: { type: new GraphQLList(GraphQLString) },
+    phasesCompleted: { type: new GraphQLList(GraphQLString) },
+    curPhaseStepId: { type: GraphQLString },
+    curPhaseTitle: { type: GraphQLString },
+    startingPhaseStepsOrdered: { type: new GraphQLList(GraphQLString) },
+  }),
+});
+
 export const CurGameStateType = new GraphQLObjectType({
   name: "CurGameStateType",
   fields: () => ({
@@ -305,9 +347,13 @@ export const GameDataType = new GraphQLObjectType({
     curGameState: { type: CurGameStateType },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
+    phaseProgression: { type: PhaseProgressionType },
     mathStandardsCompleted: {
       type: GraphQLScalarType,
       resolve: function (gameData: GameDataDocument) {
+        if (!gameData.gameId) {
+          return {};
+        }
         const game = getGameById(gameData.gameId, [], true);
         return Object.entries(game.mathStandardsCompletedRequirements).reduce(
           (acc, [standardName, requiredKeyValuePairs]) => {

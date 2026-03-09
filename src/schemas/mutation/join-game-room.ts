@@ -8,7 +8,7 @@ import { GraphQLObjectType, GraphQLString } from "graphql";
 import { Room, RoomType } from "../models/Room";
 import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
-import { addPlayerToRoom } from "../../authoritative-server/authority/step-process-pure-functions";
+import { addPlayerToRoomAtomically } from "../../authoritative-server/authority/step-process-pure-functions";
 import { PlayerComputedState } from "../types/types";
 
 export const joinGameRoom = {
@@ -43,19 +43,23 @@ export const joinGameRoom = {
         console.log("Player already in room");
         return room;
       }
+      const now = new Date();
+      console.log("setting join game room heartbeat to now", now);
 
       if (!room.gameData.playersStatusRecord[player._id]) {
         room.gameData.playersStatusRecord[player._id] = {
-          lastHeartbeatAt: new Date(),
+          lastHeartbeatAt: now,
           reportedAwayStatus: {
             isAway: false,
           },
           pausedByAdmin: false,
           computedState: PlayerComputedState.ACTIVE,
         };
+      } else {
+        room.gameData.playersStatusRecord[player._id].lastHeartbeatAt = now;
       }
 
-      return await addPlayerToRoom(room, player);
+      return await addPlayerToRoomAtomically(room, player);
     } catch (error) {
       throw new Error(error);
     }

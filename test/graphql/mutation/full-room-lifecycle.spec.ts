@@ -11,7 +11,7 @@ import { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
 import { player1Id } from "../../fixtures/mongodb/data";
-import { createUser } from "../../helpers";
+import { assertSuccessfullGqlResponse, createUser } from "../../helpers";
 import mongoose from "mongoose";
 const { ObjectId } = mongoose.Types;
 import RoomModel, { Room } from "../../../src/schemas/models/Room";
@@ -48,6 +48,7 @@ import { AiServicesResponseTypes } from "../../../src/authoritative-server/llm-r
 import { SenderType } from "../../../src/authoritative-server/llm-request/types";
 import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../../src/authoritative-server/games/game-helpers";
 import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
+import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 
 const submitGamePhaseReflectionMutation = `
   mutation SubmitGamePhaseReflection($roomId: ID!, $reflection: String!) {
@@ -319,6 +320,8 @@ describe("full room lifecycle", () => {
     // ENSURE that prompt_response gets added to the global state data.
     const globalGameStateData =
       roomAfterProcessingPrompt?.gameData.globalStateData.gameStateData;
+
+    console.log(JSON.stringify(globalGameStateData, null, 2));
     const promptResponse = globalGameStateData?.["prompt_response"];
     expect(promptResponse).to.equal("Mocked analysis of the prompt");
 
@@ -597,7 +600,6 @@ describe("full room lifecycle", () => {
     expect(
       currentRoom?.gameData.curGameState.playersLeftToRespond
     ).to.deep.equal([ownerStudentId, studentTwoId, leavingStudentId]);
-    return;
 
     // ENSURE still on first request user input stage and step
     expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
@@ -1158,7 +1160,6 @@ describe("full room lifecycle", () => {
       instructorToken
     );
     expect(pingAfterPauseStudentTwo.status).to.equal(200);
-    console.log(JSON.stringify(pingAfterPauseStudentTwo.body, null, 2));
 
     // ENSURE has moved on to next require user input step since studentTwo is paused, ignores requiring their message.
     currentRoom = await RoomModel.findById(newRoomId);
@@ -1554,6 +1555,8 @@ describe("full room lifecycle", () => {
       });
     expect(viewSimulationResponse.status).to.equal(200);
 
+    console.log("pinging room process");
+
     const pingAfterSimulationResponse = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${studentAccessToken}`)
@@ -1564,7 +1567,7 @@ describe("full room lifecycle", () => {
           sessionId: "session1",
         },
       });
-    expect(pingAfterSimulationResponse.status).to.equal(200);
+    assertSuccessfullGqlResponse(pingAfterSimulationResponse);
 
     // ENSURE getSimulationViewedKey in the playersGameStateData exists and is set to "true"
     currentRoom = await RoomModel.findById(roomId);
@@ -1624,8 +1627,20 @@ describe("full room lifecycle", () => {
     expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
     const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
 
-    // ENSURE at request user input step
+    // ENSURE phaseProgression is set correctly
     let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.phaseProgression.phasesStarted).to.deep.equal([
+      "0",
+    ]);
+    expect(
+      currentRoom?.gameData.phaseProgression.phasesCompleted
+    ).to.deep.equal([]);
+    expect(currentRoom?.gameData.phaseProgression.curPhaseTitle).to.equal(
+      "Start of Phase"
+    );
+    expect(currentRoom?.gameData.phaseProgression.curPhaseStepId).to.equal("0");
+
+    // ENSURE at request user input step
     expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
       TEST_END_OF_PHASE_REFLECTION_CLIENT_ID
     );
@@ -1684,9 +1699,24 @@ describe("full room lifecycle", () => {
       "2"
     );
     expect(
-      currentRoom?.gameData.curGameState.endOfPhaseStep?.phaseTitle
-    ).to.equal("End of Phase Reflection");
+      currentRoom?.gameData.curGameState.endOfPhaseStep
+        ?.skipReflectionCollection
+    ).to.be.false;
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // ENSURE phaseProgression is set correctly
+    expect(currentRoom?.gameData.phaseProgression.curPhaseTitle).to.equal(
+      "Start of Phase"
+    );
+    expect(currentRoom?.gameData.phaseProgression.phasesStarted).to.deep.equal([
+      "0",
+    ]);
+    expect(
+      currentRoom?.gameData.phaseProgression.phasesCompleted
+    ).to.deep.equal(["0"]);
+    expect(
+      currentRoom?.gameData.phaseProgression.startingPhaseStepsOrdered
+    ).to.deep.equal(["0"]);
 
     // 3. submit phase reflection from owner + ping process
     const submitReflectionResponse = await request(app)
@@ -1722,6 +1752,16 @@ describe("full room lifecycle", () => {
     );
     expect(currentRoom?.gameData.curGameState.studentReadyToContinue).to.be
       .false;
+    expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
+      {
+        [ownerStudentId]: "This was a great activity!",
+      }
+    );
+    expect(
+      currentRoom?.gameData.phaseProgression.phasesCompleted
+    ).to.deep.equal(["0"]);
+
+    // ENSURE the owners reflection is set correctly in the curGameState
     expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
       {
         [ownerStudentId]: "This was a great activity!",
@@ -1873,6 +1913,13 @@ describe("full room lifecycle", () => {
       currentRoom?.gameData.curGameState.playersLeftToRespond
     ).to.deep.equal([studentTwoId]);
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+    expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
+      {
+        [ownerStudentId]: "Round 2 was even better!",
+      }
+    );
+
+    // ENSURE owners studentReflection is set correctly
     expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
       {
         [ownerStudentId]: "Round 2 was even better!",
@@ -2165,5 +2212,754 @@ describe("full room lifecycle", () => {
     );
     // StudentTwo didn't submit a reflection for round 3, so it shouldn't exist
     expect(gamePhaseReflection?.reflections[studentTwoId]).to.be.undefined;
+  });
+
+  it("end of phase is properly skipped if skipReflectionCollection is true", async () => {
+    // 0. Update reflection step to have skipReflectionCollection step to true
+    await DiscussionStageModel.updateOne(
+      { clientId: TEST_END_OF_PHASE_REFLECTION_CLIENT_ID },
+      {
+        $set: {
+          "flowsList.0.steps.2.skipReflectionCollection": true,
+        },
+      }
+    );
+
+    // 1. Create new room for gameId: unit-test-end-of-phase
+    const ownerStudentId = new ObjectId().toString();
+
+    await createUser(ownerStudentId, UserRole.USER, EducationalRole.STUDENT);
+
+    const ownerStudentToken = await getToken(
+      ownerStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+
+    const createNewGameRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test-end-of-phase",
+        },
+      });
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
+
+    // ENSURE at request user input step
+    let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStageId).to.equal(
+      TEST_END_OF_PHASE_REFLECTION_CLIENT_ID
+    );
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.SINGLE_RESPONSE_REQUIRED
+    );
+    expect(currentRoom?.gameData.chat).to.have.length(1);
+    expect(currentRoom?.gameData.chat[0].message).to.equal(
+      "Ready for reflection?"
+    );
+
+    // 2. send message from owner + ping
+    const sendMessageResponse = await sendMessageToGameRoom(
+      newRoomId,
+      "Yes, ready!",
+      "session1",
+      ownerStudentToken
+    );
+    expect(sendMessageResponse.status).to.equal(200);
+    expect(sendMessageResponse.body.data.sendMessageToGameRoom).to.exist;
+
+    const pingAfterFirstMessage = await pingRoomProcess(
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterFirstMessage.status).to.equal(200);
+
+    // ENSURE the room is back to the request user input step, but added messages
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.SINGLE_RESPONSE_REQUIRED
+    );
+    expect(currentRoom?.gameData.chat).to.have.length(5);
+    const allMessages = currentRoom?.gameData.chat.map((msg) => msg.message);
+    expect(allMessages).to.include("Ready for reflection?");
+    expect(allMessages).to.include("Yes, ready!");
+    expect(allMessages).to.include("Thank you for participating!");
+    expect(allMessages).to.include("Ready for reflection?");
+  });
+
+  it("end of phase reflections with 2 users at start of room", async () => {
+    // 1. Create new room for gameId: unit-test-end-of-phase
+    const ownerStudentId = new ObjectId().toString();
+    const studentTwoId = new ObjectId().toString();
+
+    await createUser(ownerStudentId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(studentTwoId, UserRole.USER, EducationalRole.STUDENT);
+
+    const ownerStudentToken = await getToken(
+      ownerStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const studentTwoToken = await getToken(
+      studentTwoId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+
+    const createNewGameRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test-end-of-phase",
+        },
+      });
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
+    const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
+
+    // ENSURE phaseProgression is set correctly
+    let currentRoom = await RoomModel.findById(newRoomId);
+
+    // 4. studentTwo joins room
+    const joinStudentTwoResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: joinGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(joinStudentTwoResponse.status).to.equal(200);
+    expect(joinStudentTwoResponse.body.data.joinGameRoom).to.exist;
+
+    // ENSURE studentTwo is now in the room
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.players).to.have.length(2);
+    expect(currentRoom?.gameData.players).to.include(studentTwoId);
+
+    // 5. owner send message + ping (SINGLE_RESPONSE_REQUIRED so will complete phase)
+    const sendSecondMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Ready for round 2!",
+          sessionId: "session1",
+        },
+      });
+    expect(sendSecondMessageResponse.status).to.equal(200);
+
+    const pingAfterSecondMessage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterSecondMessage.status).to.equal(200);
+
+    // ENSURE the room is now at the END_OF_PHASE_REFLECTION stage
+    // ENSURE curGameState data is all set correctly (roundNumber 2, etc.)
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "END_OF_PHASE_REFLECTION"
+    );
+    expect(currentRoom?.gameData.curGameState.curRoundNumber).to.equal(1);
+
+    // 6. owner submits reflection + ping room
+    const submitSecondReflectionOwner = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: submitGamePhaseReflectionMutation,
+        variables: {
+          roomId: newRoomId,
+          reflection: "Round 2 was even better!",
+        },
+      });
+    expect(submitSecondReflectionOwner.status).to.equal(200);
+
+    const pingAfterOwnerSecondReflection = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterOwnerSecondReflection.status).to.equal(200);
+
+    // ENSURE the room is still at the END_OF_PHASE_REFLECTION stage with roundNumber 2
+    // ENSURE the room has the studentTwo as the only player id in curGameState.playersLeftToRespond
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "END_OF_PHASE_REFLECTION"
+    );
+    expect(currentRoom?.gameData.curGameState.curRoundNumber).to.equal(1);
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([studentTwoId]);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+    expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
+      {
+        [ownerStudentId]: "Round 2 was even better!",
+      }
+    );
+
+    // ENSURE GamePhaseReflection document has room owners reflection and is roundNumber 2
+    let gamePhaseReflection = await GamePhaseReflectionsModel.findOne({
+      roomId: newRoomId,
+      stepId: "2",
+      roundNumber: 1,
+    });
+    expect(gamePhaseReflection).to.exist;
+    expect(gamePhaseReflection?.reflections[ownerStudentId]).to.equal(
+      "Round 2 was even better!"
+    );
+
+    // 7. studentTwo submits reflection + ping room
+    const submitSecondReflectionStudentTwo = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: submitGamePhaseReflectionMutation,
+        variables: {
+          roomId: newRoomId,
+          reflection: "I learned a lot in round 2!",
+        },
+      });
+    expect(submitSecondReflectionStudentTwo.status).to.equal(200);
+
+    const pingAfterStudentTwoSecondReflection = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session2",
+        },
+      });
+    expect(pingAfterStudentTwoSecondReflection.status).to.equal(200);
+
+    // ESNURE the studentReflections are set correctly
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.studentReflections).to.deep.equal(
+      {
+        [ownerStudentId]: "Round 2 was even better!",
+        [studentTwoId]: "I learned a lot in round 2!",
+      }
+    );
+
+    // ENSURE GamePhaseReflection document has both owner and studentTwo reflections
+    gamePhaseReflection = await GamePhaseReflectionsModel.findOne({
+      roomId: newRoomId,
+      stepId: "2",
+      roundNumber: 1,
+    });
+    expect(gamePhaseReflection).to.exist;
+    expect(gamePhaseReflection?.reflections[ownerStudentId]).to.equal(
+      "Round 2 was even better!"
+    );
+    expect(gamePhaseReflection?.reflections[studentTwoId]).to.equal(
+      "I learned a lot in round 2!"
+    );
+
+    // 7.5 we should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
+    );
+    expect(currentRoom?.gameData.curGameState.studentReadyToContinue).to.be
+      .false;
+
+    // 7.75 a student submits that they are ready to continue
+    let submitStudentTwoReadyToContinueResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: submitReadyToContinueMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(submitStudentTwoReadyToContinueResponse.status).to.equal(200);
+    expect(
+      submitStudentTwoReadyToContinueResponse.body.data.submitReadyToContinue
+    ).to.exist;
+
+    // 7.75 ping process
+    let pingAfterStudentTwoSubmitReadyToContinue = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session2",
+        },
+      });
+    expect(pingAfterStudentTwoSubmitReadyToContinue.status).to.equal(200);
+
+    // ENSURE we are now back at the request user input step.
+    currentRoom = await RoomModel.findById(newRoomId);
+
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.SINGLE_RESPONSE_REQUIRED
+    );
+
+    // ENSURE GamePhaseReflection document for roundNumber 2 now has both owner and studentTwo
+    gamePhaseReflection = await GamePhaseReflectionsModel.findOne({
+      roomId: newRoomId,
+      stepId: "2",
+      roundNumber: 1,
+    });
+    expect(gamePhaseReflection).to.exist;
+    expect(gamePhaseReflection?.reflections[ownerStudentId]).to.equal(
+      "Round 2 was even better!"
+    );
+    expect(gamePhaseReflection?.reflections[studentTwoId]).to.equal(
+      "I learned a lot in round 2!"
+    );
+
+    // 8. send message from owner + ping
+    const sendThirdMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Ready for round 3!",
+          sessionId: "session1",
+        },
+      });
+    expect(sendThirdMessageResponse.status).to.equal(200);
+
+    const pingAfterThirdMessage = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterThirdMessage.status).to.equal(200);
+
+    // ENSURE the room is now at the END_OF_PHASE_REFLECTION stage
+    // ENSURE curGameState data is all set correctly (roundNumber 3, etc.)
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "END_OF_PHASE_REFLECTION"
+    );
+    expect(currentRoom?.gameData.curGameState.curRoundNumber).to.equal(2);
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([ownerStudentId, studentTwoId]);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // 9. owner submits their reflection + ping room
+    const submitThirdReflectionOwner = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: submitGamePhaseReflectionMutation,
+        variables: {
+          roomId: newRoomId,
+          reflection: "Round 3 is my favorite!",
+        },
+      });
+    expect(submitThirdReflectionOwner.status).to.equal(200);
+
+    const pingAfterOwnerThirdReflection = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterOwnerThirdReflection.status).to.equal(200);
+
+    // ENSURE the room is still at the END_OF_PHASE_REFLECTION stage with roundNumber 3
+    // ENSURE the room has the studentTwo as the only player id in curGameState.playersLeftToRespond
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "END_OF_PHASE_REFLECTION"
+    );
+    expect(currentRoom?.gameData.curGameState.curRoundNumber).to.equal(2);
+    expect(
+      currentRoom?.gameData.curGameState.playersLeftToRespond
+    ).to.deep.equal([studentTwoId]);
+
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // ENSURE GamePhaseReflection document has room owners reflection and is roundNumber 2
+    gamePhaseReflection = await GamePhaseReflectionsModel.findOne({
+      roomId: newRoomId,
+      stepId: "2",
+      roundNumber: 2,
+    });
+    expect(gamePhaseReflection).to.exist;
+    expect(gamePhaseReflection?.reflections[ownerStudentId]).to.equal(
+      "Round 3 is my favorite!"
+    );
+
+    // 10. studentTwo leaves the room + ping
+    const leaveRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: leaveGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(leaveRoomResponse.status).to.equal(200);
+    expect(leaveRoomResponse.body.data.leaveGameRoom).to.exist;
+
+    const pingAfterStudentTwoLeaves = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterStudentTwoLeaves.status).to.equal(200);
+
+    // 10.5 we should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
+    );
+    expect(currentRoom?.gameData.curGameState.studentReadyToContinue).to.be
+      .false;
+
+    // 10.75 a student submits that they are ready to continue
+    let submitOwnerReadyToContinueResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: submitReadyToContinueMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(submitOwnerReadyToContinueResponse.status).to.equal(200);
+    expect(submitOwnerReadyToContinueResponse.body.data.submitReadyToContinue)
+      .to.exist;
+
+    // 10.75 ping process
+    pingAfterStudentTwoSubmitReadyToContinue = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session2",
+        },
+      });
+    expect(pingAfterStudentTwoSubmitReadyToContinue.status).to.equal(200);
+
+    // ENSURE we are now back at the request user input step because without student two, all people have provided input
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.players).to.have.length(1);
+    expect(currentRoom?.gameData.players).to.not.include(studentTwoId);
+
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+    expect(currentRoom?.gameData.curGameState.curState).to.equal(
+      RequireInputType.SINGLE_RESPONSE_REQUIRED
+    );
+
+    // ENSURE GamePhaseReflection document for roundNumber 3 now has owner's reflection
+    // (studentTwo left before submitting their reflection for round 3)
+    gamePhaseReflection = await GamePhaseReflectionsModel.findOne({
+      roomId: newRoomId,
+      stepId: "2",
+      roundNumber: 2,
+    });
+    expect(gamePhaseReflection).to.exist;
+    expect(gamePhaseReflection?.reflections[ownerStudentId]).to.equal(
+      "Round 3 is my favorite!"
+    );
+    // StudentTwo didn't submit a reflection for round 3, so it shouldn't exist
+    expect(gamePhaseReflection?.reflections[studentTwoId]).to.be.undefined;
+  });
+
+  it("multiple prompt room with group and individual prompt processes", async () => {
+    // 1. Create a room for game "unit-test-multiple-prompt", add two students, ping process
+    const ownerStudentId = new ObjectId().toString();
+    const studentTwoId = new ObjectId().toString();
+
+    await createUser(ownerStudentId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(studentTwoId, UserRole.USER, EducationalRole.STUDENT);
+
+    const ownerStudentToken = await getToken(
+      ownerStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const studentTwoToken = await getToken(
+      studentTwoId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+
+    const createNewGameRoomResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: createNewGameRoomMutation,
+        variables: {
+          gameId: "unit-test-multiple-prompt",
+        },
+      });
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
+    const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
+
+    // Add studentTwo to the room
+    const joinStudentTwoResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: joinGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+        },
+      });
+    expect(joinStudentTwoResponse.status).to.equal(200);
+    expect(joinStudentTwoResponse.body.data.joinGameRoom).to.exist;
+
+    // Ping to ensure room is initialized
+    const initialPingResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(initialPingResponse.status).to.equal(200);
+
+    // ENSURE we are at the first request user input step
+    let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+    expect(currentRoom?.gameData.chat[0].message).to.equal(
+      "What is your single user message?"
+    );
+
+    // GROUP prompt portion
+    // Setup llm mock to respond with group_prompt_response json data
+    syncLlmRequestStub.onFirstCall().resolves({
+      answer: JSON.stringify({
+        group_prompt_response: "Mocked group response for all users",
+      }),
+    } as AiServicesResponseTypes);
+
+    // 2. Send messages from both users (ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL)
+    const ownerFirstMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Owner's first input",
+          sessionId: "session1",
+        },
+      });
+    expect(ownerFirstMessageResponse.status).to.equal(200);
+
+    const studentTwoFirstMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Student Two's first input",
+          sessionId: "session2",
+        },
+      });
+    expect(studentTwoFirstMessageResponse.status).to.equal(200);
+
+    // Ping to process the GROUP prompt
+    const pingAfterFirstMessages = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterFirstMessages.status).to.equal(200);
+
+    // ENSURE we are now at the second request user input step (stepId 3)
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("3");
+    expect(
+      currentRoom?.gameData.chat.find(
+        (c: any) => c.message === "Provide the single user response."
+      )
+    ).to.exist;
+
+    // ENSURE the prompt request was called ONCE, should contain both users messages in the prompt text with format "Name: Message"
+    expect(syncLlmRequestStub.callCount).to.equal(1);
+    const firstCallArgs = syncLlmRequestStub.getCall(0).args[0];
+    expect(firstCallArgs.prompts).to.exist;
+    expect(firstCallArgs.prompts.length).to.be.greaterThan(0);
+
+    // The prompt text should contain both users' inputs formatted with their names
+    const groupPromptText = firstCallArgs.prompts.find((p: any) =>
+      p.promptText.includes("Here are each students responses")
+    )?.promptText;
+    expect(groupPromptText).to.exist;
+    expect(groupPromptText).to.include("Owner's first input");
+    expect(groupPromptText).to.include("Student Two's first input");
+
+    // ENSURE the global state data has the group_prompt_response field set
+    expect(
+      currentRoom?.gameData.globalStateData.gameStateData.group_prompt_response
+    ).to.equal("Mocked group response for all users");
+
+    // INDIVIDUALLY prompt portion
+    // Setup the llm mock so that there are 2 distinct llm responses
+    syncLlmRequestStub.reset();
+
+    // Configure stub to return different responses based on the prompt text
+    syncLlmRequestStub.callsFake((request: any) => {
+      const promptText = request.prompts.find((p: any) =>
+        p.promptText.includes("Process the single user second response")
+      )?.promptText;
+
+      if (promptText?.includes("Owner's second input")) {
+        return Promise.resolve({
+          answer: JSON.stringify({
+            individually_prompt_response: "Owner's individual response",
+          }),
+        } as AiServicesResponseTypes);
+      } else if (promptText?.includes("Student Two's second input")) {
+        return Promise.resolve({
+          answer: JSON.stringify({
+            individually_prompt_response: "Student Two's individual response",
+          }),
+        } as AiServicesResponseTypes);
+      }
+
+      // Default fallback
+      return Promise.resolve({
+        answer: JSON.stringify({
+          individually_prompt_response: "Default individual response",
+        }),
+      } as AiServicesResponseTypes);
+    });
+
+    // 3. Send a message from both students
+    const ownerSecondMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Owner's second input",
+          sessionId: "session1",
+        },
+      });
+    expect(ownerSecondMessageResponse.status).to.equal(200);
+
+    const studentTwoSecondMessageResponse = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${studentTwoToken}`)
+      .send({
+        query: sendMessageToGameRoomMutation,
+        variables: {
+          roomId: newRoomId,
+          message: "Student Two's second input",
+          sessionId: "session2",
+        },
+      });
+    expect(studentTwoSecondMessageResponse.status).to.equal(200);
+
+    // Ping to process the INDIVIDUALLY prompts
+    const pingAfterSecondMessages = await request(app)
+      .post("/graphql")
+      .set("Authorization", `Bearer ${ownerStudentToken}`)
+      .send({
+        query: pingGameRoomProcessMutation,
+        variables: {
+          roomId: newRoomId,
+          sessionId: "session1",
+        },
+      });
+    expect(pingAfterSecondMessages.status).to.equal(200);
+
+    // ENSURE we are now back at the first request user input step
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+
+    // ENSURE the prompt request was called twice (once per user)
+    expect(syncLlmRequestStub.callCount).to.equal(2);
+
+    // ENSURE each call had one of the users messages
+    const secondCallArgs = syncLlmRequestStub.getCall(0).args[0];
+    const thirdCallArgs = syncLlmRequestStub.getCall(1).args[0];
+
+    const secondCallPromptText = secondCallArgs.prompts.find((p: any) =>
+      p.promptText.includes("Process the single user second response")
+    )?.promptText;
+    const thirdCallPromptText = thirdCallArgs.prompts.find((p: any) =>
+      p.promptText.includes("Process the single user second response")
+    )?.promptText;
+
+    // One should have owner's message, the other should have student two's message
+    const hasOwnerMessage =
+      secondCallPromptText?.includes("Owner's second input") ||
+      thirdCallPromptText?.includes("Owner's second input");
+    const hasStudentTwoMessage =
+      secondCallPromptText?.includes("Student Two's second input") ||
+      thirdCallPromptText?.includes("Student Two's second input");
+
+    expect(hasOwnerMessage).to.be.true;
+    expect(hasStudentTwoMessage).to.be.true;
+
+    // ENSURE each user has their distinct llm response in their player state data
+    expect(
+      currentRoom?.gameData.playersGameStateData[ownerStudentId]
+        .individually_prompt_response
+    ).to.equal("Owner's individual response");
+    expect(
+      currentRoom?.gameData.playersGameStateData[studentTwoId]
+        .individually_prompt_response
+    ).to.equal("Student Two's individual response");
   });
 });

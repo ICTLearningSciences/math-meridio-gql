@@ -9,7 +9,10 @@ import { GraphQLString, GraphQLObjectType } from "graphql";
 import ClassModel from "../../models/classes/Class";
 import RoomModel, { Room, RoomPhase, RoomType } from "../../models/Room";
 import PlayerModel from "../../models/Player";
-import { addPlayerToRoom } from "../../../authoritative-server/authority/step-process-pure-functions";
+import {
+  addPlayerToRoomAtomically,
+  addPlayerToRoomNonAtomically,
+} from "../../../authoritative-server/authority/step-process-pure-functions";
 import { getGameById } from "../../../authoritative-server/games/game-helpers";
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
 import {
@@ -26,6 +29,58 @@ import { AiServiceNames } from "../../../authoritative-server/llm-request/types"
 import mongoose from "mongoose";
 import { getCurStageAndStep } from "../../../authoritative-server/authority/user-action-pure-functions";
 import { RequireInputType } from "../../../schemas/models/DiscussionStage/objects";
+
+/**
+ * Initializes the new game room with the first stage and step.
+ */
+export function initializeGroupGameRoomWithoutGameId(
+  userId: string,
+  groupId: number,
+  usersInGroup: string[],
+  classId: string
+): Room {
+  let room: Room = {
+    _id: new mongoose.Types.ObjectId().toString(),
+    name: `Group #${groupId} Solution Space`,
+    ...(classId ? { classId } : {}),
+    phase: RoomPhase.NO_ACTIVE_PROCESSING,
+    versionNumber: 1,
+    gameData: {
+      gameId: "",
+      players: [],
+      playersStatusRecord: {},
+      chat: [],
+      curGameState: {
+        curState: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+        playersLeftToRespond: [],
+        studentReadyToContinue: false,
+      },
+      persistTruthGlobalStateData: [],
+      playersGameStateData: {},
+      mathStandardsCompleted: {},
+      phaseProgression: {
+        phasesStarted: [],
+        phasesCompleted: [],
+        curPhaseTitle: "",
+        curPhaseStepId: "",
+        startingPhaseStepsOrdered: [],
+      },
+      globalStateData: {
+        curStageId: "",
+        curStepId: "",
+        roomOwnerId: userId,
+        discussionData: {},
+        gameStateData: {},
+      },
+    },
+    deletedRoom: false,
+  };
+  for (const userId of usersInGroup) {
+    room = addPlayerToRoomNonAtomically(room, userId);
+  }
+  return room;
+}
+
 /**
  * Initializes the new game room with the first stage and step.
  */
@@ -58,6 +113,13 @@ export function initializeGameRoom(
       persistTruthGlobalStateData: game.persistTruthGlobalStateData,
       playersGameStateData: {},
       mathStandardsCompleted: {},
+      phaseProgression: {
+        phasesStarted: [],
+        phasesCompleted: [],
+        curPhaseTitle: "",
+        curPhaseStepId: "",
+        startingPhaseStepsOrdered: [],
+      },
       globalStateData: {
         curStageId: firstStage.stage.clientId,
         curStepId: firstStepId,
@@ -106,7 +168,14 @@ export const createNewGameRoom = {
       rooms.length
     );
     const newRoom: Room = await (await RoomModel.create(_newRoom)).toObject();
-    const roomWithPlayerAdded: Room = await addPlayerToRoom(newRoom, player);
+    const roomWithPlayerAdded: Room = await addPlayerToRoomAtomically(
+      newRoom,
+      player
+    );
+
+    const playerDocuments = await PlayerModel.find({
+      _id: { $in: roomWithPlayerAdded.gameData.players },
+    });
 
     // Process the first step.
     const roomWithFirstStepProcessed: Room = await processCurStep(
@@ -117,7 +186,8 @@ export const createNewGameRoom = {
         model: "gpt-4o-mini",
       },
       context.userId,
-      args.sessionId
+      args.sessionId,
+      playerDocuments
     );
 
     const curStageAndStep = getCurStageAndStep(
@@ -139,7 +209,8 @@ export const createNewGameRoom = {
             model: "gpt-4o-mini",
           },
           context.userId,
-          args.sessionId
+          args.sessionId,
+          playerDocuments
         );
       return await RoomModel.findOneAndUpdate(
         { _id: roomWithProcessedSteps._id },
