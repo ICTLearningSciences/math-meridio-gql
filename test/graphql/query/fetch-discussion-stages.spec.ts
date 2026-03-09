@@ -72,12 +72,14 @@ export const fullDiscussionStageQueryData = `
                               stepId
                               stepType
                               jumpToStepId
-                              promptText
-                              responseFormat
-                              includeChatLogContext
-                              outputDataType
-                              jsonResponseData
-                              customSystemRole
+                              prompts{
+                                promptText
+                                responseFormat
+                                includeChatLogContext
+                                outputDataType
+                                jsonResponseData
+                                customSystemRole
+                              }
                           }
 
                           ... on ConditionalActivityStepType {

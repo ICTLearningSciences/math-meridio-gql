@@ -87,14 +87,18 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
   requireInputType: RequireInputType;
 }
 
-export interface PromptStageStep extends StageBuilderStep {
-  stepType: DiscussionStageStepType.PROMPT;
+export interface PromptConfiguration {
   promptText: string;
   responseFormat: string;
   includeChatLogContext: boolean;
   outputDataType: string;
   jsonResponseData?: string;
   customSystemRole: string;
+}
+
+export interface PromptStageStep extends StageBuilderStep {
+  stepType: DiscussionStageStepType.PROMPT;
+  prompts: PromptConfiguration[];
 }
 
 export interface StartOfPhaseStep extends StageBuilderStep {

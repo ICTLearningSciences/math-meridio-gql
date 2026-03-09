@@ -151,12 +151,17 @@ module.exports = {
             {
               stepId: "4",
               stepType: DiscussionStageStepType.PROMPT,
-              promptText: "Please generate a nickname for {{user_input_name}}",
-              responseFormat: "",
-              jsonResponseData: "stringified_json_response_data",
-              includeChatLogContext: true,
-              outputDataType: "JSON",
-              customSystemRole: "user",
+              prompts: [
+                {
+                  promptText:
+                    "Please generate a nickname for {{user_input_name}}",
+                  responseFormat: "",
+                  jsonResponseData: "stringified_json_response_data",
+                  includeChatLogContext: true,
+                  outputDataType: "JSON",
+                  customSystemRole: "user",
+                },
+              ],
             },
             {
               stepId: "5",
@@ -254,20 +259,24 @@ module.exports = {
               stepId: "3",
               stepType: "PROMPT",
               jumpToStepId: "",
-              promptText: "Process the users prompt: {{user_input_prompt}}",
-              responseFormat: "",
-              includeChatLogContext: false,
-              outputDataType: "JSON",
-              jsonResponseData: JSON.stringify([
+              prompts: [
                 {
-                  clientId: "1",
-                  name: "prompt_response",
-                  type: "string",
-                  isRequired: true,
-                  additionalInfo: "Your response to the question",
+                  promptText: "Process the users prompt: {{user_input_prompt}}",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "JSON",
+                  jsonResponseData: JSON.stringify([
+                    {
+                      clientId: "1",
+                      name: "prompt_response",
+                      type: "string",
+                      isRequired: true,
+                      additionalInfo: "Your response to the question",
+                    },
+                  ]),
+                  customSystemRole: "",
                 },
-              ]),
-              customSystemRole: "",
+              ],
             },
             {
               lastStep: true,

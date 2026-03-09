@@ -390,115 +390,131 @@ export async function processPromptStep(
   playerIdToUpdate: string,
   sessionId: string
 ): Promise<AtomicRoomModiticationAction[]> {
-  const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
   const collectedDiscussionData: CollectedDiscussionData =
     gameData.globalStateData.discussionData || {};
-  // handle replacing promptText with stored data
-  const promptText = replaceStoredDataInString(
-    curStep.promptText,
-    collectedDiscussionData
-  );
-  // handle replacing responseFormat with stored data
-  const responseFormat = replaceStoredDataInString(
-    curStep.responseFormat,
-    collectedDiscussionData
-  );
-  // handle replacing customSystemRole with stored data
-  const customSystemRole = replaceStoredDataInString(
-    curStep.customSystemRole,
-    collectedDiscussionData
-  );
 
-  const llmRequest: GenericLlmRequest = {
-    prompts: [],
-    outputDataType: curStep.outputDataType as PromptOutputTypes,
-    targetAiServiceModel: targetAiServiceModel,
-    responseFormat: responseFormat,
-    systemRole: customSystemRole,
-  };
+  // Execute all prompts in parallel
+  const promptResults = await Promise.all(
+    curStep.prompts.map(async (promptConfig) => {
+      const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
 
-  if (curStep.includeChatLogContext) {
-    llmRequest.prompts.push({
-      promptText: `Current state of chat log between user and system: ${chatLogToString(
-        gameData.chat
-      )}`,
-      promptRole: PromptRoles.SYSTEM,
-    });
-  }
-
-  llmRequest.prompts.push({
-    promptText: promptText,
-    promptRole: PromptRoles.SYSTEM,
-  });
-
-  if (
-    curStep.jsonResponseData &&
-    curStep.outputDataType === PromptOutputTypes.JSON
-  ) {
-    const jsonResponseData: JsonResponseData[] = JSON.parse(
-      curStep.jsonResponseData || "[]"
-    );
-    llmRequest.responseFormat += recursivelyConvertExpectedDataToAiPromptString(
-      recursiveUpdateAdditionalInfo(jsonResponseData, collectedDiscussionData)
-    );
-  }
-
-  const requestFunction = async () => {
-    const _response = await executePrompt(llmRequest);
-    const response = _response.answer;
-
-    if (curStep.outputDataType === PromptOutputTypes.JSON) {
-      if (!isJsonString(response)) {
-        throw new Error(`Did not receive valid JSON data: ${response}`);
-      }
-      const jsonResponseData: JsonResponseData[] = JSON.parse(
-        curStep.jsonResponseData || "[]"
+      // handle replacing promptText with stored data
+      const promptText = replaceStoredDataInString(
+        promptConfig.promptText,
+        collectedDiscussionData
       );
-      if (curStep.jsonResponseData && curStep.jsonResponseData.length > 0) {
-        if (!receivedExpectedData(jsonResponseData, response)) {
-          throw new Error(
-            `Did not receive expected JSON data: ${response}. \n Expected: ${JSON.stringify(
-              jsonResponseData
-            )}`
+      // handle replacing responseFormat with stored data
+      const responseFormat = replaceStoredDataInString(
+        promptConfig.responseFormat,
+        collectedDiscussionData
+      );
+      // handle replacing customSystemRole with stored data
+      const customSystemRole = replaceStoredDataInString(
+        promptConfig.customSystemRole,
+        collectedDiscussionData
+      );
+
+      const llmRequest: GenericLlmRequest = {
+        prompts: [],
+        outputDataType: promptConfig.outputDataType as PromptOutputTypes,
+        targetAiServiceModel: targetAiServiceModel,
+        responseFormat: responseFormat,
+        systemRole: customSystemRole,
+      };
+
+      if (promptConfig.includeChatLogContext) {
+        llmRequest.prompts.push({
+          promptText: `Current state of chat log between user and system: ${chatLogToString(
+            gameData.chat
+          )}`,
+          promptRole: PromptRoles.SYSTEM,
+        });
+      }
+
+      llmRequest.prompts.push({
+        promptText: promptText,
+        promptRole: PromptRoles.SYSTEM,
+      });
+
+      if (
+        promptConfig.jsonResponseData &&
+        promptConfig.outputDataType === PromptOutputTypes.JSON
+      ) {
+        const jsonResponseData: JsonResponseData[] = JSON.parse(
+          promptConfig.jsonResponseData || "[]"
+        );
+        llmRequest.responseFormat +=
+          recursivelyConvertExpectedDataToAiPromptString(
+            recursiveUpdateAdditionalInfo(
+              jsonResponseData,
+              collectedDiscussionData
+            )
           );
+      }
+
+      const _response = await executePrompt(llmRequest);
+      const response = _response.answer;
+
+      if (promptConfig.outputDataType === PromptOutputTypes.JSON) {
+        if (!isJsonString(response)) {
+          throw new Error(`Did not receive valid JSON data: ${response}`);
         }
-      }
-      const resData: Record<string, any> = JSON.parse(response);
-      const newDataToAdd = removePersistTruthDataFromNewData(gameData, resData);
-
-      if (Object.keys(newDataToAdd).length > 0) {
-        atomicRoomModificationActions.push({
-          actionType: RoomModificationEnum.ADD_TO_DISCUSSION_DATA,
-          newData: newDataToAdd,
-        } as UpdateDiscussionDataRoomAtomicAction);
-
-        atomicRoomModificationActions.push({
-          actionType: RoomModificationEnum.ADD_TO_GLOBAL_STATE_DATA,
-          newData: newDataToAdd,
-        } as UpdateGlobalGameStateDataRoomAtomicAction);
-
-        atomicRoomModificationActions.push({
-          actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
-          playerId: playerIdToUpdate,
-          newData: newDataToAdd,
-        } as UpdatePlayerGameStateDataRoomAtomicAction);
-      }
-    } else {
-      atomicRoomModificationActions.push({
-        actionType: RoomModificationEnum.ADD_MESSAGE,
-        newMessage: buildSystemMessage(
+        const jsonResponseData: JsonResponseData[] = JSON.parse(
+          promptConfig.jsonResponseData || "[]"
+        );
+        if (
+          promptConfig.jsonResponseData &&
+          promptConfig.jsonResponseData.length > 0
+        ) {
+          if (!receivedExpectedData(jsonResponseData, response)) {
+            throw new Error(
+              `Did not receive expected JSON data: ${response}. \n Expected: ${JSON.stringify(
+                jsonResponseData
+              )}`
+            );
+          }
+        }
+        const resData: Record<string, any> = JSON.parse(response);
+        const newDataToAdd = removePersistTruthDataFromNewData(
           gameData,
-          response,
-          sessionId,
-          curStep.stepId
-        ),
-      } as AddMessageRoomAtomicAction);
-    }
-  };
+          resData
+        );
 
-  await requestFunction();
+        if (Object.keys(newDataToAdd).length > 0) {
+          atomicRoomModificationActions.push({
+            actionType: RoomModificationEnum.ADD_TO_DISCUSSION_DATA,
+            newData: newDataToAdd,
+          } as UpdateDiscussionDataRoomAtomicAction);
 
-  return atomicRoomModificationActions;
+          atomicRoomModificationActions.push({
+            actionType: RoomModificationEnum.ADD_TO_GLOBAL_STATE_DATA,
+            newData: newDataToAdd,
+          } as UpdateGlobalGameStateDataRoomAtomicAction);
+
+          atomicRoomModificationActions.push({
+            actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
+            playerId: playerIdToUpdate,
+            newData: newDataToAdd,
+          } as UpdatePlayerGameStateDataRoomAtomicAction);
+        }
+      } else {
+        atomicRoomModificationActions.push({
+          actionType: RoomModificationEnum.ADD_MESSAGE,
+          newMessage: buildSystemMessage(
+            gameData,
+            response,
+            sessionId,
+            curStep.stepId
+          ),
+        } as AddMessageRoomAtomicAction);
+      }
+
+      return atomicRoomModificationActions;
+    })
+  );
+
+  // Flatten all actions from all prompts into a single array
+  return promptResults.flat();
 }
 export const defaultPlayerStatusRecord: PlayerStatusData = {
   lastHeartbeatAt: new Date(),

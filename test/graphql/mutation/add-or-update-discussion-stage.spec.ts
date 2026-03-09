@@ -71,14 +71,18 @@ describe("update discussion stage", () => {
           {
             stepId: "789",
             stepType: DiscussionStageStepType.PROMPT,
-            promptText: "prompt 1",
-            jumpToStepId: "123",
-            jsonResponseData: "stringified_json_response_data",
-            responseFormat: "response format 1",
-            includeChatLogContext: true,
-            outputDataType: "JSON",
-            customSystemRole: "custom system role 1",
             lastStep: true,
+            jumpToStepId: "123",
+            prompts: [
+              {
+                promptText: "prompt 1",
+                jsonResponseData: "stringified_json_response_data",
+                responseFormat: "response format 1",
+                includeChatLogContext: true,
+                outputDataType: "JSON",
+                customSystemRole: "custom system role 1",
+              },
+            ],
           },
         ],
       },
@@ -145,14 +149,18 @@ describe("update discussion stage", () => {
           {
             stepId: "789",
             stepType: DiscussionStageStepType.PROMPT,
-            promptText: "prompt 1",
-            jumpToStepId: "123",
-            jsonResponseData: "stringified_json_response_data",
-            responseFormat: "response format 1",
-            includeChatLogContext: true,
-            outputDataType: "JSON",
-            customSystemRole: "custom system role 1",
             lastStep: true,
+            jumpToStepId: "123",
+            prompts: [
+              {
+                promptText: "prompt 1",
+                jsonResponseData: "stringified_json_response_data",
+                responseFormat: "response format 1",
+                includeChatLogContext: true,
+                outputDataType: "JSON",
+                customSystemRole: "custom system role 1",
+              },
+            ],
           },
         ],
       },
@@ -228,14 +236,18 @@ describe("update discussion stage", () => {
           {
             stepId: "789",
             stepType: DiscussionStageStepType.PROMPT,
-            promptText: "prompt 1",
-            jumpToStepId: "123",
-            jsonResponseData: "stringified_json_response_data",
-            responseFormat: "response format 1",
-            includeChatLogContext: true,
-            outputDataType: "JSON",
-            customSystemRole: "custom system role 1",
             lastStep: true,
+            jumpToStepId: "123",
+            prompts: [
+              {
+                promptText: "prompt 1",
+                jsonResponseData: "stringified_json_response_data",
+                responseFormat: "response format 1",
+                includeChatLogContext: true,
+                outputDataType: "JSON",
+                customSystemRole: "custom system role 1",
+              },
+            ],
           },
           {
             stepId: "5",
@@ -372,7 +384,14 @@ describe("update discussion stage", () => {
                                 lastStep
                                 stepId
                                 stepType
-                                promptText
+                                prompts{
+                                  promptText
+                                  responseFormat
+                                  includeChatLogContext
+                                  outputDataType
+                                  jsonResponseData
+                                  customSystemRole
+                                }
                             }
                         }
                         }
