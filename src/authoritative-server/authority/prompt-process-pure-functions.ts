@@ -195,6 +195,14 @@ async function processGroupPrompt(
         actionType: RoomModificationEnum.ADD_TO_GLOBAL_STATE_DATA,
         newData: newDataToAdd,
       } as UpdateGlobalGameStateDataRoomAtomicAction);
+
+      for (const player of activePlayerData) {
+        atomicRoomModificationActions.push({
+          actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
+          playerId: player._id,
+          newData: newDataToAdd,
+        } as UpdatePlayerGameStateDataRoomAtomicAction);
+      }
     }
   } else {
     atomicRoomModificationActions.push({
