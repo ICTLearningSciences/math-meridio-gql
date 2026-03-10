@@ -574,6 +574,13 @@ module.exports = {
               stepId: "0",
               stepType: DiscussionStageStepType.START_OF_PHASE,
               phaseTitle: "Start of Phase",
+              learningObjectives: [
+                {
+                  title: "Test Learning Objective",
+                  description: "Test Learning Objective Description",
+                  criteria: "Test Learning Objective Criteria",
+                },
+              ],
               lastStep: false,
             },
             {

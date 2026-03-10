@@ -2328,7 +2328,7 @@ describe("full room lifecycle", () => {
     // ENSURE phaseProgression is set correctly
     let currentRoom = await RoomModel.findById(newRoomId);
 
-    // 4. studentTwo joins room
+    // 2. studentTwo joins room
     const joinStudentTwoResponse = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${studentTwoToken}`)
@@ -2346,7 +2346,7 @@ describe("full room lifecycle", () => {
     expect(currentRoom?.gameData.players).to.have.length(2);
     expect(currentRoom?.gameData.players).to.include(studentTwoId);
 
-    // 5. owner send message + ping (SINGLE_RESPONSE_REQUIRED so will complete phase)
+    // 3. owner send message + ping (SINGLE_RESPONSE_REQUIRED so will complete user input phase)
     const sendSecondMessageResponse = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${ownerStudentToken}`)
@@ -2374,13 +2374,22 @@ describe("full room lifecycle", () => {
 
     // ENSURE the room is now at the END_OF_PHASE_REFLECTION stage
     // ENSURE curGameState data is all set correctly (roundNumber 2, etc.)
-    currentRoom = await RoomModel.findById(newRoomId);
+    currentRoom = await RoomModel.findById(newRoomId).lean();
     expect(currentRoom?.gameData.curGameState.curState).to.equal(
       "END_OF_PHASE_REFLECTION"
     );
     expect(currentRoom?.gameData.curGameState.curRoundNumber).to.equal(1);
+    expect(
+      currentRoom?.gameData.phaseProgression.learningObjectives
+    ).to.deep.include.members([
+      {
+        title: "Test Learning Objective",
+        description: "Test Learning Objective Description",
+        criteria: "Test Learning Objective Criteria",
+      },
+    ]);
 
-    // 6. owner submits reflection + ping room
+    // 4. owner submits reflection + ping room
     const submitSecondReflectionOwner = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${ownerStudentToken}`)
@@ -2433,7 +2442,7 @@ describe("full room lifecycle", () => {
       "Round 2 was even better!"
     );
 
-    // 7. studentTwo submits reflection + ping room
+    // 5. studentTwo submits reflection + ping room
     const submitSecondReflectionStudentTwo = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${studentTwoToken}`)
@@ -2481,14 +2490,14 @@ describe("full room lifecycle", () => {
       "I learned a lot in round 2!"
     );
 
-    // 7.5 we should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
+    // 6. we should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
     expect(currentRoom?.gameData.curGameState.curState).to.equal(
       "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
     );
     expect(currentRoom?.gameData.curGameState.studentReadyToContinue).to.be
       .false;
 
-    // 7.75 a student submits that they are ready to continue
+    // 7. a student submits that they are ready to continue
     let submitStudentTwoReadyToContinueResponse = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${studentTwoToken}`)
@@ -2503,7 +2512,7 @@ describe("full room lifecycle", () => {
       submitStudentTwoReadyToContinueResponse.body.data.submitReadyToContinue
     ).to.exist;
 
-    // 7.75 ping process
+    // 8. ping process
     let pingAfterStudentTwoSubmitReadyToContinue = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${studentTwoToken}`)
@@ -2538,7 +2547,7 @@ describe("full room lifecycle", () => {
       "I learned a lot in round 2!"
     );
 
-    // 8. send message from owner + ping
+    // 9. send message from owner + ping
     const sendThirdMessageResponse = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${ownerStudentToken}`)
@@ -2576,7 +2585,7 @@ describe("full room lifecycle", () => {
     ).to.deep.equal([ownerStudentId, studentTwoId]);
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
 
-    // 9. owner submits their reflection + ping room
+    // 10. owner submits their reflection + ping room
     const submitThirdReflectionOwner = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${ownerStudentToken}`)
@@ -2625,7 +2634,7 @@ describe("full room lifecycle", () => {
       "Round 3 is my favorite!"
     );
 
-    // 10. studentTwo leaves the room + ping
+    // 11. studentTwo leaves the room + ping
     const leaveRoomResponse = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${studentTwoToken}`)

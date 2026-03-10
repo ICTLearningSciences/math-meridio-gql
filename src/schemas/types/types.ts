@@ -57,6 +57,11 @@ export const fullRoomData = `
           curPhaseTitle
           curPhaseStepId
           startingPhaseStepsOrdered
+          learningObjectives{
+            title
+            description
+            criteria
+          }
         }
         gameId
         players {

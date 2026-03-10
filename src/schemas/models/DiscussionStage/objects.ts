@@ -245,6 +245,15 @@ export const EndOfPhaseReflectionStepType = new GraphQLObjectType({
   }),
 });
 
+export const LearningObjectiveType = new GraphQLObjectType({
+  name: "LearningObjectiveType",
+  fields: () => ({
+    title: { type: GraphQLString },
+    description: { type: GraphQLString },
+    criteria: { type: GraphQLString },
+  }),
+});
+
 export const StartOfPhaseStepType = new GraphQLObjectType({
   name: "StartOfPhaseStepType",
   fields: () => ({
@@ -254,7 +263,17 @@ export const StartOfPhaseStepType = new GraphQLObjectType({
       value: DiscussionStageStepType.START_OF_PHASE,
     },
     phaseTitle: { type: GraphQLString },
+    learningObjectives: { type: GraphQLList(LearningObjectiveType) },
     lastStep: { type: GraphQLBoolean },
+  }),
+});
+
+export const LearningObjectiveTypeInput = new GraphQLInputObjectType({
+  name: "LearningObjectiveTypeInput",
+  fields: () => ({
+    title: { type: GraphQLString },
+    description: { type: GraphQLString },
+    criteria: { type: GraphQLString },
   }),
 });
 
@@ -268,6 +287,7 @@ export const StartOfPhaseStepTypeInput = new GraphQLInputObjectType({
     },
     phaseTitle: { type: GraphQLString },
     lastStep: { type: GraphQLBoolean },
+    learningObjectives: { type: GraphQLList(LearningObjectiveTypeInput) },
   }),
 });
 
@@ -357,10 +377,20 @@ export const PromptStageStepSchema = new Schema({
   prompts: [PromptConfigurationSchema],
 });
 
+export const LearningObjectiveSchema = new Schema(
+  {
+    title: { type: String },
+    description: { type: String },
+    criteria: { type: String },
+  },
+  { _id: false }
+);
+
 export const StartOfPhaseStepSchema = new Schema({
   ...StageBuilderStepSchema.obj,
   stepType: { type: String, default: DiscussionStageStepType.START_OF_PHASE },
   phaseTitle: { type: String },
+  learningObjectives: [LearningObjectiveSchema],
 });
 
 export const EndOfPhaseReflectionStepSchema = new Schema({

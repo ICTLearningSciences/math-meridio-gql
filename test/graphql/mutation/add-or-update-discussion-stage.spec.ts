@@ -210,6 +210,7 @@ describe("update discussion stage", () => {
             stepId: "0",
             stepType: DiscussionStageStepType.START_OF_PHASE,
             phaseTitle: "phase title 0",
+            learningObjectives: [],
             lastStep: false,
           },
           {

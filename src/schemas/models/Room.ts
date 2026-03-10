@@ -27,9 +27,14 @@ import { Class } from "./classes/Class";
 import {
   EndOfPhaseReflectionStepSchema,
   EndOfPhaseReflectionStepType,
+  LearningObjectiveSchema,
+  LearningObjectiveType,
   RequireInputType,
 } from "./DiscussionStage/objects";
-import { EndOfPhaseReflectionStep } from "./DiscussionStage/types";
+import {
+  EndOfPhaseReflectionStep,
+  LearningObjective,
+} from "./DiscussionStage/types";
 import { PlayerStatusRecord } from "../../schemas/types/types";
 import { getPlayerComputedState } from "../../helpers";
 import { getGameById } from "../../authoritative-server/games/game-helpers";
@@ -70,6 +75,7 @@ export interface PhaseProgression {
   curPhaseTitle: string;
   curPhaseStepId: string;
   startingPhaseStepsOrdered: string[];
+  learningObjectives: LearningObjective[];
 }
 
 export interface CurGameState {
@@ -149,6 +155,7 @@ export const PhaseProgressionSchema = new Schema<PhaseProgression>(
     curPhaseTitle: { type: String },
     curPhaseStepId: { type: String },
     startingPhaseStepsOrdered: [{ type: String }],
+    learningObjectives: [{ type: LearningObjectiveSchema }],
   },
   { collation: { locale: "en", strength: 2 } }
 );
@@ -193,6 +200,7 @@ export const GameSchema = new Schema<GameDataDocument>(
         curPhaseTitle: "",
         curPhaseStepId: "",
         startingPhaseStepsOrdered: [],
+        learningObjectives: [],
       },
     },
     chat: [{ type: ChatMessageSchema }],
@@ -303,6 +311,7 @@ export const PhaseProgressionType = new GraphQLObjectType({
     curPhaseStepId: { type: GraphQLString },
     curPhaseTitle: { type: GraphQLString },
     startingPhaseStepsOrdered: { type: new GraphQLList(GraphQLString) },
+    learningObjectives: { type: new GraphQLList(LearningObjectiveType) },
   }),
 });
 

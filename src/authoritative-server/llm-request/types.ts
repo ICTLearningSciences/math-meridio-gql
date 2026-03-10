@@ -13,6 +13,7 @@ import {
 import {
   CurrentStage,
   IStage,
+  LearningObjective,
 } from "../../schemas/models/DiscussionStage/types";
 export enum PromptOutputTypes {
   TEXT = "TEXT",
@@ -216,6 +217,7 @@ export interface StartPhaseAtomicAction
   actionType: RoomModificationEnum.STARTING_PHASE;
   startingPhaseStepId: string;
   phaseTitle: string;
+  learningObjectives: LearningObjective[];
 }
 
 export interface CompletePhaseAtomicAction
