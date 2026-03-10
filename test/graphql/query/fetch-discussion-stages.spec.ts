@@ -39,7 +39,6 @@ export const fullDiscussionStageQueryData = `
                               phaseTitle
                               learningObjectives{
                                 title
-                                description
                                 criteria
                               }
                           }
@@ -85,6 +84,13 @@ export const fullDiscussionStageQueryData = `
                                 outputDataType
                                 jsonResponseData
                                 customSystemRole
+                                appendLearningObjectives
+                                includeMessageContext{
+                                  type
+                                  stepIds
+                                  numRecentMessages
+                                  includeMessagesFromOtherUsers
+                                }
                               }
                           }
 

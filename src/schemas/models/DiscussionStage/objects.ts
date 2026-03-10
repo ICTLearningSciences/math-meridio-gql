@@ -10,6 +10,7 @@ import {
   GraphQLBoolean,
   GraphQLList,
   GraphQLInputObjectType,
+  GraphQLInt,
 } from "graphql";
 import { Schema } from "mongoose";
 import { DiscussionStageStepType } from "./types";
@@ -181,6 +182,16 @@ export const ConditionalActivityStepTypeInput = new GraphQLInputObjectType({
   }),
 });
 
+export const IncludeMessageContextType = new GraphQLObjectType({
+  name: "IncludeMessageContextType",
+  fields: () => ({
+    type: { type: GraphQLString, enum: IncludeMessagesContextTypeEnum },
+    stepIds: { type: GraphQLList(GraphQLString) },
+    numRecentMessages: { type: GraphQLInt },
+    includeMessagesFromOtherUsers: { type: GraphQLBoolean },
+  }),
+});
+
 export const PromptConfigurationType = new GraphQLObjectType({
   name: "PromptConfigurationType",
   fields: () => ({
@@ -188,6 +199,8 @@ export const PromptConfigurationType = new GraphQLObjectType({
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
+    appendLearningObjectives: { type: GraphQLBoolean },
+    includeMessageContext: { type: IncludeMessageContextType },
     outputDataType: { type: GraphQLString },
     jsonResponseData: { type: GraphQLString },
     customSystemRole: { type: GraphQLString },
@@ -205,6 +218,16 @@ export const PromptStageStepType = new GraphQLObjectType({
   }),
 });
 
+export const IncludeMessageContextTypeInput = new GraphQLInputObjectType({
+  name: "IncludeMessageContextTypeInput",
+  fields: () => ({
+    type: { type: GraphQLString, enum: IncludeMessagesContextTypeEnum },
+    stepIds: { type: GraphQLList(GraphQLString) },
+    numRecentMessages: { type: GraphQLInt },
+    includeMessagesFromOtherUsers: { type: GraphQLBoolean },
+  }),
+});
+
 export const PromptConfigurationTypeInput = new GraphQLInputObjectType({
   name: "PromptConfigurationTypeInput",
   fields: () => ({
@@ -212,6 +235,8 @@ export const PromptConfigurationTypeInput = new GraphQLInputObjectType({
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
+    appendLearningObjectives: { type: GraphQLBoolean },
+    includeMessageContext: { type: IncludeMessageContextTypeInput },
     outputDataType: { type: GraphQLString },
     jsonResponseData: { type: GraphQLString },
     customSystemRole: { type: GraphQLString },
@@ -249,7 +274,6 @@ export const LearningObjectiveType = new GraphQLObjectType({
   name: "LearningObjectiveType",
   fields: () => ({
     title: { type: GraphQLString },
-    description: { type: GraphQLString },
     criteria: { type: GraphQLString },
   }),
 });
@@ -272,7 +296,6 @@ export const LearningObjectiveTypeInput = new GraphQLInputObjectType({
   name: "LearningObjectiveTypeInput",
   fields: () => ({
     title: { type: GraphQLString },
-    description: { type: GraphQLString },
     criteria: { type: GraphQLString },
   }),
 });
@@ -361,9 +384,24 @@ export enum ProcessPromptAs {
   INDIVIDUALLY = "INDIVIDUALLY",
 }
 
+export enum IncludeMessagesContextTypeEnum {
+  ALL_MESSAGES = "ALL_MESSAGES",
+  NUM_RECENT_MESSAGES = "NUM_RECENT_MESSAGES",
+  FROM_INPUT_STEPS = "FROM_INPUT_STEPS",
+}
+
+export const IncludeMessageContextSchema = new Schema({
+  type: { type: String, enum: IncludeMessagesContextTypeEnum },
+  stepIds: { type: [String], default: [] },
+  numRecentMessages: { type: Number, default: 10 },
+  includeMessagesFromOtherUsers: { type: Boolean, default: false },
+});
+
 export const PromptConfigurationSchema = new Schema({
   processPromptAs: { type: String, default: ProcessPromptAs.INDIVIDUALLY },
   promptText: { type: String },
+  appendLearningObjectives: { type: Boolean },
+  includeMessageContext: { type: IncludeMessageContextSchema },
   responseFormat: { type: String },
   includeChatLogContext: { type: Boolean },
   outputDataType: { type: String },
@@ -380,7 +418,6 @@ export const PromptStageStepSchema = new Schema({
 export const LearningObjectiveSchema = new Schema(
   {
     title: { type: String },
-    description: { type: String },
     criteria: { type: String },
   },
   { _id: false }

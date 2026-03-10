@@ -8,6 +8,7 @@ The full terms of this copyright and license should always be found in the root 
 import mongoose from "mongoose";
 import { DiscussionStageStepType } from "../../../src/schemas/models/DiscussionStage/types";
 import {
+  IncludeMessagesContextTypeEnum,
   ProcessPromptAs,
   RequireInputType,
 } from "../../../src/schemas/models/DiscussionStage/objects";
@@ -164,6 +165,13 @@ module.exports = {
                   includeChatLogContext: true,
                   outputDataType: "JSON",
                   customSystemRole: "user",
+                  appendLearningObjectives: false,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                    stepIds: [],
+                    numRecentMessages: 0,
+                    includeMessagesFromOtherUsers: false,
+                  },
                 },
               ],
             },
@@ -281,6 +289,13 @@ module.exports = {
                     },
                   ]),
                   customSystemRole: "",
+                  appendLearningObjectives: false,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                    stepIds: [],
+                    numRecentMessages: 0,
+                    includeMessagesFromOtherUsers: false,
+                  },
                 },
               ],
             },
@@ -342,6 +357,13 @@ module.exports = {
                     },
                   ]),
                   customSystemRole: "",
+                  appendLearningObjectives: false,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                    stepIds: [],
+                    numRecentMessages: 0,
+                    includeMessagesFromOtherUsers: false,
+                  },
                 },
               ],
             },
@@ -379,6 +401,13 @@ module.exports = {
                     },
                   ]),
                   customSystemRole: "",
+                  appendLearningObjectives: false,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                    stepIds: [],
+                    numRecentMessages: 0,
+                    includeMessagesFromOtherUsers: false,
+                  },
                 },
               ],
             },
@@ -577,7 +606,6 @@ module.exports = {
               learningObjectives: [
                 {
                   title: "Test Learning Objective",
-                  description: "Test Learning Objective Description",
                   criteria: "Test Learning Objective Criteria",
                 },
               ],

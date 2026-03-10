@@ -2384,7 +2384,6 @@ describe("full room lifecycle", () => {
     ).to.deep.include.members([
       {
         title: "Test Learning Objective",
-        description: "Test Learning Objective Description",
         criteria: "Test Learning Objective Criteria",
       },
     ]);

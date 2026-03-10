@@ -59,7 +59,6 @@ export const fullRoomData = `
           startingPhaseStepsOrdered
           learningObjectives{
             title
-            description
             criteria
           }
         }

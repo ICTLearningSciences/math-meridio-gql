@@ -245,7 +245,6 @@ export function startOfPhaseStep(
     phaseTitle: curStep.phaseTitle,
     learningObjectives: curStep.learningObjectives.map((objective) => ({
       title: objective.title,
-      description: objective.description,
       criteria: objective.criteria,
     })),
   } as StartPhaseAtomicAction);

@@ -21,6 +21,7 @@ import {
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 import { fullDiscussionStageQueryData } from "../query/fetch-discussion-stages.spec";
 import {
+  IncludeMessagesContextTypeEnum,
   ProcessPromptAs,
   RequireInputType,
 } from "../../../src/schemas/models/DiscussionStage/objects";
@@ -85,6 +86,13 @@ describe("update discussion stage", () => {
                 includeChatLogContext: true,
                 outputDataType: "JSON",
                 customSystemRole: "custom system role 1",
+                appendLearningObjectives: false,
+                includeMessageContext: {
+                  type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                  stepIds: [],
+                  numRecentMessages: 0,
+                  includeMessagesFromOtherUsers: false,
+                },
               },
             ],
           },
@@ -164,6 +172,13 @@ describe("update discussion stage", () => {
                 includeChatLogContext: true,
                 outputDataType: "JSON",
                 customSystemRole: "custom system role 1",
+                appendLearningObjectives: false,
+                includeMessageContext: {
+                  type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                  stepIds: [],
+                  numRecentMessages: 0,
+                  includeMessagesFromOtherUsers: false,
+                },
               },
             ],
           },
@@ -253,6 +268,13 @@ describe("update discussion stage", () => {
                 includeChatLogContext: true,
                 outputDataType: "JSON",
                 customSystemRole: "custom system role 1",
+                appendLearningObjectives: false,
+                includeMessageContext: {
+                  type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                  stepIds: [],
+                  numRecentMessages: 0,
+                  includeMessagesFromOtherUsers: false,
+                },
               },
             ],
           },
@@ -398,6 +420,13 @@ describe("update discussion stage", () => {
                                   outputDataType
                                   jsonResponseData
                                   customSystemRole
+                                  appendLearningObjectives
+                                  includeMessageContext{
+                                    type
+                                    stepIds
+                                    numRecentMessages
+                                    includeMessagesFromOtherUsers
+                                  }
                                 }
                             }
                         }

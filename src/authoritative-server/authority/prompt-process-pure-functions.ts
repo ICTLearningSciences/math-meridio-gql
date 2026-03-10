@@ -130,11 +130,15 @@ async function processGroupPrompt(
     systemRole: customSystemRole,
   };
 
-  if (promptConfig.includeChatLogContext) {
+  if (
+    promptConfig.appendLearningObjectives &&
+    gameData.phaseProgression.learningObjectives.length > 0
+  ) {
     llmRequest.prompts.push({
-      promptText: `Current state of chat log between user and system: ${chatLogToString(
-        gameData.chat
-      )}`,
+      promptText: `Active Learning objectives:
+      ${gameData.phaseProgression.learningObjectives
+        .map((objective) => `- ${objective.title}: ${objective.criteria}`)
+        .join("\n")}`,
       promptRole: PromptRoles.SYSTEM,
     });
   }
