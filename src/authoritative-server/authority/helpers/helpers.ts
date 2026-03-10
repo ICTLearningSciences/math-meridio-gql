@@ -17,6 +17,8 @@ import {
   RoomPhase,
   RoomModel as RoomModelType,
 } from "../../../schemas/models/Room";
+import { PlayerComputedState } from "../../../schemas/types/types";
+import { getPlayerComputedState } from "../../../helpers";
 
 export function replaceStoredDataInString(
   str: string,
@@ -298,4 +300,41 @@ export async function acquireProcessingLock(
     room: finalRoom ? finalRoom.toObject() : null,
     reason: "MAX_RETRIES",
   };
+}
+
+export async function updateRoomPlayerStatusedRecord(
+  room: Room,
+  pingingUserId: string,
+  RoomModel: RoomModelType
+): Promise<Room> {
+  const newComputedPlayerStatuses: Record<string, PlayerComputedState> =
+    Object.entries(room.gameData.playersStatusRecord).reduce(
+      (acc, [playerId, playerStatus]) => {
+        acc[playerId] = getPlayerComputedState(playerStatus);
+        return acc;
+      },
+      {} as Record<string, PlayerComputedState>
+    );
+
+  const updates: Record<string, any> = {
+    $set: {
+      [`gameData.playersStatusRecord.${pingingUserId}.lastHeartbeatAt`]:
+        new Date(),
+      ...Object.entries(newComputedPlayerStatuses).reduce(
+        (acc, [playerId, computedState]) => {
+          acc[`gameData.playersStatusRecord.${playerId}.computedState`] =
+            computedState;
+          return acc;
+        },
+        {} as Record<string, any>
+      ),
+    },
+  };
+
+  const updatedRoom = await RoomModel.findOneAndUpdate(
+    { _id: room._id },
+    updates,
+    { new: true }
+  );
+  return updatedRoom.toObject();
 }

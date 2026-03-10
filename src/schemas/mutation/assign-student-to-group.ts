@@ -11,6 +11,7 @@ import ClassMembershipModel, {
   ClassMembership,
   ClassMembershipType,
 } from "../models/classes/ClassMembership";
+import { canModifyClassroom } from "../../helpers";
 
 export const assignStudentToGroup = {
   type: ClassMembershipType,
@@ -42,7 +43,7 @@ export const assignStudentToGroup = {
       }
 
       // Ensure requester is the owner of the class
-      if (classroom.teacherId !== userId) {
+      if (!canModifyClassroom(userId, classroom)) {
         throw new Error("User is not the teacher of this classroom");
       }
 

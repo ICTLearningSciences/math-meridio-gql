@@ -18,6 +18,7 @@ import {
   setTokenCookie,
   generateRefreshToken,
 } from "../../schemas/types/user-access-token";
+import ClassMembershipModel from "../models/classes/ClassMembership";
 
 export interface GoogleResponse {
   id: string;
@@ -114,6 +115,13 @@ export const loginGoogle = {
           upsert: true,
         }
       );
+
+      // update all existing classMemberships for the user
+      await ClassMembershipModel.updateMany(
+        { userEmail: user.email },
+        { $set: { userId: user._id.toString() } }
+      );
+
       // authentication successful so generate jwt and refresh tokens
       const jwtToken = await generateJwtToken(user);
       const refreshToken = await generateRefreshToken(user);

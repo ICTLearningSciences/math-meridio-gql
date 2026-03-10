@@ -57,7 +57,7 @@ export default {
 
       // Fetch all classes owned by this instructor (archived or not)
       const classes = await ClassModel.find({
-        teacherId: userId,
+        $or: [{ teacherId: userId }, { sharedWithInstructorIds: userId }],
       });
 
       const classIds = classes.map((c) => c._id);

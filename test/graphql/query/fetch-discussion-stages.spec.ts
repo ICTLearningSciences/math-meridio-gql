@@ -32,11 +32,19 @@ export const fullDiscussionStageQueryData = `
                               message
                           }
 
-                          ... on EndOfPhaseReflectionStepType {
+                          ... on StartOfPhaseStepType {
                               lastStep
                               stepId
                               stepType
                               phaseTitle
+                          }
+
+                          ... on EndOfPhaseReflectionStepType {
+                              lastStep
+                              stepId
+                              stepType
+                              parentStartOfPhaseStepId
+                              skipReflectionCollection
                               message
                               questions
                           }
@@ -64,12 +72,15 @@ export const fullDiscussionStageQueryData = `
                               stepId
                               stepType
                               jumpToStepId
-                              promptText
-                              responseFormat
-                              includeChatLogContext
-                              outputDataType
-                              jsonResponseData
-                              customSystemRole
+                              prompts{
+                                promptText
+                                processPromptAs
+                                responseFormat
+                                includeChatLogContext
+                                outputDataType
+                                jsonResponseData
+                                customSystemRole
+                              }
                           }
 
                           ... on ConditionalActivityStepType {
@@ -77,12 +88,12 @@ export const fullDiscussionStageQueryData = `
                               stepType
                               lastStep
                               jumpToStepId
-                              conditionals{
+                              targetStepId
+                              conditionalsToMeet{
                                   stateDataKey
                                   checking
                                   operation
                                   expectedValue
-                                  targetStepId
                               }
                           }
                       }
@@ -135,7 +146,7 @@ describe("fetch discussion stages", () => {
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps[1]
         .requireInputType
-    ).to.equal(RequireInputType.SINGLE_RESPONSE_REQUIRED);
+    ).to.equal(RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL);
     expect(
       response.body.data.fetchDiscussionStages[0].flowsList[0].steps[4]
     ).to.deep.equal({
@@ -143,13 +154,13 @@ describe("fetch discussion stages", () => {
       stepType: DiscussionStageStepType.CONDITIONAL,
       jumpToStepId: "6",
       lastStep: false,
-      conditionals: [
+      targetStepId: "6",
+      conditionalsToMeet: [
         {
           stateDataKey: "nickname",
           checking: "is",
           operation: "equal",
           expectedValue: "John",
-          targetStepId: "6",
         },
       ],
     });

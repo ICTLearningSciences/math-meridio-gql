@@ -114,6 +114,7 @@ export function generateJwtToken(user: PlayerDocument): UserAccessToken {
     {
       id: user._id,
       userRole: user.userRole,
+      email: user.email,
       educationalRole: user.educationalRole,
       expirationDate,
     },

@@ -30,6 +30,7 @@ const joinClassroomQuery = `
         classMembership {
             classId
             userId
+            userEmail 
             status
         }
         classroom {
@@ -85,7 +86,9 @@ describe("join a classroom", () => {
     studentAccessToken = await getToken(
       studentUserId,
       UserRole.USER,
-      EducationalRole.STUDENT
+      EducationalRole.STUDENT,
+      undefined,
+      "student@example.com"
     );
   });
 
@@ -112,6 +115,9 @@ describe("join a classroom", () => {
     expect(response.body.data.joinClassroom).to.have.property("classroom");
     expect(response.body.data.joinClassroom.classMembership.status).to.equal(
       ClassMembershipStatus.MEMBER
+    );
+    expect(response.body.data.joinClassroom.classMembership.userEmail).to.equal(
+      "student@example.com"
     );
     expect(response.body.data.joinClassroom.classMembership.userId).to.equal(
       studentUserId

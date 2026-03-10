@@ -30,6 +30,9 @@ import {
   RequireInputType,
 } from "./DiscussionStage/objects";
 import { EndOfPhaseReflectionStep } from "./DiscussionStage/types";
+import { PlayerStatusRecord } from "../../schemas/types/types";
+import { getPlayerComputedState } from "../../helpers";
+import { getGameById } from "../../authoritative-server/games/game-helpers";
 
 /** mongoose */
 
@@ -61,6 +64,14 @@ export interface GlobalStateData {
 
 export interface GlobalStateDataDocument extends GlobalStateData, Document {}
 
+export interface PhaseProgression {
+  phasesStarted: string[];
+  phasesCompleted: string[];
+  curPhaseTitle: string;
+  curPhaseStepId: string;
+  startingPhaseStepsOrdered: string[];
+}
+
 export interface CurGameState {
   curState:
     | RequireInputType
@@ -83,7 +94,10 @@ export interface GameData {
   chat: ChatMessage[];
   globalStateData: GlobalStateData;
   persistTruthGlobalStateData: string[];
+  playersStatusRecord: PlayerStatusRecord; // keyed by player ID
   playersGameStateData: Record<string, GameStateData>; // keyed by player ID
+  mathStandardsCompleted: Record<string, boolean>; // keyed by standard name
+  phaseProgression: PhaseProgression;
 }
 
 export interface GameDataDocument extends GameData, Document {}
@@ -127,6 +141,18 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
+
+export const PhaseProgressionSchema = new Schema<PhaseProgression>(
+  {
+    phasesStarted: [{ type: String }],
+    phasesCompleted: [{ type: String }],
+    curPhaseTitle: { type: String },
+    curPhaseStepId: { type: String },
+    startingPhaseStepsOrdered: [{ type: String }],
+  },
+  { collation: { locale: "en", strength: 2 } }
+);
+
 export const CurGameStateSchema = new Schema<CurGameStateDocument>(
   {
     curState: { type: String },
@@ -157,7 +183,18 @@ export const GlobalStateSchema = new Schema<GlobalStateDataDocument>(
 export const GameSchema = new Schema<GameDataDocument>(
   {
     gameId: { type: String },
-    players: [{ type: String }],
+    players: [{ type: String }], // keyed by player Id
+    mathStandardsCompleted: { type: Schema.Types.Mixed, default: {} },
+    phaseProgression: {
+      type: PhaseProgressionSchema,
+      default: {
+        phasesStarted: [],
+        phasesCompleted: [],
+        curPhaseTitle: "",
+        curPhaseStepId: "",
+        startingPhaseStepsOrdered: [],
+      },
+    },
     chat: [{ type: ChatMessageSchema }],
     curGameState: {
       type: CurGameStateSchema,
@@ -172,7 +209,8 @@ export const GameSchema = new Schema<GameDataDocument>(
     },
     globalStateData: { type: GlobalStateSchema },
     persistTruthGlobalStateData: [{ type: String }],
-    playersGameStateData: { type: Schema.Types.Mixed, default: {} },
+    playersStatusRecord: { type: Schema.Types.Mixed, default: {} },
+    playersGameStateData: { type: Schema.Types.Mixed, default: {} }, // keyed by player Id
   },
   {
     timestamps: true,
@@ -194,7 +232,11 @@ export const RoomSchema = new Schema<RoomDocument, RoomModel>(
     deletedRoom: { type: Boolean },
     versionNumber: { type: Number, default: 1 },
   },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
+  {
+    timestamps: true,
+    collation: { locale: "en", strength: 2 },
+    minimize: false, // Preserve empty objects in Mixed fields
+  }
 );
 
 pluginPagination(RoomSchema);
@@ -253,6 +295,17 @@ export const GlobalStateDataType = new GraphQLObjectType({
 //  - studentReflections (just for frontend display)
 //  - roundNumber (how many times this phase has been run)
 
+export const PhaseProgressionType = new GraphQLObjectType({
+  name: "PhaseProgressionType",
+  fields: () => ({
+    phasesStarted: { type: new GraphQLList(GraphQLString) },
+    phasesCompleted: { type: new GraphQLList(GraphQLString) },
+    curPhaseStepId: { type: GraphQLString },
+    curPhaseTitle: { type: GraphQLString },
+    startingPhaseStepsOrdered: { type: new GraphQLList(GraphQLString) },
+  }),
+});
+
 export const CurGameStateType = new GraphQLObjectType({
   name: "CurGameStateType",
   fields: () => ({
@@ -276,9 +329,45 @@ export const GameDataType = new GraphQLObjectType({
         return PlayerModel.find({ _id: { $in: game.players } });
       },
     },
+    playersStatusRecord: {
+      type: GraphQLScalarType,
+      resolve: function (game: GameDataDocument) {
+        return Object.entries(game.playersStatusRecord).reduce(
+          (acc, [playerEmail, playerStatus]) => {
+            acc[playerEmail] = {
+              ...playerStatus,
+              computedState: getPlayerComputedState(playerStatus),
+            };
+            return acc;
+          },
+          {} as PlayerStatusRecord
+        );
+      },
+    }, // keyed by player email
     curGameState: { type: CurGameStateType },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },
+    phaseProgression: { type: PhaseProgressionType },
+    mathStandardsCompleted: {
+      type: GraphQLScalarType,
+      resolve: function (gameData: GameDataDocument) {
+        if (!gameData.gameId) {
+          return {};
+        }
+        const game = getGameById(gameData.gameId, [], true);
+        return Object.entries(game.mathStandardsCompletedRequirements).reduce(
+          (acc, [standardName, requiredKeyValuePairs]) => {
+            acc[standardName] = Object.entries(requiredKeyValuePairs).every(
+              ([key, value]) => {
+                return gameData.globalStateData.gameStateData[key] === value;
+              }
+            );
+            return acc;
+          },
+          {} as Record<string, boolean>
+        );
+      },
+    },
     globalStateData: { type: GlobalStateDataType },
     playersGameStateData: { type: GraphQLScalarType }, // keyed by player ID
   }),

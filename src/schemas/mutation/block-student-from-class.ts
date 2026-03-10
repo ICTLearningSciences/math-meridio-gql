@@ -13,6 +13,7 @@ import ClassMembershipModel, {
   ClassMembershipType,
 } from "../models/classes/ClassMembership";
 import RoomModel from "../models/Room";
+import { canModifyClassroom } from "../../helpers";
 
 export const blockStudentFromClass = {
   type: ClassMembershipType,
@@ -42,7 +43,7 @@ export const blockStudentFromClass = {
       }
 
       // Ensure requester is the owner of the class
-      if (classroom.teacherId !== userId) {
+      if (!canModifyClassroom(userId, classroom)) {
         throw new Error("User is not the teacher of this classroom");
       }
 

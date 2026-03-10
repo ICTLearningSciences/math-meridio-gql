@@ -8,18 +8,19 @@ import { GraphQLObjectType, GraphQLString } from "graphql";
 import { EducationalRole } from "../models/Player";
 import ClassModel, { Class, ClassType } from "../models/classes/Class";
 import { canModifyClassroom } from "../../helpers";
+import PlayerModel from "../models/Player";
 
-export const revokeClassInviteCode = {
+export const shareClassroomWithInstructor = {
   type: ClassType,
   args: {
     classId: { type: GraphQLString },
-    classroomCode: { type: GraphQLString },
+    instructorEmail: { type: GraphQLString },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
       classId: string;
-      classroomCode: string;
+      instructorEmail: string;
     },
     context: {
       userId: string;
@@ -28,7 +29,7 @@ export const revokeClassInviteCode = {
   ): Promise<Class> => {
     try {
       const userId = context.userId;
-      const { classId, classroomCode } = args;
+      const { classId, instructorEmail } = args;
 
       // Get classroom document
       const classroom = await ClassModel.findById(classId);
@@ -36,24 +37,22 @@ export const revokeClassInviteCode = {
         throw new Error("Classroom not found");
       }
 
-      // Ensure requesting userId is the teacherId or sharedWithInstructorIds of the classroom document
+      // Ensure the user is the owner of the classroom
       if (!canModifyClassroom(userId, classroom)) {
         throw new Error("User is not the teacher of this classroom");
       }
 
-      // Find the invite code
-      const inviteCodeIndex = classroom.inviteCodes.findIndex(
-        (code) => code.code === classroomCode
-      );
-
-      if (inviteCodeIndex === -1) {
-        throw new Error("Invite code not found");
+      // Get instructor document
+      const instructor = await PlayerModel.findOne({ email: instructorEmail });
+      if (!instructor) {
+        throw new Error("Instructor not found");
       }
 
-      // Hard delete invite code from class inviteCode list
-      classroom.inviteCodes.splice(inviteCodeIndex, 1);
+      // Add instructor to sharedWithInstructorIds
+      classroom.sharedWithInstructorIds.push(instructor._id.toString());
       const updatedClassroom = await classroom.save();
 
+      // Return updated classroom
       return updatedClassroom;
     } catch (error) {
       throw new Error(error);
@@ -61,4 +60,4 @@ export const revokeClassInviteCode = {
   },
 };
 
-export default revokeClassInviteCode;
+export default shareClassroomWithInstructor;

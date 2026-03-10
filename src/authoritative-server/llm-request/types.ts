@@ -6,6 +6,11 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import {
+  ChatMessage,
+  GameStateData,
+  DiscussionData,
+} from "../../schemas/models/Room";
+import {
   CurrentStage,
   IStage,
 } from "../../schemas/models/DiscussionStage/types";
@@ -132,14 +137,89 @@ export interface JsonResponseData {
   additionalInfo?: string;
   subData?: JsonResponseData[];
 }
+
+/**
+ * Record<StandardName, Record<GlobalStateDataKey, RequiredValueForCompletion>>
+ */
+export type MathStandardsCompletionRequirements = Record<
+  string,
+  Record<string, any>
+>;
+
 export abstract class AbstractGameData {
   abstract id: string;
   abstract name: string;
   abstract stageList: CurrentStage<IStage>[];
   abstract persistTruthGlobalStateData: string[];
+  abstract mathStandardsCompletedRequirements: MathStandardsCompletionRequirements;
 }
 
 export interface SimulationStage extends IStage {
   _id: string;
   stageType: "simulation";
+}
+
+export enum RoomModificationEnum {
+  ADD_MESSAGE = "ADD_MESSAGE",
+  ADD_TO_PLAYER_STATE_DATA = "ADD_TO_PLAYER_STATE_DATA",
+  ADD_TO_GLOBAL_STATE_DATA = "ADD_TO_GLOBAL_STATE_DATA",
+  ADD_TO_DISCUSSION_DATA = "ADD_TO_DISCUSSION_DATA",
+  ADD_PLAYER_TO_ROOM = "ADD_PLAYER_TO_ROOM",
+  NO_OP = "NO_OP",
+  STARTING_PHASE = "STARTING_PHASE",
+  COMPLETE_PHASE = "COMPLETE_PHASE",
+}
+
+export interface AtomicRoomModiticationAction {
+  actionType: RoomModificationEnum;
+}
+
+export interface NoOpRoomAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.NO_OP;
+}
+
+export interface AddMessageRoomAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.ADD_MESSAGE;
+  newMessage: ChatMessage;
+}
+
+export interface UpdatePlayerGameStateDataRoomAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA;
+  playerId: string;
+  newData: GameStateData;
+}
+
+export interface UpdateGlobalGameStateDataRoomAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.ADD_TO_GLOBAL_STATE_DATA;
+  newData: GameStateData;
+}
+
+export interface UpdateDiscussionDataRoomAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.ADD_TO_DISCUSSION_DATA;
+  newData: DiscussionData;
+}
+
+export interface AddPlayerToRoomAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.ADD_PLAYER_TO_ROOM;
+  playerId: string;
+  playerStateData: GameStateData;
+}
+
+export interface StartPhaseAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.STARTING_PHASE;
+  startingPhaseStepId: string;
+  phaseTitle: string;
+}
+
+export interface CompletePhaseAtomicAction
+  extends Omit<AtomicRoomModiticationAction, "actionType"> {
+  actionType: RoomModificationEnum.COMPLETE_PHASE;
+  phaseToComplete: string;
 }

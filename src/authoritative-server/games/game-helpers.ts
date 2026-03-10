@@ -12,18 +12,20 @@ import { UnitTestGame } from "./unit-test-game";
 import { UnitTestMultipleUsersGame } from "./unit-test-multiple-users-game";
 import { UnitTestSimulationGame } from "./unit-test-simulation-game";
 import { UnitTestEndOfPhaseReflectionGame } from "./unit-test-end-of-phase";
+import { UnitTestMultiplePromptGame } from "./unit-test-multiple-prompt-game";
 
 export const WAIT_FOR_SIMULATION_STAGE_CLIENT_ID = "wait-for-simulation";
 
 export function getGameById(
   gameId: string,
-  discussionStages: DiscussionStage[]
+  discussionStages: DiscussionStage[],
+  skipStages?: boolean
 ): AbstractGameData {
   switch (gameId) {
     case "basketball":
-      return new BasketballStateHandler(discussionStages);
+      return new BasketballStateHandler(discussionStages, skipStages);
     case "concert-ticket-sales":
-      return new ConcertTicketSalesStateHandler(discussionStages);
+      return new ConcertTicketSalesStateHandler(discussionStages, skipStages);
     case "unit-test":
       return new UnitTestGame(discussionStages);
     case "unit-test-multiple-users":
@@ -32,6 +34,8 @@ export function getGameById(
       return new UnitTestSimulationGame(discussionStages);
     case "unit-test-end-of-phase":
       return new UnitTestEndOfPhaseReflectionGame(discussionStages);
+    case "unit-test-multiple-prompt":
+      return new UnitTestMultiplePromptGame(discussionStages);
     default:
       throw new Error(`Game not found: ${gameId}`);
   }

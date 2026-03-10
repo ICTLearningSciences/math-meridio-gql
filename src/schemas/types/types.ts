@@ -22,11 +22,42 @@ export enum UserRole {
   ADMIN = "ADMIN",
 }
 
+export enum PlayerComputedState {
+  NEVER_ACCESSED_ACTIVITY = "NEVER_ACCESSED_ACTIVITY", // no heartebeat ever recorded
+  PAUSED_BY_ADMIN = "PAUSED_BY_ADMIN", // paused by admin
+  REPORTED_AWAY_BY_OTHER_PLAYER = "REPORTED_AWAY_BY_OTHER_PLAYER", // reported away by other player
+  REPORTED_AWAY_BY_FRONTEND_DETECTION = "REPORTED_AWAY_BY_FRONTEND_DETECTION", // reported away by frontend detection
+  INACTIVE = "INACTIVE", // no heartbeat in the last 15 seconds
+  ACTIVE = "ACTIVE", // heartbeat in the last 15 seconds
+}
+
+export interface ReportedAwayStatus {
+  isAway: boolean;
+  reportedAwayAt?: Date;
+  reportedBy?: "STUDENT" | "FRONTEND_SYSTEM";
+}
+
+export interface PlayerStatusData {
+  lastHeartbeatAt?: Date;
+  reportedAwayStatus: ReportedAwayStatus;
+  pausedByAdmin: boolean;
+  computedState: PlayerComputedState;
+}
+
+export type PlayerStatusRecord = Record<string, PlayerStatusData>;
+
 export const fullRoomData = `
       _id
       name
       classId
       gameData {
+        phaseProgression {
+          phasesStarted
+          phasesCompleted
+          curPhaseTitle
+          curPhaseStepId
+          startingPhaseStepsOrdered
+        }
         gameId
         players {
           _id
@@ -43,6 +74,7 @@ export const fullRoomData = `
         }
         persistTruthGlobalStateData
         playersGameStateData
+        playersStatusRecord
         globalStateData {
           curStageId
           curStepId
@@ -104,5 +136,51 @@ export const viewGameRoomSimulationMutation = `
 export const submitReadyToContinueMutation = `
   mutation SubmitReadyToContinue($roomId: String!) {
     submitReadyToContinue(roomId: $roomId)
+  }
+`;
+
+export const reportPlayerAwayMutation = `
+  mutation ReportPlayerAway($roomId: String!, $playerId: ID!) {
+    reportPlayerAway(roomId: $roomId, playerId: $playerId) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const clearAwayStatusMutation = `
+  mutation ClearAwayStatus($roomId: String!, $playerId: ID!) {
+    clearAwayStatus(roomId: $roomId, playerId: $playerId) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const setPlayerPauseStatusMutation = `
+  mutation SetPlayerPauseStatus($roomId: String!, $playerId: ID!, $isPaused: Boolean!) {
+    setPlayerPauseStatus(roomId: $roomId, playerId: $playerId, isPaused: $isPaused) {
+      ${fullRoomData}
+    }
+  }
+`;
+
+export const fullClassroomData = `
+        _id
+        name
+        teacherId
+        sharedWithInstructorIds
+        startedAt
+        inviteCodes {
+            code
+            validUntil
+            maxUses
+            uses
+        }
+`;
+
+export const shareClassroomWithInstructorMutation = `
+  mutation ShareClassroomWithInstructor($classId: String!, $instructorEmail: String!) {
+    shareClassroomWithInstructor(classId: $classId, instructorEmail: $instructorEmail) {
+      ${fullClassroomData}
+    }
   }
 `;

@@ -20,7 +20,10 @@ import {
 } from "../../../src/schemas/models/DiscussionStage/types";
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 import { fullDiscussionStageQueryData } from "../query/fetch-discussion-stages.spec";
-import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
+import {
+  ProcessPromptAs,
+  RequireInputType,
+} from "../../../src/schemas/models/DiscussionStage/objects";
 
 describe("update discussion stage", () => {
   let app: Express;
@@ -71,14 +74,19 @@ describe("update discussion stage", () => {
           {
             stepId: "789",
             stepType: DiscussionStageStepType.PROMPT,
-            promptText: "prompt 1",
-            jumpToStepId: "123",
-            jsonResponseData: "stringified_json_response_data",
-            responseFormat: "response format 1",
-            includeChatLogContext: true,
-            outputDataType: "JSON",
-            customSystemRole: "custom system role 1",
             lastStep: true,
+            jumpToStepId: "123",
+            prompts: [
+              {
+                promptText: "prompt 1",
+                processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                jsonResponseData: "stringified_json_response_data",
+                responseFormat: "response format 1",
+                includeChatLogContext: true,
+                outputDataType: "JSON",
+                customSystemRole: "custom system role 1",
+              },
+            ],
           },
         ],
       },
@@ -145,14 +153,19 @@ describe("update discussion stage", () => {
           {
             stepId: "789",
             stepType: DiscussionStageStepType.PROMPT,
-            promptText: "prompt 1",
-            jumpToStepId: "123",
-            jsonResponseData: "stringified_json_response_data",
-            responseFormat: "response format 1",
-            includeChatLogContext: true,
-            outputDataType: "JSON",
-            customSystemRole: "custom system role 1",
             lastStep: true,
+            jumpToStepId: "123",
+            prompts: [
+              {
+                promptText: "prompt 1",
+                processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                jsonResponseData: "stringified_json_response_data",
+                responseFormat: "response format 1",
+                includeChatLogContext: true,
+                outputDataType: "JSON",
+                customSystemRole: "custom system role 1",
+              },
+            ],
           },
         ],
       },
@@ -194,6 +207,12 @@ describe("update discussion stage", () => {
         name: "flow 1",
         steps: [
           {
+            stepId: "0",
+            stepType: DiscussionStageStepType.START_OF_PHASE,
+            phaseTitle: "phase title 0",
+            lastStep: false,
+          },
+          {
             stepId: "123",
             jumpToStepId: "456",
             stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
@@ -222,34 +241,40 @@ describe("update discussion stage", () => {
           {
             stepId: "789",
             stepType: DiscussionStageStepType.PROMPT,
-            promptText: "prompt 1",
-            jumpToStepId: "123",
-            jsonResponseData: "stringified_json_response_data",
-            responseFormat: "response format 1",
-            includeChatLogContext: true,
-            outputDataType: "JSON",
-            customSystemRole: "custom system role 1",
             lastStep: true,
+            jumpToStepId: "123",
+            prompts: [
+              {
+                promptText: "prompt 1",
+                processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                jsonResponseData: "stringified_json_response_data",
+                responseFormat: "response format 1",
+                includeChatLogContext: true,
+                outputDataType: "JSON",
+                customSystemRole: "custom system role 1",
+              },
+            ],
           },
           {
             stepId: "5",
             stepType: DiscussionStageStepType.CONDITIONAL,
             jumpToStepId: "6",
+            targetStepId: "6",
             lastStep: false,
-            conditionals: [
+            conditionalsToMeet: [
               {
                 stateDataKey: "nickname",
                 checking: Checking.VALUE,
                 operation: NumericOperations.EQUALS,
                 expectedValue: "John",
-                targetStepId: "6",
               },
             ],
           },
           {
             stepId: "6",
             stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
-            phaseTitle: "phase title 1",
+            parentStartOfPhaseStepId: "0",
+            skipReflectionCollection: false,
             message: "message 1",
             questions: ["question 1", "question 2", "question 3"],
             lastStep: true,
@@ -364,7 +389,15 @@ describe("update discussion stage", () => {
                                 lastStep
                                 stepId
                                 stepType
-                                promptText
+                                prompts{
+                                  promptText
+                                  processPromptAs
+                                  responseFormat
+                                  includeChatLogContext
+                                  outputDataType
+                                  jsonResponseData
+                                  customSystemRole
+                                }
                             }
                         }
                         }

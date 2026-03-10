@@ -5,7 +5,8 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { RequireInputType } from "./objects";
+import { GameStateData } from "../Room";
+import { ProcessPromptAs, RequireInputType } from "./objects";
 
 export interface IStage {
   stageType: "discussion" | "simulation";
@@ -25,6 +26,7 @@ export interface FlowItem {
     | PromptStageStep
     | ConditionalActivityStep
     | EndOfPhaseReflectionStep
+    | StartOfPhaseStep
   )[];
 }
 
@@ -42,13 +44,15 @@ export type DiscussionStageStep =
   | RequestUserInputStageStep
   | PromptStageStep
   | ConditionalActivityStep
-  | EndOfPhaseReflectionStep;
+  | EndOfPhaseReflectionStep
+  | StartOfPhaseStep;
 
 export enum DiscussionStageStepType {
   SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
   REQUEST_USER_INPUT = "REQUEST_USER_INPUT",
   PROMPT = "PROMPT",
   CONDITIONAL = "CONDITIONAL",
+  START_OF_PHASE = "START_OF_PHASE",
   END_OF_PHASE_REFLECTION = "END_OF_PHASE_REFLECTION",
   NONE = "NONE",
 }
@@ -83,14 +87,24 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
   requireInputType: RequireInputType;
 }
 
-export interface PromptStageStep extends StageBuilderStep {
-  stepType: DiscussionStageStepType.PROMPT;
+export interface PromptConfiguration {
   promptText: string;
+  processPromptAs: ProcessPromptAs;
   responseFormat: string;
   includeChatLogContext: boolean;
   outputDataType: string;
   jsonResponseData?: string;
   customSystemRole: string;
+}
+
+export interface PromptStageStep extends StageBuilderStep {
+  stepType: DiscussionStageStepType.PROMPT;
+  prompts: PromptConfiguration[];
+}
+
+export interface StartOfPhaseStep extends StageBuilderStep {
+  stepType: DiscussionStageStepType.START_OF_PHASE;
+  phaseTitle: string;
 }
 // LogicOperation
 export enum NumericOperations {
@@ -116,17 +130,18 @@ export interface LogicStepConditional {
   checking: Checking;
   operation: NumericOperations;
   expectedValue: string;
-  targetStepId: string;
 }
 
 export interface ConditionalActivityStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.CONDITIONAL;
-  conditionals: LogicStepConditional[];
+  targetStepId: string;
+  conditionalsToMeet: LogicStepConditional[];
 }
 
 export interface EndOfPhaseReflectionStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION;
-  phaseTitle: string;
+  parentStartOfPhaseStepId: string;
+  skipReflectionCollection: boolean;
   message: string;
   questions: string[];
 }
@@ -141,7 +156,10 @@ export interface CurrentStage<T extends IStage> {
   stage: T;
   action?: () => void;
   beforeStart?: () => void;
-  getNextStage: (collectedData: CollectedDiscussionData) => IStage;
+  getNextStage: (
+    collectedData: CollectedDiscussionData,
+    globalGameStateData: GameStateData
+  ) => IStage;
 }
 
 export type DiscussionCurrentStage = CurrentStage<DiscussionStage>;

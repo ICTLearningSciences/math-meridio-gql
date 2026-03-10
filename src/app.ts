@@ -129,6 +129,7 @@ export function createApp(): Express {
         ? (jwtData.userEducationalRole as EducationalRole)
         : EducationalRole.STUDENT;
       const userId = jwtData ? jwtData.userId : undefined;
+      const userEmail = jwtData ? jwtData.userEmail : undefined;
       return {
         schema: publicSchema,
         graphiql: true,
@@ -139,6 +140,7 @@ export function createApp(): Express {
           userRole: userRole,
           userEducationalRole: userEducationalRole,
           userId: userId,
+          userEmail: userEmail,
         },
       };
     })

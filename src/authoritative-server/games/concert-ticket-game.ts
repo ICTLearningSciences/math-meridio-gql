@@ -4,7 +4,10 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-import { AbstractGameData } from "../llm-request/types";
+import {
+  AbstractGameData,
+  MathStandardsCompletionRequirements,
+} from "../llm-request/types";
 
 import {
   CurrentStage,
@@ -49,13 +52,34 @@ export class ConcertTicketSalesStateHandler extends AbstractGameData {
   name = "Concert Ticket Sales";
   stageList: CurrentStage<IStage>[] = [];
   persistTruthGlobalStateData = [
-    UNDERSTANDS_ALGORITHM_KEY,
     UNDERSTANDS_MULTIPLICATION_KEY,
     UNDERSTANDS_ADDITION_KEY,
     UNDERSTANDS_CONVERSION_RATE_KEY,
     UNDERSTANDS_TICKET_PRICES_KEY,
     BEST_STRATEGY_FOUND_KEY,
   ];
+
+  mathStandardsCompletedRequirements: MathStandardsCompletionRequirements = {
+    "Understands Addition of Revenue from Multiple Ticket Types": {
+      understands_addition: "true",
+    },
+    "Understands Multiplication to Calculate Revenue from Tickets Sold": {
+      understands_multiplication: "true",
+    },
+    "Understands Rates as Price per Ticket": {
+      understands_conversion_rate: "true",
+    },
+    "Understands How Ticket Price and Quantity Affect Total Revenue": {
+      understands_ticket_prices: "true",
+    },
+    "Understands How to Apply a Multi-Step Formula to Calculate Total Revenue":
+      {
+        understands_addition: "true",
+        understands_multiplication: "true",
+        understands_conversion_rate: "true",
+        understands_ticket_prices: "true",
+      },
+  };
 
   constructor(discussionStages: DiscussionStage[], skipStages?: boolean) {
     super();

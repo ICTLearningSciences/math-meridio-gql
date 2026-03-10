@@ -7,6 +7,7 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLObjectType, GraphQLString, GraphQLBoolean } from "graphql";
 import { EducationalRole } from "../models/Player";
 import ClassModel, { Class, ClassType } from "../models/classes/Class";
+import { canModifyClassroom } from "../../helpers";
 
 export const adjustClassroomArchiveStatus = {
   type: ClassType,
@@ -36,7 +37,7 @@ export const adjustClassroomArchiveStatus = {
       }
 
       // Ensure the user is the owner of the classroom
-      if (classroom.teacherId !== userId) {
+      if (!canModifyClassroom(userId, classroom)) {
         throw new Error("User is not the teacher of this classroom");
       }
 

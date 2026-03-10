@@ -7,12 +7,16 @@ The full terms of this copyright and license should always be found in the root 
 
 import mongoose from "mongoose";
 import { DiscussionStageStepType } from "../../../src/schemas/models/DiscussionStage/types";
-import { RequireInputType } from "../../../src/schemas/models/DiscussionStage/objects";
+import {
+  ProcessPromptAs,
+  RequireInputType,
+} from "../../../src/schemas/models/DiscussionStage/objects";
 const { ObjectId } = mongoose.Types;
 
 const player1Id = "5f748650f4b3f1b9f1f1f1f1";
 const room1Id = "5f748650f4b3f2b2f1f1f1f2";
 const room3Id = "5f748650f4b3f2b2f1f1f1f4";
+const room4Id = "5f748650f4b3f2b2f1f1f1f5";
 module.exports = {
   players: [
     {
@@ -93,6 +97,28 @@ module.exports = {
       },
       deletedRoom: false,
     },
+
+    {
+      _id: new ObjectId(room4Id),
+      name: "Basketball Room Test Math Standards Completed",
+      gameData: {
+        gameId: "basketball",
+        players: [player1Id],
+        chat: [],
+        globalStateData: {
+          curStageId: "Stage 1",
+          curStepId: "Step 1",
+          roomOwnerId: player1Id,
+          discussionData: {},
+          gameStateData: {
+            understands_addition: "true",
+            understands_multiplication: "true",
+          },
+        },
+        playersGameStateData: {},
+      },
+      deletedRoom: false,
+    },
   ],
 
   discussionstages: [
@@ -128,24 +154,30 @@ module.exports = {
             {
               stepId: "4",
               stepType: DiscussionStageStepType.PROMPT,
-              promptText: "Please generate a nickname for {{user_input_name}}",
-              responseFormat: "",
-              jsonResponseData: "stringified_json_response_data",
-              includeChatLogContext: true,
-              outputDataType: "JSON",
-              customSystemRole: "user",
+              prompts: [
+                {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                  promptText:
+                    "Please generate a nickname for {{user_input_name}}",
+                  responseFormat: "",
+                  jsonResponseData: "stringified_json_response_data",
+                  includeChatLogContext: true,
+                  outputDataType: "JSON",
+                  customSystemRole: "user",
+                },
+              ],
             },
             {
               stepId: "5",
               stepType: DiscussionStageStepType.CONDITIONAL,
               jumpToStepId: "6",
-              conditionals: [
+              targetStepId: "6",
+              conditionalsToMeet: [
                 {
                   stateDataKey: "nickname",
                   checking: "is",
                   operation: "equal",
                   expectedValue: "John",
-                  targetStepId: "6",
                 },
               ],
             },
@@ -198,6 +230,7 @@ module.exports = {
         },
       ],
     },
+
     {
       _id: new ObjectId("5ffdf1231ee2c22320b49e30"),
       clientId: "test-prompt-discussion-client-id",
@@ -231,20 +264,25 @@ module.exports = {
               stepId: "3",
               stepType: "PROMPT",
               jumpToStepId: "",
-              promptText: "Process the users prompt: {{user_input_prompt}}",
-              responseFormat: "",
-              includeChatLogContext: false,
-              outputDataType: "JSON",
-              jsonResponseData: JSON.stringify([
+              prompts: [
                 {
-                  clientId: "1",
-                  name: "prompt_response",
-                  type: "string",
-                  isRequired: true,
-                  additionalInfo: "Your response to the question",
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                  promptText: "Process the users prompt: {{user_input_prompt}}",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "JSON",
+                  jsonResponseData: JSON.stringify([
+                    {
+                      clientId: "1",
+                      name: "prompt_response",
+                      type: "string",
+                      isRequired: true,
+                      additionalInfo: "Your response to the question",
+                    },
+                  ]),
+                  customSystemRole: "",
                 },
-              ]),
-              customSystemRole: "",
+              ],
             },
             {
               lastStep: true,
@@ -257,6 +295,105 @@ module.exports = {
         },
       ],
     },
+
+    {
+      _id: new ObjectId("5ffdf1231ee2c22320b49a30"),
+      clientId: "test-multiple-prompt-discussion-client-id",
+      title: "Test Multiple Prompt Discussion",
+      stageType: "discussion",
+      description: "",
+      flowsList: [
+        {
+          clientId: new ObjectId("5ffdf1231ee2c61322b49e5f"),
+          name: "Test Multiple Prompt Flow",
+          steps: [
+            {
+              lastStep: false,
+              stepId: "1",
+              stepType: "REQUEST_USER_INPUT",
+              jumpToStepId: null,
+              message: "What is your single user message?",
+              saveResponseVariableName: "users_first_inputs",
+              disableFreeInput: false,
+              requireInputType:
+                RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
+              predefinedResponses: [],
+            },
+            {
+              lastStep: false,
+              stepId: "2",
+              stepType: "PROMPT",
+              jumpToStepId: "",
+              prompts: [
+                {
+                  processPromptAs: ProcessPromptAs.GROUP,
+                  promptText:
+                    "Here are the users first inputs: {{users_first_inputs}}",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "JSON",
+                  jsonResponseData: JSON.stringify([
+                    {
+                      clientId: "1",
+                      name: "group_prompt_response",
+                      type: "string",
+                      isRequired: true,
+                      additionalInfo: "Your response to the question",
+                    },
+                  ]),
+                  customSystemRole: "",
+                },
+              ],
+            },
+            {
+              lastStep: false,
+              stepId: "3",
+              stepType: "REQUEST_USER_INPUT",
+              jumpToStepId: null,
+              message: "Provide the single user response.",
+              saveResponseVariableName: "user_second_response",
+              disableFreeInput: false,
+              requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+              predefinedResponses: [],
+            },
+            {
+              lastStep: false,
+              stepId: "4",
+              stepType: "PROMPT",
+              jumpToStepId: "",
+              prompts: [
+                {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                  promptText:
+                    "Process the single user second response: {{user_second_response}}",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "JSON",
+                  jsonResponseData: JSON.stringify([
+                    {
+                      clientId: "1",
+                      name: "individually_prompt_response",
+                      type: "string",
+                      isRequired: true,
+                      additionalInfo: "Your response to the question",
+                    },
+                  ]),
+                  customSystemRole: "",
+                },
+              ],
+            },
+            {
+              lastStep: true,
+              stepId: "5",
+              stepType: "SYSTEM_MESSAGE",
+              jumpToStepId: "",
+              message: "{{second_prompt_response}}",
+            },
+          ],
+        },
+      ],
+    },
+
     {
       _id: new ObjectId("5ffdf1231ee2c22320b69e30"),
       clientId: "test-conditional-discussion-client-id",
@@ -290,38 +427,46 @@ module.exports = {
               stepType: DiscussionStageStepType.CONDITIONAL,
               lastStep: false,
               jumpToStepId: "",
-              conditionals: [
+              targetStepId: "5",
+              conditionalsToMeet: [
                 {
                   stateDataKey: "user_input_number",
                   checking: "VALUE",
                   operation: "==",
                   expectedValue: "1",
-                  targetStepId: "4",
-                },
-                {
-                  stateDataKey: "user_input_number",
-                  checking: "VALUE",
-                  operation: "==",
-                  expectedValue: "2",
-                  targetStepId: "5",
                 },
               ],
             },
             {
               stepId: "4",
-              stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
-              message: "You entered number 1",
-              jumpToStepId: "6",
+              stepType: DiscussionStageStepType.CONDITIONAL,
               lastStep: false,
+              jumpToStepId: "",
+              targetStepId: "6",
+              conditionalsToMeet: [
+                {
+                  stateDataKey: "user_input_number",
+                  checking: "VALUE",
+                  operation: "==",
+                  expectedValue: "2",
+                },
+              ],
             },
             {
               stepId: "5",
+              stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
+              message: "You entered number 1",
+              jumpToStepId: "7",
+              lastStep: false,
+            },
+            {
+              stepId: "6",
               stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
               message: "You entered number 2",
               lastStep: false,
             },
             {
-              stepId: "6",
+              stepId: "7",
               stepType: DiscussionStageStepType.SYSTEM_MESSAGE,
               message: "Thank you for playing!",
               lastStep: true,
@@ -426,6 +571,12 @@ module.exports = {
           name: "Test End of Phase Reflection Flow",
           steps: [
             {
+              stepId: "0",
+              stepType: DiscussionStageStepType.START_OF_PHASE,
+              phaseTitle: "Start of Phase",
+              lastStep: false,
+            },
+            {
               stepId: "1",
               stepType: DiscussionStageStepType.REQUEST_USER_INPUT,
               message: "Ready for reflection?",
@@ -438,7 +589,8 @@ module.exports = {
             {
               stepId: "2",
               stepType: DiscussionStageStepType.END_OF_PHASE_REFLECTION,
-              phaseTitle: "End of Phase Reflection",
+              parentStartOfPhaseStepId: "0",
+              skipReflectionCollection: false,
               message: "Thank you for participating!",
               questions: [
                 "What did you think of the activity?",

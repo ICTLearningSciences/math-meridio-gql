@@ -27,7 +27,7 @@ import {
 import RoomModel from "../../../src/schemas/models/Room";
 import { initializeGameRoom } from "../../../src/schemas/mutation/game-room-authoritative/create-new-game-room";
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
-import { addPlayerToRoom } from "../../../src/authoritative-server/authority/step-process-pure-functions";
+import { addPlayerToRoomAtomically } from "../../../src/authoritative-server/authority/step-process-pure-functions";
 const { ObjectId } = mongoose.Types;
 
 describe("leave a game room", () => {
@@ -63,7 +63,10 @@ describe("leave a game room", () => {
       initializeGameRoom(studentUserId, "unit-test", "", discussionStages, 0)
     );
     const player = await PlayerModel.findById(studentUserId);
-    const roomWithStudent = await addPlayerToRoom(newGameRoom, player);
+    const roomWithStudent = await addPlayerToRoomAtomically(
+      newGameRoom,
+      player
+    );
     roomId = roomWithStudent._id;
     const response = await request(app)
       .post("/graphql")

@@ -11,9 +11,25 @@ import ClassMembershipModel, {
   ClassMembership,
   ClassMembershipInputType,
 } from "../models/classes/ClassMembership";
+import { canModifyClassroom } from "../../helpers";
+import { initializeGroupGameRoomWithoutGameId } from "./game-room-authoritative/create-new-game-room";
+import RoomModel, { Room, RoomType } from "../models/Room";
+
+export interface AssignClassGroupsAndStartResponse {
+  updatedClassroom: Class;
+  createdRooms: Room[];
+}
+
+export const AssignClassGroupsAndStartResponseType = new GraphQLObjectType({
+  name: "AssignClassGroupsAndStartResponseType",
+  fields: {
+    updatedClassroom: { type: ClassType },
+    createdRooms: { type: new GraphQLList(RoomType) },
+  },
+});
 
 export const assignClassGroupsAndStart = {
-  type: ClassType,
+  type: AssignClassGroupsAndStartResponseType,
   args: {
     classId: { type: GraphQLString },
     groups: { type: new GraphQLList(ClassMembershipInputType) },
@@ -28,7 +44,7 @@ export const assignClassGroupsAndStart = {
       userId: string;
       userEducationalRole: EducationalRole;
     }
-  ): Promise<Class> => {
+  ): Promise<AssignClassGroupsAndStartResponse> => {
     try {
       const userId = context.userId;
       const { classId, groups } = args;
@@ -40,7 +56,7 @@ export const assignClassGroupsAndStart = {
       }
 
       // Ensure the user is the owner of the classroom
-      if (classroom.teacherId !== userId) {
+      if (!canModifyClassroom(userId, classroom)) {
         throw new Error("User is not the teacher of this classroom");
       }
 
@@ -64,12 +80,37 @@ export const assignClassGroupsAndStart = {
         }
       }
 
+      const classMembershipsByGroupId = groups.reduce((acc, membership) => {
+        if (!acc[membership.groupId]) {
+          acc[membership.groupId] = [];
+        }
+        acc[membership.groupId].push(membership);
+        return acc;
+      }, {} as Record<number, ClassMembership[]>);
+
+      const roomsToCreate: Room[] = [];
+      for (const [groupId, memberships] of Object.entries(
+        classMembershipsByGroupId
+      )) {
+        const gameRoom = initializeGroupGameRoomWithoutGameId(
+          userId,
+          Number(groupId),
+          memberships.map((m) => m.userId),
+          classroom._id
+        );
+        roomsToCreate.push(gameRoom);
+      }
+      const createdRooms = await RoomModel.create(roomsToCreate);
+
       // Update start date
       classroom.startedAt = new Date();
       const updatedClassroom = await classroom.save();
 
       // Return updated classroom
-      return updatedClassroom;
+      return {
+        updatedClassroom,
+        createdRooms,
+      };
     } catch (error) {
       throw new Error(error);
     }

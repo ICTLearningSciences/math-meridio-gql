@@ -7,7 +7,6 @@ The full terms of this copyright and license should always be found in the root 
 import {
   AbstractGameData,
   MathStandardsCompletionRequirements,
-  SimulationStage,
 } from "../llm-request/types";
 
 import {
@@ -16,44 +15,31 @@ import {
   IStage,
 } from "../../schemas/models/DiscussionStage/types";
 
-export const TEST_SIMULATION_DISCUSSION_CLIENT_ID =
-  "test-simulation-discussion-client-id";
+export const TEST_MULTIPLE_PROMPT_DISCUSSION_CLIENT_ID =
+  "test-multiple-prompt-discussion-client-id";
 
-export class UnitTestSimulationGame extends AbstractGameData {
-  id = "unit-test-simulation";
-  name = "Unit Test Simulation";
+export class UnitTestMultiplePromptGame extends AbstractGameData {
+  id = "unit-test-multiple-prompt";
+  name = "Unit Test Multiple Prompt";
   stageList: CurrentStage<IStage>[] = [];
   persistTruthGlobalStateData: string[] = [];
   mathStandardsCompletedRequirements: MathStandardsCompletionRequirements = {};
 
   constructor(discussionStages: DiscussionStage[]) {
     super();
-    const simulationDiscussionStage = discussionStages.find(
-      (s) => s.clientId === TEST_SIMULATION_DISCUSSION_CLIENT_ID
+    const mutliplePromptDiscussionStage = discussionStages.find(
+      (s) => s.clientId === TEST_MULTIPLE_PROMPT_DISCUSSION_CLIENT_ID
     );
 
-    if (!simulationDiscussionStage) {
+    if (!mutliplePromptDiscussionStage) {
       throw new Error("missing discussion stage");
     }
-    const simulationStage = {
-      _id: "wait-for-simulation",
-      clientId: "wait-for-simulation",
-      stageType: "simulation",
-    } as SimulationStage;
-
     const stageList: CurrentStage<IStage>[] = [
       {
-        id: "simulation-discussion",
-        stage: simulationDiscussionStage,
+        id: "mutliple-prompt-discussion",
+        stage: mutliplePromptDiscussionStage,
         getNextStage: () => {
-          return simulationStage;
-        },
-      },
-      {
-        id: "wait-for-simulation",
-        stage: simulationStage,
-        getNextStage: () => {
-          return simulationDiscussionStage;
+          return mutliplePromptDiscussionStage;
         },
       },
     ];

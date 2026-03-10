@@ -15,6 +15,7 @@ import { getToken, createUser, createClassroom } from "../../helpers";
 import {
   fullRoomData,
   joinGameRoomMutation,
+  PlayerComputedState,
   UserRole,
 } from "../../../src/schemas/types/types";
 import {
@@ -89,6 +90,17 @@ describe("join a game room", () => {
         (player: PlayerDocument) => player._id
       )
     ).to.include(studentUserId);
+
+    expect(
+      response.body.data.joinGameRoom.gameData.playersStatusRecord[
+        studentUserId
+      ]
+    ).to.exist;
+    expect(
+      response.body.data.joinGameRoom.gameData.playersStatusRecord[
+        studentUserId
+      ].computedState
+    ).to.equal(PlayerComputedState.ACTIVE);
   });
 
   it(`fails if no access token`, async () => {

@@ -12,6 +12,15 @@ import { Request } from "express";
 import mongoose from "mongoose";
 dotenv.config();
 import jwt from "jsonwebtoken";
+import { PlayerComputedState } from "./schemas/types/types";
+import { PlayerStatusData } from "./schemas/types/types";
+import { Class } from "./schemas/models/classes/Class";
+import { getGameById } from "./authoritative-server/games/game-helpers";
+import {
+  DiscussionStage,
+  DiscussionStageStepType,
+  isDiscussionStage,
+} from "./schemas/models/DiscussionStage/types";
 
 const queryPayloadSchema = {
   type: "object",
@@ -64,6 +73,7 @@ export interface JwtData {
   userId: string;
   userRole: string;
   userEducationalRole: string;
+  userEmail: string;
 }
 
 export async function getDataFromRequest(
@@ -82,10 +92,64 @@ export async function getDataFromRequest(
         userId: decodedJwt.id,
         userRole: decodedJwt.userRole,
         userEducationalRole: decodedJwt.educationalRole,
+        userEmail: decodedJwt.email,
       };
     }
     return undefined;
   } catch (err) {
     return undefined;
   }
+}
+
+export const PLAYER_INACTIVE_THRESHOLD_MS = 30000;
+
+export function getPlayerComputedState(
+  playerStatus: PlayerStatusData
+): PlayerComputedState {
+  if (playerStatus.lastHeartbeatAt === undefined) {
+    return PlayerComputedState.NEVER_ACCESSED_ACTIVITY;
+  }
+  if (playerStatus.pausedByAdmin) {
+    return PlayerComputedState.PAUSED_BY_ADMIN;
+  }
+  if (playerStatus.reportedAwayStatus.isAway) {
+    if (playerStatus.reportedAwayStatus.reportedBy === "STUDENT") {
+      return PlayerComputedState.REPORTED_AWAY_BY_OTHER_PLAYER;
+    } else if (
+      playerStatus.reportedAwayStatus.reportedBy === "FRONTEND_SYSTEM"
+    ) {
+      return PlayerComputedState.REPORTED_AWAY_BY_FRONTEND_DETECTION;
+    }
+  }
+  const now = new Date();
+  const timeSinceLastHeartbeat =
+    now.getTime() - playerStatus.lastHeartbeatAt.getTime();
+  if (timeSinceLastHeartbeat > PLAYER_INACTIVE_THRESHOLD_MS) {
+    return PlayerComputedState.INACTIVE;
+  }
+  return PlayerComputedState.ACTIVE;
+}
+
+export function canModifyClassroom(userId: string, classroom: Class): boolean {
+  return (
+    classroom.teacherId === userId ||
+    classroom.sharedWithInstructorIds.includes(userId)
+  );
+}
+
+export function getStartingPhasesInOrderForGame(
+  gameId: string,
+  discussionStages: DiscussionStage[]
+): string[] {
+  const game = getGameById(gameId, discussionStages);
+  const allDiscussionStages: DiscussionStage[] = game.stageList
+    .map((s) => s.stage)
+    .filter((s) => isDiscussionStage(s)) as any[];
+  const allDiscussionSteps = allDiscussionStages
+    .flatMap((stage) => stage.flowsList)
+    .flatMap((flowItem) => flowItem.steps);
+  const allStartOfPhaseSteps = allDiscussionSteps.filter(
+    (step) => step.stepType === DiscussionStageStepType.START_OF_PHASE
+  );
+  return allStartOfPhaseSteps.map((step) => step.stepId);
 }

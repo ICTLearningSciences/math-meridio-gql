@@ -9,9 +9,12 @@ import { GraphQLObjectType, GraphQLSchema } from "graphql";
 import fetchRoom from "./query/fetch-room";
 import fetchRooms from "./query/fetch-rooms";
 import deleteRoom from "./mutation/room-delete";
+import reportPlayerAway from "./mutation/report-player-away";
+import clearAwayStatus from "./mutation/clear-away-status";
 import renameRoom from "./mutation/room-rename";
 import joinGameRoom from "./mutation/join-game-room";
 import leaveGameRoom from "./mutation/leave-game-room";
+import assignGameToGameRoom from "./mutation/assign-game-to-game-room";
 import fetchPlayer from "./query/fetch-player";
 import fetchPlayers from "./query/fetch-players";
 import addOrUpdatePlayer from "./mutation/add-or-update-player";
@@ -26,6 +29,7 @@ import loginGoogle from "./mutation/login-google";
 import refreshAccessToken from "./mutation/refresh-access-token";
 
 import createClassroom from "./mutation/create-classroom";
+import setPlayerPauseStatus from "./mutation/set-player-pause-status";
 import createNewClassInviteCode from "./mutation/create-new-class-invite-code";
 import revokeClassInviteCode from "./mutation/revoke-class-invite-code";
 import joinClassroom from "./mutation/join-classroom";
@@ -48,7 +52,8 @@ import assignStudentToGroup from "./mutation/assign-student-to-group";
 import assignClassGroupsAndStart from "./mutation/assign-class-groups-and-start";
 import submitGamePhaseReflection from "./mutation/submit-game-phase-reflection";
 import submitReadyToContinue from "./mutation/room-sumbit-ready-to-continue";
-import fetchGamePhaseReflections from "./query/fetch-game-phase-reflections";
+import createClassMembership from "./mutation/create-class-membership";
+import shareClassroomWithInstructor from "./mutation/share-classroom-with-instructor";
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -61,7 +66,6 @@ const PublicRootQuery = new GraphQLObjectType({
     fetchStudentDataHydration,
     fetchRoomHeartbeats,
     fetchGamesList,
-    fetchGamePhaseReflections,
   },
 });
 
@@ -69,9 +73,14 @@ const PublicMutation = new GraphQLObjectType({
   name: "PublicMutation",
   fields: {
     deleteRoom,
+    reportPlayerAway,
+    clearAwayStatus,
     renameRoom,
+    setPlayerPauseStatus,
     addOrUpdatePlayer,
     addOrUpdateDiscussionStage,
+    createClassMembership,
+    shareClassroomWithInstructor,
     loginGoogle,
     refreshAccessToken,
     createClassroom,
@@ -92,6 +101,7 @@ const PublicMutation = new GraphQLObjectType({
     testLlmCall,
     sendMessageToGameRoom,
     joinGameRoom,
+    assignGameToGameRoom,
     updatePlayerGameStateData,
     leaveGameRoom,
     pingGameRoomProcess,
