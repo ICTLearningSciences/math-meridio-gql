@@ -169,7 +169,6 @@ module.exports = {
                   includeMessageContext: {
                     type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                     stepIds: [],
-                    numRecentMessages: 0,
                     includeMessagesFromOtherUsers: false,
                   },
                 },
@@ -293,7 +292,7 @@ module.exports = {
                   includeMessageContext: {
                     type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                     stepIds: [],
-                    numRecentMessages: 0,
+
                     includeMessagesFromOtherUsers: false,
                   },
                 },
@@ -361,7 +360,7 @@ module.exports = {
                   includeMessageContext: {
                     type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                     stepIds: [],
-                    numRecentMessages: 0,
+
                     includeMessagesFromOtherUsers: false,
                   },
                 },
@@ -405,7 +404,7 @@ module.exports = {
                   includeMessageContext: {
                     type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                     stepIds: [],
-                    numRecentMessages: 0,
+
                     includeMessagesFromOtherUsers: false,
                   },
                 },
@@ -688,7 +687,7 @@ module.exports = {
               predefinedResponses: [],
             },
             {
-              lastStep: false,
+              lastStep: true,
               stepId: "2",
               stepType: "PROMPT",
               jumpToStepId: "",
@@ -707,8 +706,154 @@ module.exports = {
                   includeMessageContext: {
                     type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                     stepIds: [],
-                    numRecentMessages: 0,
+
                     includeMessagesFromOtherUsers: false,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+
+    {
+      _id: new ObjectId("5ffdf1231ee2c21320c49e30"),
+      clientId: "test-include-message-context-discussion-client-id",
+      title: "Test Include Message Context Discussion",
+      stageType: "discussion",
+      description: "",
+      flowsList: [
+        {
+          clientId: new ObjectId("5ffdf1211ee2d62322b49e5f"),
+          name: "Test Include Message Context Flow",
+          steps: [
+            {
+              lastStep: false,
+              stepId: "1",
+              stepType: "REQUEST_USER_INPUT",
+              jumpToStepId: null,
+              message: "What is your name?",
+              saveResponseVariableName: "user_input_name",
+              disableFreeInput: false,
+              requireInputType:
+                RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
+              predefinedResponses: [],
+            },
+
+            {
+              lastStep: false,
+              stepId: "2",
+              stepType: "SYSTEM_MESSAGE",
+              message: "Thank you!",
+              jumpToStepId: null,
+            },
+
+            {
+              lastStep: false,
+              stepId: "3",
+              stepType: "REQUEST_USER_INPUT",
+              jumpToStepId: null,
+              message: "What is your favorite color?",
+              saveResponseVariableName: "user_input_color",
+              disableFreeInput: false,
+              requireInputType:
+                RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
+              predefinedResponses: [],
+            },
+
+            {
+              lastStep: true,
+              stepId: "4",
+              stepType: "PROMPT",
+              jumpToStepId: "",
+              prompts: [
+                {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                  promptText: "Include no messages",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "TEXT",
+                  // This will be populated by the system based on the learning objectives
+                  jsonResponseData: JSON.stringify([]),
+                  customSystemRole: "",
+                  analyzeLearningObjectives: true,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.NONE,
+                    stepIds: [],
+                    includeMessagesFromOtherUsers: true,
+                  },
+                },
+
+                {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                  promptText:
+                    "Include all messages including other users messages",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "TEXT",
+                  // This will be populated by the system based on the learning objectives
+                  jsonResponseData: JSON.stringify([]),
+                  customSystemRole: "",
+                  analyzeLearningObjectives: true,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                    stepIds: [],
+
+                    includeMessagesFromOtherUsers: true,
+                  },
+                },
+
+                {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                  promptText:
+                    "Include all messages without other users messages",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "TEXT",
+                  // This will be populated by the system based on the learning objectives
+                  jsonResponseData: JSON.stringify([]),
+                  customSystemRole: "",
+                  analyzeLearningObjectives: true,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                    stepIds: [],
+
+                    includeMessagesFromOtherUsers: false,
+                  },
+                },
+
+                {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                  promptText: "From input step 3 only",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "TEXT",
+                  // This will be populated by the system based on the learning objectives
+                  jsonResponseData: JSON.stringify([]),
+                  customSystemRole: "",
+                  analyzeLearningObjectives: true,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.FROM_INPUT_STEPS,
+                    stepIds: ["3"],
+                    includeMessagesFromOtherUsers: true,
+                  },
+                },
+
+                {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                  promptText: "From input step 1 and 3",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "TEXT",
+                  // This will be populated by the system based on the learning objectives
+                  jsonResponseData: JSON.stringify([]),
+                  customSystemRole: "",
+                  analyzeLearningObjectives: true,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.FROM_INPUT_STEPS,
+                    stepIds: ["1", "3"],
+                    includeMessagesFromOtherUsers: true,
                   },
                 },
               ],

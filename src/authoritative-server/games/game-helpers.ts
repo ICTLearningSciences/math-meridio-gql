@@ -14,6 +14,7 @@ import { UnitTestSimulationGame } from "./unit-test-simulation-game";
 import { UnitTestEndOfPhaseReflectionGame } from "./unit-test-end-of-phase";
 import { UnitTestMultiplePromptGame } from "./unit-test-multiple-prompt-game";
 import { UnitTestLearningObjectivesGame } from "./unit-test-lo-game";
+import { UnitTestChatContextGame } from "./unit-test-chat-context-game";
 
 export const WAIT_FOR_SIMULATION_STAGE_CLIENT_ID = "wait-for-simulation";
 
@@ -31,6 +32,8 @@ export function getGameById(
       return new UnitTestGame(discussionStages);
     case "unit-test-multiple-users":
       return new UnitTestMultipleUsersGame(discussionStages);
+    case "unit-test-chat-context":
+      return new UnitTestChatContextGame(discussionStages);
     case "unit-test-simulation":
       return new UnitTestSimulationGame(discussionStages);
     case "unit-test-end-of-phase":

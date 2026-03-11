@@ -53,6 +53,7 @@ import {
   submitReadyToContinue,
   viewGameRoomSimulation,
 } from "./helpers/game_room_controllers";
+import { questionPairPrefix } from "../../../src/helpers/chatContextGenerator";
 
 describe("full room lifecycle", () => {
   let app: Express;
@@ -2671,5 +2672,262 @@ describe("full room lifecycle", () => {
       currentRoom?.gameData.playersGameStateData[studentTwoId]
         .test_learning_objective_2
     ).to.equal("true");
+
+    // ENSURE the json response data in the requests is set correctly
+    expect(studentOneCall?.args[0].responseFormat).to.exist;
+    expect(studentOneCall?.args[0].responseFormat).to.include(
+      "test_learning_objective_1"
+    );
+    expect(studentOneCall?.args[0].responseFormat).to.include(
+      "test_learning_objective_2"
+    );
+    expect(studentTwoCall?.args[0].responseFormat).to.exist;
+    expect(studentTwoCall?.args[0].responseFormat).to.include(
+      "test_learning_objective_1"
+    );
+    expect(studentTwoCall?.args[0].responseFormat).to.include(
+      "test_learning_objective_2"
+    );
+  });
+
+  it("includeMessageContext includes proper data when set", async () => {
+    // 1. create room with two students + ping
+    const ownerStudentId = new ObjectId().toString();
+    const studentTwoId = new ObjectId().toString();
+
+    await createUser(ownerStudentId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(studentTwoId, UserRole.USER, EducationalRole.STUDENT);
+
+    const ownerStudentToken = await getToken(
+      ownerStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const studentTwoToken = await getToken(
+      studentTwoId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+
+    const createNewGameRoomResponse = await createNewGameRoom(
+      app,
+      "unit-test-chat-context",
+      ownerStudentToken
+    );
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
+    const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
+
+    // Add studentTwo to the room
+    const joinStudentTwoResponse = await joinGameRoom(
+      app,
+      newRoomId,
+      studentTwoToken
+    );
+    expect(joinStudentTwoResponse.status).to.equal(200);
+    expect(joinStudentTwoResponse.body.data.joinGameRoom).to.exist;
+
+    // Ping to ensure room is initialized
+    const initialPingResponse = await pingRoomProcess(
+      app,
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(initialPingResponse.status).to.equal(200);
+
+    // ENSURE we are at stepId 1 request user input
+    let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+
+    // 2. send message from both students + ping
+    const ownerFirstMessageResponse = await sendMessageToGameRoom(
+      app,
+      newRoomId,
+      "Owner's first input",
+      "session1",
+      ownerStudentToken
+    );
+    expect(ownerFirstMessageResponse.status).to.equal(200);
+
+    const studentTwoFirstMessageResponse = await sendMessageToGameRoom(
+      app,
+      newRoomId,
+      "Student Two's first input",
+      "session2",
+      studentTwoToken
+    );
+    expect(studentTwoFirstMessageResponse.status).to.equal(200);
+
+    const pingAfterFirstMessages = await pingRoomProcess(
+      app,
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterFirstMessages.status).to.equal(200);
+
+    // ENSURE we are at stepId 3 request user input
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("3");
+
+    // setup llmRequest mock, response doesn't matter for each one.
+    syncLlmRequestStub.resolves({
+      answer: JSON.stringify({
+        test_learning_objective_1: "true",
+        test_learning_objective_2: "true",
+      }),
+    } as AiServicesResponseTypes);
+
+    // 3. send message from both students + ping
+
+    const ownerSecondMessageResponse = await sendMessageToGameRoom(
+      app,
+      newRoomId,
+      "Owner's second input",
+      "session1",
+      ownerStudentToken
+    );
+    expect(ownerSecondMessageResponse.status).to.equal(200);
+
+    const studentTwoSecondMessageResponse = await sendMessageToGameRoom(
+      app,
+      newRoomId,
+      "Student Two's second input",
+      "session2",
+      studentTwoToken
+    );
+    expect(studentTwoSecondMessageResponse.status).to.equal(200);
+
+    const pingAfterSecondMessages = await pingRoomProcess(
+      app,
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterSecondMessages.status).to.equal(200);
+
+    // ENSURE we are at stepId 1 request user input
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+
+    // Now we are going to be validating the text content that was included in each specific prompt request.
+
+    // First, grab each request made for each specific prompt based on if that request had the prompText for the target prompt in its list of prompts.
+    const noMessagePromptText = "Include no messages";
+    const allMessagesPromptText =
+      "Include all messages including other users messages";
+    const allMessagesWithoutOtherUsersPromptText =
+      "Include all messages without other users messages";
+    const fromInputStepsPromptText = "From input step 3 only";
+    const fromInputStepsBothPromptText = "From input step 1 and 3";
+    const allCalls = syncLlmRequestStub.getCalls();
+    const noMessageCall = allCalls.find((c) =>
+      c.args[0].prompts.find((p: any) =>
+        p.promptText.includes(noMessagePromptText)
+      )
+    );
+    const allMessagesCall = allCalls.find((c) =>
+      c.args[0].prompts.find((p: any) =>
+        p.promptText.includes(allMessagesPromptText)
+      )
+    );
+    const allMessagesWithoutOtherUsersCall = allCalls.find((c) =>
+      c.args[0].prompts.find((p: any) =>
+        p.promptText.includes(allMessagesWithoutOtherUsersPromptText)
+      )
+    );
+    const fromInputStepsCall = allCalls.find((c) =>
+      c.args[0].prompts.find((p: any) =>
+        p.promptText.includes(fromInputStepsPromptText)
+      )
+    );
+    const fromInputStepsBothCall = allCalls.find((c) =>
+      c.args[0].prompts.find((p: any) =>
+        p.promptText.includes(fromInputStepsBothPromptText)
+      )
+    );
+
+    // Confirm each request was found.
+    expect(noMessageCall).to.exist;
+    expect(allMessagesCall).to.exist;
+    expect(allMessagesWithoutOtherUsersCall).to.exist;
+    expect(fromInputStepsCall).to.exist;
+    expect(fromInputStepsBothCall).to.exist;
+
+    // Confirm the noMessageCall request does NOT include any messages from any users
+    expect(
+      noMessageCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes(questionPairPrefix)
+      )
+    ).to.not.exist;
+    expect(
+      noMessageCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Owner's first input")
+      )
+    ).to.not.exist;
+    expect(
+      noMessageCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Student Two's first input")
+      )
+    ).to.not.exist;
+
+    // Confirm the allMessagesCall request includes the owner's first input and the student two's first input
+    let messageContextString = allMessagesCall?.args[0].prompts.find((p: any) =>
+      p.promptText.includes(questionPairPrefix)
+    )?.promptText;
+    expect(messageContextString).to.exist;
+    expect(messageContextString).to.include(questionPairPrefix);
+    expect(messageContextString).to
+      .include(`The student(s) were asked this question: What is your name?
+And these were their responses:
+User: Owner's first input
+User: Student Two's first input
+
+Then they were asked: What is your favorite color?
+And these were their responses:
+User: Owner's second input
+User: Student Two's second input`);
+
+    // Confirm the allMessagesWithoutOtherUsersCall request only includes one of the user's inputs
+    console.log(
+      "allMessagesWithoutOtherUsersCall",
+      JSON.stringify(allMessagesWithoutOtherUsersCall?.args[0].prompts, null, 2)
+    );
+    messageContextString =
+      allMessagesWithoutOtherUsersCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes(questionPairPrefix)
+      )?.promptText;
+    expect(messageContextString).to.exist;
+    const isOwnersStringPresent = messageContextString?.includes(
+      "Owner's first input"
+    );
+    const isStudentsStringPresent = messageContextString?.includes(
+      "Student Two's first input"
+    );
+    expect(isOwnersStringPresent || isStudentsStringPresent).to.be.true;
+    expect(isOwnersStringPresent !== isStudentsStringPresent).to.be.true;
+
+    // Confirm the fromInputStepsCall request includes the owner's second input and the student two's second input and NOT the first input
+    messageContextString = fromInputStepsCall?.args[0].prompts.find((p: any) =>
+      p.promptText.includes(questionPairPrefix)
+    )?.promptText;
+    expect(messageContextString).to.exist;
+    expect(messageContextString).to.include(questionPairPrefix);
+    expect(messageContextString).to.include("Owner's second input");
+    expect(messageContextString).to.include("Student Two's second input");
+    expect(messageContextString).to.not.include("Owner's first input");
+    expect(messageContextString).to.not.include("Student Two's first input");
+
+    // Confirm the fromInputStepsBothCall request includes the owner's first input, second input, and the student two's first input and second input
+    messageContextString = fromInputStepsBothCall?.args[0].prompts.find(
+      (p: any) => p.promptText.includes(questionPairPrefix)
+    )?.promptText;
+    expect(messageContextString).to.exist;
+    expect(messageContextString).to.include(questionPairPrefix);
+    expect(messageContextString).to.include("Owner's first input");
+    expect(messageContextString).to.include("Owner's second input");
+    expect(messageContextString).to.include("Student Two's first input");
+    expect(messageContextString).to.include("Student Two's second input");
   });
 });

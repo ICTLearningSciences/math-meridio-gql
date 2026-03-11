@@ -10,7 +10,6 @@ import {
   GraphQLBoolean,
   GraphQLList,
   GraphQLInputObjectType,
-  GraphQLInt,
 } from "graphql";
 import { Schema } from "mongoose";
 import { DiscussionStageStepType } from "./types";
@@ -187,7 +186,7 @@ export const IncludeMessageContextType = new GraphQLObjectType({
   fields: () => ({
     type: { type: GraphQLString, enum: IncludeMessagesContextTypeEnum },
     stepIds: { type: GraphQLList(GraphQLString) },
-    numRecentMessages: { type: GraphQLInt },
+    // numRecentMessages: { type: GraphQLInt },
     includeMessagesFromOtherUsers: { type: GraphQLBoolean },
   }),
 });
@@ -223,7 +222,7 @@ export const IncludeMessageContextTypeInput = new GraphQLInputObjectType({
   fields: () => ({
     type: { type: GraphQLString, enum: IncludeMessagesContextTypeEnum },
     stepIds: { type: GraphQLList(GraphQLString) },
-    numRecentMessages: { type: GraphQLInt },
+    // numRecentMessages: { type: GraphQLInt },
     includeMessagesFromOtherUsers: { type: GraphQLBoolean },
   }),
 });
@@ -387,15 +386,16 @@ export enum ProcessPromptAs {
 }
 
 export enum IncludeMessagesContextTypeEnum {
+  NONE = "NONE",
   ALL_MESSAGES = "ALL_MESSAGES",
-  NUM_RECENT_MESSAGES = "NUM_RECENT_MESSAGES",
+  // NUM_RECENT_MESSAGES = "NUM_RECENT_MESSAGES",
   FROM_INPUT_STEPS = "FROM_INPUT_STEPS",
 }
 
 export const IncludeMessageContextSchema = new Schema({
   type: { type: String, enum: IncludeMessagesContextTypeEnum },
   stepIds: { type: [String], default: [] },
-  numRecentMessages: { type: Number, default: 10 },
+  // numRecentMessages: { type: Number, default: 10 },
   includeMessagesFromOtherUsers: { type: Boolean, default: false },
 });
 

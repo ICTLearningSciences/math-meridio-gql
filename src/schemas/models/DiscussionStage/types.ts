@@ -94,7 +94,7 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
 export interface IncludeMessageContext {
   type: IncludeMessagesContextTypeEnum;
   stepIds: string[];
-  numRecentMessages: number;
+  // numRecentMessages: number;
   includeMessagesFromOtherUsers: boolean;
 }
 

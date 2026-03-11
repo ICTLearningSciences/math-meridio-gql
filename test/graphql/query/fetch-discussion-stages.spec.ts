@@ -89,7 +89,6 @@ export const fullDiscussionStageQueryData = `
                                 includeMessageContext{
                                   type
                                   stepIds
-                                  numRecentMessages
                                   includeMessagesFromOtherUsers
                                 }
                               }

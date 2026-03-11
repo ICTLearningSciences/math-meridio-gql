@@ -90,7 +90,6 @@ describe("update discussion stage", () => {
                 includeMessageContext: {
                   type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                   stepIds: [],
-                  numRecentMessages: 0,
                   includeMessagesFromOtherUsers: false,
                 },
               },
@@ -176,7 +175,6 @@ describe("update discussion stage", () => {
                 includeMessageContext: {
                   type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                   stepIds: [],
-                  numRecentMessages: 0,
                   includeMessagesFromOtherUsers: false,
                 },
               },
@@ -272,7 +270,6 @@ describe("update discussion stage", () => {
                 includeMessageContext: {
                   type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                   stepIds: [],
-                  numRecentMessages: 0,
                   includeMessagesFromOtherUsers: false,
                 },
               },
@@ -424,7 +421,6 @@ describe("update discussion stage", () => {
                                   includeMessageContext{
                                     type
                                     stepIds
-                                    numRecentMessages
                                     includeMessagesFromOtherUsers
                                   }
                                 }

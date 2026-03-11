@@ -38,7 +38,11 @@ import {
   UpdatePlayerGameStateDataRoomAtomicAction,
   AddMessageRoomAtomicAction,
 } from "../llm-request/types";
-import { ProcessPromptAs } from "../../schemas/models/DiscussionStage/objects";
+import {
+  IncludeMessagesContextTypeEnum,
+  ProcessPromptAs,
+} from "../../schemas/models/DiscussionStage/objects";
+import { generateChatContext } from "../../helpers/chatContextGenerator";
 
 export async function processPromptStep(
   gameData: GameData,
@@ -137,6 +141,22 @@ async function processGroupPrompt(
   });
 
   if (
+    promptConfig.includeMessageContext?.type !==
+    IncludeMessagesContextTypeEnum.NONE
+  ) {
+    const chatContext = generateChatContext(
+      gameData,
+      "",
+      false,
+      promptConfig.includeMessageContext
+    );
+    llmRequest.prompts.push({
+      promptText: chatContext,
+      promptRole: PromptRoles.SYSTEM,
+    });
+  }
+
+  if (
     promptConfig.jsonResponseData &&
     promptConfig.outputDataType === PromptOutputTypes.JSON
   ) {
@@ -224,11 +244,29 @@ async function processIndividualPrompts(
   sessionId: string,
   activePlayerData: PlayerDocument[]
 ): Promise<AtomicRoomModiticationAction[]> {
-  // Check if this is an analyze learning objectives prompt
-  if (promptConfig.analyzeLearningObjectives) {
+  try {
+    // Check if this is an analyze learning objectives prompt
+    if (promptConfig.analyzeLearningObjectives) {
+      const individualResults = await Promise.all(
+        activePlayerData.map(async (player) => {
+          return processAnalyzeLearningObjectivePrompt(
+            promptConfig,
+            player,
+            gameData,
+            curStep,
+            targetAiServiceModel,
+            executePrompt,
+            sessionId
+          );
+        })
+      );
+      return individualResults.flat();
+    }
+
+    // Process each student individually in parallel
     const individualResults = await Promise.all(
       activePlayerData.map(async (player) => {
-        return processAnalyzeLearningObjectivePrompt(
+        return processSingleStudentPrompt(
           promptConfig,
           player,
           gameData,
@@ -239,26 +277,13 @@ async function processIndividualPrompts(
         );
       })
     );
+
+    // Flatten and return all actions
     return individualResults.flat();
+  } catch (error) {
+    console.error("Error processing individual prompts: ", error);
+    return [];
   }
-
-  // Process each student individually in parallel
-  const individualResults = await Promise.all(
-    activePlayerData.map(async (player) => {
-      return processSingleStudentPrompt(
-        promptConfig,
-        player,
-        gameData,
-        curStep,
-        targetAiServiceModel,
-        executePrompt,
-        sessionId
-      );
-    })
-  );
-
-  // Flatten and return all actions
-  return individualResults.flat();
 }
 
 // Process a single student's prompt for analyzing learning objectives
@@ -274,14 +299,15 @@ async function processAnalyzeLearningObjectivePrompt(
   ) => Promise<AiServicesResponseTypes>,
   sessionId: string
 ): Promise<AtomicRoomModiticationAction[]> {
+  const playerId = String(player._id);
   console.log(
     "PROCESSING analyzeLearningObjectivePrompt for player: ",
-    player.name
+    playerId
   );
   const playerActions: AtomicRoomModiticationAction[] = [];
 
   // Build student-specific state data (player data takes precedence over global)
-  const studentStateData = buildStudentStateData(player._id, gameData);
+  const studentStateData = buildStudentStateData(playerId, gameData);
 
   // Replace variables with student-specific data
   const promptText = replaceStoredDataInString(
@@ -314,11 +340,19 @@ async function processAnalyzeLearningObjectivePrompt(
     });
   }
 
-  if (promptConfig.includeChatLogContext) {
+  if (
+    promptConfig.includeMessageContext?.type !==
+    IncludeMessagesContextTypeEnum.NONE
+  ) {
+    const chatContext = generateChatContext(
+      gameData,
+      playerId,
+      true,
+      promptConfig.includeMessageContext
+    );
+    console.log("chatContext generated", chatContext);
     llmRequest.prompts.push({
-      promptText: `Current state of chat log between user and system: ${chatLogToString(
-        gameData.chat
-      )}`,
+      promptText: chatContext,
       promptRole: PromptRoles.SYSTEM,
     });
   }
@@ -372,7 +406,7 @@ async function processAnalyzeLearningObjectivePrompt(
 
     playerActions.push({
       actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
-      playerId: player._id,
+      playerId: playerId,
       newData: newDataToAdd,
     } as UpdatePlayerGameStateDataRoomAtomicAction);
 
@@ -401,10 +435,11 @@ async function processSingleStudentPrompt(
   ) => Promise<AiServicesResponseTypes>,
   sessionId: string
 ): Promise<AtomicRoomModiticationAction[]> {
+  const playerId = String(player._id);
   const playerActions: AtomicRoomModiticationAction[] = [];
 
   // Build student-specific state data (player data takes precedence over global)
-  const studentStateData = buildStudentStateData(player._id, gameData);
+  const studentStateData = buildStudentStateData(playerId, gameData);
 
   // Replace variables with student-specific data
   const promptText = replaceStoredDataInString(
@@ -430,10 +465,14 @@ async function processSingleStudentPrompt(
   };
 
   if (promptConfig.includeChatLogContext) {
+    const chatContext = generateChatContext(
+      gameData,
+      playerId,
+      true,
+      promptConfig.includeMessageContext
+    );
     llmRequest.prompts.push({
-      promptText: `Current state of chat log between user and system: ${chatLogToString(
-        gameData.chat
-      )}`,
+      promptText: chatContext,
       promptRole: PromptRoles.SYSTEM,
     });
   }
@@ -492,7 +531,7 @@ async function processSingleStudentPrompt(
 
       playerActions.push({
         actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
-        playerId: player._id,
+        playerId: playerId,
         newData: newDataToAdd,
       } as UpdatePlayerGameStateDataRoomAtomicAction);
 
@@ -581,7 +620,8 @@ function buildAggregatedStateDataForGroup(
     const studentValues: { name: string; value: any }[] = [];
 
     for (const player of activePlayerData) {
-      const playerStateData = gameData.playersGameStateData[player._id] || {};
+      const playerStateData =
+        gameData.playersGameStateData[String(player._id)] || {};
       const value = getValueByPath(playerStateData, varPath);
 
       if (value !== undefined && value !== null && value !== "") {
@@ -622,7 +662,7 @@ function buildStudentStateData(
   gameData: GameData
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Record<string, any> {
-  const playerStateData = gameData.playersGameStateData[playerId] || {};
+  const playerStateData = gameData.playersGameStateData[String(playerId)] || {};
   const globalStateData = gameData.globalStateData.gameStateData || {};
 
   // Merge with player data taking precedence over global data
