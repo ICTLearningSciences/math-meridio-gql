@@ -54,6 +54,8 @@ import submitGamePhaseReflection from "./mutation/submit-game-phase-reflection";
 import submitReadyToContinue from "./mutation/room-sumbit-ready-to-continue";
 import createClassMembership from "./mutation/create-class-membership";
 import shareClassroomWithInstructor from "./mutation/share-classroom-with-instructor";
+import fetchGamePhaseReflections from "./query/fetch-game-phase-reflections";
+
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
   fields: {
@@ -66,6 +68,7 @@ const PublicRootQuery = new GraphQLObjectType({
     fetchStudentDataHydration,
     fetchRoomHeartbeats,
     fetchGamesList,
+    fetchGamePhaseReflections,
   },
 });
 

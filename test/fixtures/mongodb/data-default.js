@@ -863,4 +863,17 @@ module.exports = {
       ],
     },
   ],
+
+  gamephasereflections: [
+    {
+      _id: new ObjectId(player1Id),
+      roomId: room1Id,
+      stepId: "Step 1",
+      question: "What did you eat for dinner?",
+      roundNumber: 0,
+      reflections: {
+        [player1Id]: "value",
+      },
+    },
+  ],
 };
