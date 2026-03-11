@@ -16,7 +16,7 @@ import {
   RequestUserInputStageStep,
 } from "../../models/DiscussionStage/types";
 import { buildUserMessage } from "../../../authoritative-server/authority/state-modifier-helpers";
-import { updateNumWordsSentInPhases } from "authoritative-server/authority/step-process-pure-functions";
+import { updateNumWordsSentInPhases } from "../../../authoritative-server/authority/step-process-pure-functions";
 
 export const sendMessageToGameRoom = {
   type: RoomType,

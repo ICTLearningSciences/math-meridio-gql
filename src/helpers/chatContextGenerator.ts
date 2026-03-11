@@ -15,7 +15,10 @@ export function generateChatContext(
   isIndividualPrompt: boolean,
   includeMessageContext: IncludeMessageContext
 ): string {
-  if (includeMessageContext.type === IncludeMessagesContextTypeEnum.NONE) {
+  if (
+    !includeMessageContext ||
+    includeMessageContext.type === IncludeMessagesContextTypeEnum.NONE
+  ) {
     return "";
   }
 
