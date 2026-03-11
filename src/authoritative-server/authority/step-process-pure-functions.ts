@@ -322,6 +322,8 @@ export const defaultPlayerStatusRecord: PlayerStatusData = {
   },
   pausedByAdmin: false,
   computedState: PlayerComputedState.ACTIVE,
+  timeSpentInPhases: {},
+  numWordsSentInPhases: {},
 };
 
 export async function updatePlayersHeartbeat(
@@ -360,6 +362,33 @@ export async function updatePlayersHeartbeat(
     );
   }
   return room.toObject();
+}
+
+export async function updateNumWordsSentInPhases(
+  room: Room,
+  playerId: string,
+  incomingMessage: string
+): Promise<Room> {
+  const curPhaseStepId = room.gameData.phaseProgression.curPhaseStepId;
+  if (!curPhaseStepId) {
+    return room;
+  }
+  const numNewWords = incomingMessage.split(" ").length;
+
+  const updatedRoom = await RoomModel.findOneAndUpdate(
+    { _id: room._id },
+    {
+      $inc: {
+        [`gameData.playersStatusRecord.${playerId}.numWordsSentInPhases.${curPhaseStepId}`]:
+          numNewWords,
+      },
+    },
+    { new: true }
+  );
+  if (!updatedRoom) {
+    throw new Error(`Failed to update room: ${room._id}`);
+  }
+  return updatedRoom.toObject();
 }
 
 export function addPlayerToRoomNonAtomically(

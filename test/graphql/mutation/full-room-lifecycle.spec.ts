@@ -1448,6 +1448,18 @@ describe("full room lifecycle", () => {
       currentRoom?.gameData.phaseProgression.startingPhaseStepsOrdered
     ).to.deep.equal(["0"]);
 
+    // ENSURE the time spent in this phase is >= 1 for the owner
+    expect(
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
+        .timeSpentInPhases["0"]
+    ).to.be.greaterThanOrEqual(1);
+
+    // ENSURE ownerStudent has numWordsSentInPhases set correctly
+    expect(
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
+        .numWordsSentInPhases["0"]
+    ).to.equal(2);
+
     // 3. submit phase reflection from owner + ping process
     const submitReflectionResponse = await submitGamePhaseReflection(
       app,
@@ -1466,6 +1478,13 @@ describe("full room lifecycle", () => {
       ownerStudentToken
     );
     expect(pingAfterFirstReflection.status).to.equal(200);
+
+    // ENSURE the time spent in this phase is >= 2 for the owner
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
+        .timeSpentInPhases["0"]
+    ).to.be.greaterThanOrEqual(2);
 
     // 3.5 We should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
     currentRoom = await RoomModel.findById(newRoomId);
@@ -1579,6 +1598,12 @@ describe("full room lifecycle", () => {
       currentRoom?.gameData.curGameState.playersLeftToRespond
     ).to.deep.equal([ownerStudentId, studentTwoId]);
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // ENSURE ownerStudent has numWordsSentInPhases set correctly
+    expect(
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
+        .numWordsSentInPhases["0"]
+    ).to.equal(6);
 
     // 6. owner submits reflection + ping room
     const submitSecondReflectionOwner = await submitGamePhaseReflection(
@@ -1751,6 +1776,12 @@ describe("full room lifecycle", () => {
       currentRoom?.gameData.curGameState.playersLeftToRespond
     ).to.deep.equal([ownerStudentId, studentTwoId]);
     expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("2");
+
+    // ENSURE ownerStudent has numWordsSentInPhases set correctly
+    expect(
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
+        .numWordsSentInPhases["0"]
+    ).to.equal(10);
 
     // 9. owner submits their reflection + ping room
     const submitThirdReflectionOwner = await submitGamePhaseReflection(

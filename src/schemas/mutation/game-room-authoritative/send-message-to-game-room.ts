@@ -16,6 +16,7 @@ import {
   RequestUserInputStageStep,
 } from "../../models/DiscussionStage/types";
 import { buildUserMessage } from "../../../authoritative-server/authority/state-modifier-helpers";
+import { updateNumWordsSentInPhases } from "authoritative-server/authority/step-process-pure-functions";
 
 export const sendMessageToGameRoom = {
   type: RoomType,
@@ -33,19 +34,23 @@ export const sendMessageToGameRoom = {
     },
     context: { userId: string }
   ): Promise<Room> => {
-    const _room = await RoomModel.findOne({
+    const __room = await RoomModel.findOne({
       _id: args.roomId,
       deletedRoom: false,
     });
-    if (!_room) throw new Error("Failed to find room");
+    if (!__room) throw new Error("Failed to find room");
+    let room = await updateNumWordsSentInPhases(
+      __room.toObject(),
+      context.userId,
+      args.message
+    );
     const player = await PlayerModel.findOne({ _id: context.userId });
     if (!player) throw new Error("Unauthorized User");
-    if (!_room.gameData.players.includes(context.userId)) {
+    if (!room.gameData.players.includes(context.userId)) {
       throw new Error("User is not a player in the room");
     }
     const _discussionStages = await DiscussionStageModel.find();
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
-    let room: Room = _room.toObject();
     const stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
 
     const shouldUpdateDiscussionData =

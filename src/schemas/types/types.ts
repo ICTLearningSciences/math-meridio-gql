@@ -42,6 +42,8 @@ export interface PlayerStatusData {
   reportedAwayStatus: ReportedAwayStatus;
   pausedByAdmin: boolean;
   computedState: PlayerComputedState;
+  timeSpentInPhases: Record<string, number>;
+  numWordsSentInPhases: Record<string, number>;
 }
 
 export type PlayerStatusRecord = Record<string, PlayerStatusData>;
