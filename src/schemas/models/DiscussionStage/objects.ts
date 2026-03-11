@@ -403,7 +403,14 @@ export const PromptConfigurationSchema = new Schema({
   processPromptAs: { type: String, default: ProcessPromptAs.INDIVIDUALLY },
   promptText: { type: String },
   analyzeLearningObjectives: { type: Boolean },
-  includeMessageContext: { type: IncludeMessageContextSchema },
+  includeMessageContext: {
+    type: IncludeMessageContextSchema,
+    default: {
+      type: IncludeMessagesContextTypeEnum.NONE,
+      stepIds: [],
+      includeMessagesFromOtherUsers: false,
+    },
+  },
   responseFormat: { type: String },
   includeChatLogContext: { type: Boolean },
   outputDataType: { type: String },

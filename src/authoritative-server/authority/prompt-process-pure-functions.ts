@@ -328,8 +328,9 @@ async function processAnalyzeLearningObjectivePrompt(
   const learningObjectives =
     gameData.phaseProgression?.learningObjectives || [];
   if (learningObjectives.length > 0) {
-    let learningObjectivesContext =
-      "Here are the active learning objectives for you to analyze:\n";
+    let learningObjectivesContext = `
+      Your task is to analyze both user responses to questions and extra provided user data to determine if the user has demonstrated the learning objectives.
+      Here are the active learning objectives:\n`;
     learningObjectives.forEach((lo) => {
       learningObjectivesContext += `- ${lo.title}: ${lo.criteria}\n`;
     });
@@ -350,7 +351,6 @@ async function processAnalyzeLearningObjectivePrompt(
       true,
       promptConfig.includeMessageContext
     );
-    console.log("chatContext generated", chatContext);
     llmRequest.prompts.push({
       promptText: chatContext,
       promptRole: PromptRoles.SYSTEM,
@@ -396,7 +396,11 @@ async function processAnalyzeLearningObjectivePrompt(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const resData: Record<string, any> = JSON.parse(response);
-  const newDataToAdd = removePersistTruthDataFromNewData(gameData, resData);
+  const _newDataToAdd = removePersistTruthDataFromNewData(gameData, resData);
+  // only keep the true values since we only care about newly met learning objectives
+  const newDataToAdd = Object.fromEntries(
+    Object.entries(_newDataToAdd).filter(([_, value]) => value === "true")
+  );
 
   if (Object.keys(newDataToAdd).length > 0) {
     playerActions.push({
