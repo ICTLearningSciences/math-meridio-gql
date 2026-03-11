@@ -13,6 +13,7 @@ import { UnitTestMultipleUsersGame } from "./unit-test-multiple-users-game";
 import { UnitTestSimulationGame } from "./unit-test-simulation-game";
 import { UnitTestEndOfPhaseReflectionGame } from "./unit-test-end-of-phase";
 import { UnitTestMultiplePromptGame } from "./unit-test-multiple-prompt-game";
+import { UnitTestLearningObjectivesGame } from "./unit-test-lo-game";
 
 export const WAIT_FOR_SIMULATION_STAGE_CLIENT_ID = "wait-for-simulation";
 
@@ -36,6 +37,8 @@ export function getGameById(
       return new UnitTestEndOfPhaseReflectionGame(discussionStages);
     case "unit-test-multiple-prompt":
       return new UnitTestMultiplePromptGame(discussionStages);
+    case "unit-test-analyze-learning-objectives":
+      return new UnitTestLearningObjectivesGame(discussionStages);
     default:
       throw new Error(`Game not found: ${gameId}`);
   }

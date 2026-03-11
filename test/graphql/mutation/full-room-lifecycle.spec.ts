@@ -54,7 +54,7 @@ import {
   viewGameRoomSimulation,
 } from "./helpers/game_room_controllers";
 
-describe.only("full room lifecycle", () => {
+describe("full room lifecycle", () => {
   let app: Express;
   const syncLlmRequestStub = sinon.stub(llmRequest, "syncLlmRequest");
 
@@ -2510,5 +2510,166 @@ describe.only("full room lifecycle", () => {
       currentRoom?.gameData.playersGameStateData[studentTwoId]
         .individually_prompt_response
     ).to.equal("Student Two's individual response");
+  });
+
+  it("analyzeLearningObjectives prompt sends the proper structure for analysis1", async () => {
+    // 1. Create a room for game "unit-test-analyze-learning-objectives", add two students, ping process
+    const ownerStudentId = new ObjectId().toString();
+    const studentTwoId = new ObjectId().toString();
+
+    await createUser(ownerStudentId, UserRole.USER, EducationalRole.STUDENT);
+    await createUser(studentTwoId, UserRole.USER, EducationalRole.STUDENT);
+
+    const ownerStudentToken = await getToken(
+      ownerStudentId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    const studentTwoToken = await getToken(
+      studentTwoId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+
+    const createNewGameRoomResponse = await createNewGameRoom(
+      app,
+      "unit-test-analyze-learning-objectives",
+      ownerStudentToken
+    );
+    expect(createNewGameRoomResponse.status).to.equal(200);
+    expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
+    const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
+
+    // Add studentTwo to the room
+    const joinStudentTwoResponse = await joinGameRoom(
+      app,
+      newRoomId,
+      studentTwoToken
+    );
+    expect(joinStudentTwoResponse.status).to.equal(200);
+    expect(joinStudentTwoResponse.body.data.joinGameRoom).to.exist;
+
+    // ENSURE we are in the request user input step, stepId 1
+    let currentRoom = await RoomModel.findById(newRoomId);
+    expect(currentRoom?.gameData.globalStateData.curStepId).to.equal("1");
+
+    // ENSURE the learning objectives are in the phaseProgress
+    expect(currentRoom?.gameData.phaseProgression?.learningObjectives).to.exist;
+    expect(
+      currentRoom?.gameData.phaseProgression?.learningObjectives?.map(
+        (lo: any) => lo.title
+      )
+    ).to.deep.equal(["Test Learning Objective 1", "Test Learning Objective 2"]);
+
+    // setup mock for llmRequest
+
+    syncLlmRequestStub.resolves({
+      answer: JSON.stringify({
+        test_learning_objective_1: "true",
+        test_learning_objective_2: "true",
+      }),
+    } as AiServicesResponseTypes);
+
+    // 2. Send messages from both users, ping process
+
+    const ownerFirstMessageResponse = await sendMessageToGameRoom(
+      app,
+      newRoomId,
+      "Owner's first input",
+      "session1",
+      ownerStudentToken
+    );
+    expect(ownerFirstMessageResponse.status).to.equal(200);
+
+    const studentTwoFirstMessageResponse = await sendMessageToGameRoom(
+      app,
+      newRoomId,
+      "Student Two's first input",
+      "session2",
+      studentTwoToken
+    );
+    expect(studentTwoFirstMessageResponse.status).to.equal(200);
+
+    const pingAfterFirstMessages = await pingRoomProcess(
+      app,
+      newRoomId,
+      "session1",
+      ownerStudentToken
+    );
+    expect(pingAfterFirstMessages.status).to.equal(200);
+
+    // ENSURE the llmRequest was called properly
+    // - one call for each user (2 total calls)
+    // - response type is JSON
+    // - empty systemRole
+    // - JSON parsed responseFormat contains an entry for each learning objective
+    // - prompts includes one message that contains the user's input
+    // - prompts includes one message that contains the learning objectives
+
+    expect(syncLlmRequestStub.callCount).to.equal(2);
+    const allCalls = syncLlmRequestStub.getCalls();
+    const studentOneCall = allCalls.find((c) =>
+      c.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Owner's first input")
+      )
+    );
+    const studentTwoCall = allCalls.find((c) =>
+      c.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Student Two's first input")
+      )
+    );
+    expect(studentOneCall).to.exist;
+    expect(studentTwoCall).to.exist;
+
+    expect(
+      studentOneCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Test Learning Objective 1")
+      )
+    ).to.exist;
+    expect(
+      studentOneCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Test Learning Objective 2")
+      )
+    ).to.exist;
+    expect(
+      studentOneCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Owner's first input")
+      )
+    ).to.exist;
+
+    expect(
+      studentTwoCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Test Learning Objective 1")
+      )
+    ).to.exist;
+    expect(
+      studentTwoCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Test Learning Objective 2")
+      )
+    ).to.exist;
+    expect(
+      studentTwoCall?.args[0].prompts.find((p: any) =>
+        p.promptText.includes("Student Two's first input")
+      )
+    ).to.exist;
+
+    // ENSURE both students have their JSON data updated
+    currentRoom = await RoomModel.findById(newRoomId);
+    expect(
+      currentRoom?.gameData.playersGameStateData[ownerStudentId]
+        .test_learning_objective_1
+    ).to.equal("true");
+    expect(
+      currentRoom?.gameData.playersGameStateData[ownerStudentId]
+        .test_learning_objective_2
+    ).to.equal("true");
+    expect(
+      currentRoom?.gameData.playersGameStateData[studentTwoId]
+        .test_learning_objective_1
+    ).to.equal("true");
+    expect(
+      currentRoom?.gameData.playersGameStateData[studentTwoId]
+        .test_learning_objective_2
+    ).to.equal("true");
   });
 });

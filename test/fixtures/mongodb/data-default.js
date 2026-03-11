@@ -658,6 +658,24 @@ module.exports = {
           name: "Test Analyze Learning Objectives Flow",
           steps: [
             {
+              stepId: "0",
+              stepType: DiscussionStageStepType.START_OF_PHASE,
+              phaseTitle: "Start of Phase",
+              learningObjectives: [
+                {
+                  title: "Test Learning Objective 1",
+                  criteria: "Test Learning Objective 1 Criteria",
+                  variableName: "test_learning_objective_1",
+                },
+                {
+                  title: "Test Learning Objective 2",
+                  criteria: "Test Learning Objective 2 Criteria",
+                  variableName: "test_learning_objective_2",
+                },
+              ],
+              lastStep: false,
+            },
+            {
               lastStep: false,
               stepId: "1",
               stepType: "REQUEST_USER_INPUT",

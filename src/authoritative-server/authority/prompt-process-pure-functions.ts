@@ -274,6 +274,10 @@ async function processAnalyzeLearningObjectivePrompt(
   ) => Promise<AiServicesResponseTypes>,
   sessionId: string
 ): Promise<AtomicRoomModiticationAction[]> {
+  console.log(
+    "PROCESSING analyzeLearningObjectivePrompt for player: ",
+    player.name
+  );
   const playerActions: AtomicRoomModiticationAction[] = [];
 
   // Build student-specific state data (player data takes precedence over global)
@@ -377,7 +381,10 @@ async function processAnalyzeLearningObjectivePrompt(
       newData: newDataToAdd,
     } as UpdateGlobalGameStateDataRoomAtomicAction);
   }
-
+  console.log(
+    "Player actions for analyzeLearningObjectivePrompt: ",
+    JSON.stringify(playerActions, null, 2)
+  );
   return playerActions;
 }
 
