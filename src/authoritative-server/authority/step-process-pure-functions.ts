@@ -322,8 +322,7 @@ export const defaultPlayerStatusRecord: PlayerStatusData = {
   },
   pausedByAdmin: false,
   computedState: PlayerComputedState.ACTIVE,
-  timeSpentInPhases: {},
-  numWordsSentInPhases: {},
+  phaseMetrics: {},
 };
 
 export async function updatePlayersHeartbeat(
@@ -379,7 +378,7 @@ export async function updateNumWordsSentInPhases(
     { _id: room._id },
     {
       $inc: {
-        [`gameData.playersStatusRecord.${playerId}.numWordsSentInPhases.${curPhaseStepId}`]:
+        [`gameData.playersStatusRecord.${playerId}.phaseMetrics.${curPhaseStepId}.numWordsSentInPhase`]:
           numNewWords,
       },
     },

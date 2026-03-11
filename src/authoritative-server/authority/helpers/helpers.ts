@@ -308,6 +308,7 @@ export async function updateRoomPlayerStatusedRecord(
   RoomModel: RoomModelType
 ): Promise<Room> {
   const curPhaseStepId = room.gameData.phaseProgression.curPhaseStepId;
+  const curPhaseTitle = room.gameData.phaseProgression.curPhaseTitle;
 
   const newComputedPlayerStatuses: Record<string, PlayerComputedState> =
     Object.entries(room.gameData.playersStatusRecord).reduce(
@@ -322,11 +323,17 @@ export async function updateRoomPlayerStatusedRecord(
     ...(curPhaseStepId
       ? {
           $inc: {
-            [`gameData.playersStatusRecord.${pingingUserId}.timeSpentInPhases.${curPhaseStepId}`]: 1,
+            [`gameData.playersStatusRecord.${pingingUserId}.phaseMetrics.${curPhaseStepId}.timeSpentInPhase`]: 1,
           },
         }
       : {}),
     $set: {
+      ...(curPhaseStepId
+        ? {
+            [`gameData.playersStatusRecord.${pingingUserId}.phaseMetrics.${curPhaseStepId}.phaseTitle`]:
+              curPhaseTitle,
+          }
+        : {}),
       [`gameData.playersStatusRecord.${pingingUserId}.lastHeartbeatAt`]:
         new Date(),
 

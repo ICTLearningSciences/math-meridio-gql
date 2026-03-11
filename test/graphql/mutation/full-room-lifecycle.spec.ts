@@ -1450,14 +1450,16 @@ describe("full room lifecycle", () => {
 
     // ENSURE the time spent in this phase is >= 1 for the owner
     expect(
-      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
-        .timeSpentInPhases["0"]
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId].phaseMetrics[
+        "0"
+      ].timeSpentInPhase
     ).to.be.greaterThanOrEqual(1);
 
     // ENSURE ownerStudent has numWordsSentInPhases set correctly
     expect(
-      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
-        .numWordsSentInPhases["0"]
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId].phaseMetrics[
+        "0"
+      ].numWordsSentInPhase
     ).to.equal(2);
 
     // 3. submit phase reflection from owner + ping process
@@ -1482,8 +1484,9 @@ describe("full room lifecycle", () => {
     // ENSURE the time spent in this phase is >= 2 for the owner
     currentRoom = await RoomModel.findById(newRoomId);
     expect(
-      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
-        .timeSpentInPhases["0"]
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId].phaseMetrics[
+        "0"
+      ].timeSpentInPhase
     ).to.be.greaterThanOrEqual(2);
 
     // 3.5 We should now be in the WAITING_FOR_STUDENT_READY_TO_CONTINUE state
@@ -1601,8 +1604,9 @@ describe("full room lifecycle", () => {
 
     // ENSURE ownerStudent has numWordsSentInPhases set correctly
     expect(
-      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
-        .numWordsSentInPhases["0"]
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId].phaseMetrics[
+        "0"
+      ].numWordsSentInPhase
     ).to.equal(6);
 
     // 6. owner submits reflection + ping room
@@ -1779,8 +1783,9 @@ describe("full room lifecycle", () => {
 
     // ENSURE ownerStudent has numWordsSentInPhases set correctly
     expect(
-      currentRoom?.gameData.playersStatusRecord[ownerStudentId]
-        .numWordsSentInPhases["0"]
+      currentRoom?.gameData.playersStatusRecord[ownerStudentId].phaseMetrics[
+        "0"
+      ].numWordsSentInPhase
     ).to.equal(10);
 
     // 9. owner submits their reflection + ping room

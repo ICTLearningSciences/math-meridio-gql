@@ -37,13 +37,18 @@ export interface ReportedAwayStatus {
   reportedBy?: "STUDENT" | "FRONTEND_SYSTEM";
 }
 
+export interface UserPhaseMetrics {
+  phaseTitle: string;
+  timeSpentInPhase: number;
+  numWordsSentInPhase: number;
+}
+
 export interface PlayerStatusData {
   lastHeartbeatAt?: Date;
   reportedAwayStatus: ReportedAwayStatus;
   pausedByAdmin: boolean;
   computedState: PlayerComputedState;
-  timeSpentInPhases: Record<string, number>;
-  numWordsSentInPhases: Record<string, number>;
+  phaseMetrics: Record<string, UserPhaseMetrics>;
 }
 
 export type PlayerStatusRecord = Record<string, PlayerStatusData>;
