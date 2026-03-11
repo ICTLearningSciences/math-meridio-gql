@@ -86,7 +86,7 @@ describe("update discussion stage", () => {
                 includeChatLogContext: true,
                 outputDataType: "JSON",
                 customSystemRole: "custom system role 1",
-                appendLearningObjectives: false,
+                analyzeLearningObjectives: false,
                 includeMessageContext: {
                   type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                   stepIds: [],
@@ -172,7 +172,7 @@ describe("update discussion stage", () => {
                 includeChatLogContext: true,
                 outputDataType: "JSON",
                 customSystemRole: "custom system role 1",
-                appendLearningObjectives: false,
+                analyzeLearningObjectives: false,
                 includeMessageContext: {
                   type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                   stepIds: [],
@@ -268,7 +268,7 @@ describe("update discussion stage", () => {
                 includeChatLogContext: true,
                 outputDataType: "JSON",
                 customSystemRole: "custom system role 1",
-                appendLearningObjectives: false,
+                analyzeLearningObjectives: false,
                 includeMessageContext: {
                   type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                   stepIds: [],
@@ -420,7 +420,7 @@ describe("update discussion stage", () => {
                                   outputDataType
                                   jsonResponseData
                                   customSystemRole
-                                  appendLearningObjectives
+                                  analyzeLearningObjectives
                                   includeMessageContext{
                                     type
                                     stepIds

@@ -58,6 +58,7 @@ export const fullRoomData = `
           curPhaseStepId
           startingPhaseStepsOrdered
           learningObjectives{
+            variableName
             title
             criteria
           }
@@ -185,6 +186,17 @@ export const shareClassroomWithInstructorMutation = `
   mutation ShareClassroomWithInstructor($classId: String!, $instructorEmail: String!) {
     shareClassroomWithInstructor(classId: $classId, instructorEmail: $instructorEmail) {
       ${fullClassroomData}
+    }
+  }
+`;
+
+export const submitGamePhaseReflectionMutation = `
+  mutation SubmitGamePhaseReflection($roomId: ID!, $reflection: String!) {
+    submitGamePhaseReflection(roomId: $roomId, reflection: $reflection) {
+      roomId
+      stepId
+      roundNumber
+      reflections
     }
   }
 `;

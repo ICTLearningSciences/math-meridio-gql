@@ -199,7 +199,7 @@ export const PromptConfigurationType = new GraphQLObjectType({
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
-    appendLearningObjectives: { type: GraphQLBoolean },
+    analyzeLearningObjectives: { type: GraphQLBoolean },
     includeMessageContext: { type: IncludeMessageContextType },
     outputDataType: { type: GraphQLString },
     jsonResponseData: { type: GraphQLString },
@@ -235,7 +235,7 @@ export const PromptConfigurationTypeInput = new GraphQLInputObjectType({
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
-    appendLearningObjectives: { type: GraphQLBoolean },
+    analyzeLearningObjectives: { type: GraphQLBoolean },
     includeMessageContext: { type: IncludeMessageContextTypeInput },
     outputDataType: { type: GraphQLString },
     jsonResponseData: { type: GraphQLString },
@@ -273,6 +273,7 @@ export const EndOfPhaseReflectionStepType = new GraphQLObjectType({
 export const LearningObjectiveType = new GraphQLObjectType({
   name: "LearningObjectiveType",
   fields: () => ({
+    variableName: { type: GraphQLString },
     title: { type: GraphQLString },
     criteria: { type: GraphQLString },
   }),
@@ -295,6 +296,7 @@ export const StartOfPhaseStepType = new GraphQLObjectType({
 export const LearningObjectiveTypeInput = new GraphQLInputObjectType({
   name: "LearningObjectiveTypeInput",
   fields: () => ({
+    variableName: { type: GraphQLString },
     title: { type: GraphQLString },
     criteria: { type: GraphQLString },
   }),
@@ -400,7 +402,7 @@ export const IncludeMessageContextSchema = new Schema({
 export const PromptConfigurationSchema = new Schema({
   processPromptAs: { type: String, default: ProcessPromptAs.INDIVIDUALLY },
   promptText: { type: String },
-  appendLearningObjectives: { type: Boolean },
+  analyzeLearningObjectives: { type: Boolean },
   includeMessageContext: { type: IncludeMessageContextSchema },
   responseFormat: { type: String },
   includeChatLogContext: { type: Boolean },
@@ -417,6 +419,7 @@ export const PromptStageStepSchema = new Schema({
 
 export const LearningObjectiveSchema = new Schema(
   {
+    variableName: { type: String },
     title: { type: String },
     criteria: { type: String },
   },

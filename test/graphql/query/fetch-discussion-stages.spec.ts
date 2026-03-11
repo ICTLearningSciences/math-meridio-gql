@@ -38,6 +38,7 @@ export const fullDiscussionStageQueryData = `
                               stepType
                               phaseTitle
                               learningObjectives{
+                                variableName
                                 title
                                 criteria
                               }
@@ -84,7 +85,7 @@ export const fullDiscussionStageQueryData = `
                                 outputDataType
                                 jsonResponseData
                                 customSystemRole
-                                appendLearningObjectives
+                                analyzeLearningObjectives
                                 includeMessageContext{
                                   type
                                   stepIds

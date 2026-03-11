@@ -165,7 +165,7 @@ module.exports = {
                   includeChatLogContext: true,
                   outputDataType: "JSON",
                   customSystemRole: "user",
-                  appendLearningObjectives: false,
+                  analyzeLearningObjectives: false,
                   includeMessageContext: {
                     type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                     stepIds: [],
@@ -289,7 +289,7 @@ module.exports = {
                     },
                   ]),
                   customSystemRole: "",
-                  appendLearningObjectives: false,
+                  analyzeLearningObjectives: false,
                   includeMessageContext: {
                     type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                     stepIds: [],
@@ -357,7 +357,7 @@ module.exports = {
                     },
                   ]),
                   customSystemRole: "",
-                  appendLearningObjectives: false,
+                  analyzeLearningObjectives: false,
                   includeMessageContext: {
                     type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                     stepIds: [],
@@ -401,7 +401,7 @@ module.exports = {
                     },
                   ]),
                   customSystemRole: "",
-                  appendLearningObjectives: false,
+                  analyzeLearningObjectives: false,
                   includeMessageContext: {
                     type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
                     stepIds: [],
@@ -607,6 +607,7 @@ module.exports = {
                 {
                   title: "Test Learning Objective",
                   criteria: "Test Learning Objective Criteria",
+                  variableName: "test_learning_objective",
                 },
               ],
               lastStep: false,
@@ -639,6 +640,60 @@ module.exports = {
               message: "Thank you for participating!",
               lastStep: false,
               jumpToStepId: "1",
+            },
+          ],
+        },
+      ],
+    },
+
+    {
+      _id: new ObjectId("5ffdf1231ee2c22320c49e30"),
+      clientId: "test-analyze-learning-objectives-discussion-client-id",
+      title: "Test Analyze Learning Objectives Discussion",
+      stageType: "discussion",
+      description: "",
+      flowsList: [
+        {
+          clientId: new ObjectId("5ffdf1231ee2d62322b49e5f"),
+          name: "Test Analyze Learning Objectives Flow",
+          steps: [
+            {
+              lastStep: false,
+              stepId: "1",
+              stepType: "REQUEST_USER_INPUT",
+              jumpToStepId: null,
+              message: "Ready for learning objectives analysis?",
+              saveResponseVariableName: "user_input",
+              disableFreeInput: false,
+              requireInputType:
+                RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
+              predefinedResponses: [],
+            },
+            {
+              lastStep: false,
+              stepId: "2",
+              stepType: "PROMPT",
+              jumpToStepId: "",
+              prompts: [
+                {
+                  processPromptAs: ProcessPromptAs.INDIVIDUALLY,
+                  promptText:
+                    "Process the users learning objectives: {{user_input}}",
+                  responseFormat: "",
+                  includeChatLogContext: false,
+                  outputDataType: "TEXT",
+                  // This will be populated by the system based on the learning objectives
+                  jsonResponseData: JSON.stringify([]),
+                  customSystemRole: "",
+                  analyzeLearningObjectives: true,
+                  includeMessageContext: {
+                    type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                    stepIds: [],
+                    numRecentMessages: 0,
+                    includeMessagesFromOtherUsers: false,
+                  },
+                },
+              ],
             },
           ],
         },

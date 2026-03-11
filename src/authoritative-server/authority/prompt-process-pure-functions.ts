@@ -11,6 +11,7 @@ import {
   PromptOutputTypes,
   JsonResponseData,
   PromptRoles,
+  JsonResponseDataType,
 } from "../../authoritative-server/llm-request/types";
 import { CancelToken } from "axios";
 import {
@@ -130,19 +131,6 @@ async function processGroupPrompt(
     systemRole: customSystemRole,
   };
 
-  if (
-    promptConfig.appendLearningObjectives &&
-    gameData.phaseProgression.learningObjectives.length > 0
-  ) {
-    llmRequest.prompts.push({
-      promptText: `Active Learning objectives:
-      ${gameData.phaseProgression.learningObjectives
-        .map((objective) => `- ${objective.title}: ${objective.criteria}`)
-        .join("\n")}`,
-      promptRole: PromptRoles.SYSTEM,
-    });
-  }
-
   llmRequest.prompts.push({
     promptText: promptText,
     promptRole: PromptRoles.SYSTEM,
@@ -236,6 +224,24 @@ async function processIndividualPrompts(
   sessionId: string,
   activePlayerData: PlayerDocument[]
 ): Promise<AtomicRoomModiticationAction[]> {
+  // Check if this is an analyze learning objectives prompt
+  if (promptConfig.analyzeLearningObjectives) {
+    const individualResults = await Promise.all(
+      activePlayerData.map(async (player) => {
+        return processAnalyzeLearningObjectivePrompt(
+          promptConfig,
+          player,
+          gameData,
+          curStep,
+          targetAiServiceModel,
+          executePrompt,
+          sessionId
+        );
+      })
+    );
+    return individualResults.flat();
+  }
+
   // Process each student individually in parallel
   const individualResults = await Promise.all(
     activePlayerData.map(async (player) => {
@@ -253,6 +259,126 @@ async function processIndividualPrompts(
 
   // Flatten and return all actions
   return individualResults.flat();
+}
+
+// Process a single student's prompt for analyzing learning objectives
+async function processAnalyzeLearningObjectivePrompt(
+  promptConfig: PromptConfiguration,
+  player: PlayerDocument,
+  gameData: GameData,
+  curStep: PromptStageStep,
+  targetAiServiceModel: TargetAiModelServiceType,
+  executePrompt: (
+    llmRequest: GenericLlmRequest,
+    cancelToken?: CancelToken
+  ) => Promise<AiServicesResponseTypes>,
+  sessionId: string
+): Promise<AtomicRoomModiticationAction[]> {
+  const playerActions: AtomicRoomModiticationAction[] = [];
+
+  // Build student-specific state data (player data takes precedence over global)
+  const studentStateData = buildStudentStateData(player._id, gameData);
+
+  // Replace variables with student-specific data
+  const promptText = replaceStoredDataInString(
+    promptConfig.promptText,
+    studentStateData
+  );
+
+  // Build LLM request
+  const llmRequest: GenericLlmRequest = {
+    prompts: [],
+    outputDataType: PromptOutputTypes.JSON, // Force JSON output for learning objectives
+    targetAiServiceModel: targetAiServiceModel,
+    responseFormat: "",
+    systemRole: "",
+  };
+
+  // Add learning objectives to context
+  const learningObjectives =
+    gameData.phaseProgression?.learningObjectives || [];
+  if (learningObjectives.length > 0) {
+    let learningObjectivesContext =
+      "Here are the active learning objectives for you to analyze:\n";
+    learningObjectives.forEach((lo) => {
+      learningObjectivesContext += `- ${lo.title}: ${lo.criteria}\n`;
+    });
+
+    llmRequest.prompts.push({
+      promptText: learningObjectivesContext.trim(),
+      promptRole: PromptRoles.SYSTEM,
+    });
+  }
+
+  if (promptConfig.includeChatLogContext) {
+    llmRequest.prompts.push({
+      promptText: `Current state of chat log between user and system: ${chatLogToString(
+        gameData.chat
+      )}`,
+      promptRole: PromptRoles.SYSTEM,
+    });
+  }
+
+  llmRequest.prompts.push({
+    promptText: promptText,
+    promptRole: PromptRoles.SYSTEM,
+  });
+
+  // Build JSON response data from learning objectives
+  const jsonResponseData: JsonResponseData[] = learningObjectives.map((lo) => ({
+    name: lo.variableName,
+    additionalInfo: `Respond with either a string "true" or "false", Set to "true" if the ${lo.title} learning objective was met by the provided user data, else return "false".`,
+    clientId: lo.variableName,
+    type: JsonResponseDataType.STRING,
+    isRequired: true,
+  }));
+
+  llmRequest.responseFormat += recursivelyConvertExpectedDataToAiPromptString(
+    recursiveUpdateAdditionalInfo(jsonResponseData, studentStateData)
+  );
+
+  // Execute prompt
+  const _response = await executePrompt(llmRequest);
+  const response = _response.answer;
+
+  // Process response
+  if (!isJsonString(response)) {
+    throw new Error(`Did not receive valid JSON data: ${response}`);
+  }
+
+  if (jsonResponseData.length > 0) {
+    if (!receivedExpectedData(jsonResponseData, response)) {
+      throw new Error(
+        `Did not receive expected JSON data: ${response}. \n Expected: ${JSON.stringify(
+          jsonResponseData
+        )}`
+      );
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const resData: Record<string, any> = JSON.parse(response);
+  const newDataToAdd = removePersistTruthDataFromNewData(gameData, resData);
+
+  if (Object.keys(newDataToAdd).length > 0) {
+    playerActions.push({
+      actionType: RoomModificationEnum.ADD_TO_DISCUSSION_DATA,
+      newData: newDataToAdd,
+    } as UpdateDiscussionDataRoomAtomicAction);
+
+    playerActions.push({
+      actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
+      playerId: player._id,
+      newData: newDataToAdd,
+    } as UpdatePlayerGameStateDataRoomAtomicAction);
+
+    playerActions.push({
+      actionType: RoomModificationEnum.ADD_TO_GLOBAL_STATE_DATA,
+      newData: newDataToAdd,
+    } as UpdateGlobalGameStateDataRoomAtomicAction);
+  }
+
+  return playerActions;
 }
 
 // Process a single student's prompt in INDIVIDUALLY mode

@@ -104,7 +104,7 @@ export interface PromptConfiguration {
   responseFormat: string;
   includeChatLogContext: boolean;
   includeMessageContext: IncludeMessageContext;
-  appendLearningObjectives: boolean;
+  analyzeLearningObjectives: boolean;
   outputDataType: string;
   jsonResponseData?: string;
   customSystemRole: string;
@@ -116,6 +116,7 @@ export interface PromptStageStep extends StageBuilderStep {
 }
 
 export interface LearningObjective {
+  variableName: string;
   title: string;
   criteria: string;
 }

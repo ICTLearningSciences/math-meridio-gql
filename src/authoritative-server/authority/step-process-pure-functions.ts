@@ -243,10 +243,7 @@ export function startOfPhaseStep(
     actionType: RoomModificationEnum.STARTING_PHASE,
     startingPhaseStepId: curStep.stepId,
     phaseTitle: curStep.phaseTitle,
-    learningObjectives: curStep.learningObjectives.map((objective) => ({
-      title: objective.title,
-      criteria: objective.criteria,
-    })),
+    learningObjectives: curStep.learningObjectives,
   } as StartPhaseAtomicAction);
   return atomicRoomModificationActions;
 }
