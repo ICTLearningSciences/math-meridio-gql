@@ -55,6 +55,7 @@ import submitReadyToContinue from "./mutation/room-sumbit-ready-to-continue";
 import createClassMembership from "./mutation/create-class-membership";
 import shareClassroomWithInstructor from "./mutation/share-classroom-with-instructor";
 import fetchGamePhaseReflections from "./query/fetch-game-phase-reflections";
+import setNeedsHelpInGameRoom from "./mutation/needs-help-in-game-room";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -110,6 +111,7 @@ const PublicMutation = new GraphQLObjectType({
     pingGameRoomProcess,
     viewGameRoomSimulation,
     submitGamePhaseReflection,
+    setNeedsHelpInGameRoom,
   },
 });
 

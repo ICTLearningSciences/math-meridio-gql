@@ -323,6 +323,7 @@ export const defaultPlayerStatusRecord: PlayerStatusData = {
   pausedByAdmin: false,
   computedState: PlayerComputedState.ACTIVE,
   phaseMetrics: {},
+  needsHelpInRoom: false,
 };
 
 export async function updatePlayersHeartbeat(

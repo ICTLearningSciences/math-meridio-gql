@@ -48,6 +48,7 @@ export interface PlayerStatusData {
   reportedAwayStatus: ReportedAwayStatus;
   pausedByAdmin: boolean;
   computedState: PlayerComputedState;
+  needsHelpInRoom: boolean;
   phaseMetrics: Record<string, UserPhaseMetrics>;
 }
 
