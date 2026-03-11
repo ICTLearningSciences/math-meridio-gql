@@ -13,6 +13,10 @@ import ClassMembershipModel, {
 } from "../models/classes/ClassMembership";
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel, { Player } from "../models/Player";
+import GamePhaseReflectionsModel, {
+  GamePhaseReflections,
+  GamePhaseReflectionsType,
+} from "../models/GamePhaseReflections";
 import { ConcertTicketSalesStateHandler } from "../../authoritative-server/games/concert-ticket-game";
 import { BasketballStateHandler } from "../../authoritative-server/games/basketball-game";
 import { GameType, StaticGame } from "./fetch-games-list";
@@ -24,6 +28,7 @@ const InstructorDataHydrationType = new GraphQLObjectType({
     rooms: { type: new GraphQLList(RoomType) },
     students: { type: new GraphQLList(PlayerType) },
     classMemberships: { type: new GraphQLList(ClassMembershipType) },
+    phaseReflections: { type: new GraphQLList(GamePhaseReflectionsType) },
     gameList: { type: new GraphQLList(GameType) },
   }),
 });
@@ -33,6 +38,7 @@ interface InstructorDataHydration {
   rooms: Room[];
   students: Player[];
   classMemberships: ClassMembership[];
+  phaseReflections: GamePhaseReflections[];
   gameList: StaticGame[];
 }
 
@@ -78,6 +84,12 @@ export default {
         _id: { $in: studentIds },
       });
 
+      // Fetch all game phase reflections for rooms
+      const roomIds = rooms.map((r) => `${r._id}`);
+      const phaseReflections = await GamePhaseReflectionsModel.find({
+        roomId: { $in: roomIds },
+      });
+
       const basketBallGame = new BasketballStateHandler([], true);
       const concertTicketSalesGame = new ConcertTicketSalesStateHandler(
         [],
@@ -93,6 +105,7 @@ export default {
         rooms,
         students,
         classMemberships,
+        phaseReflections,
         gameList,
       };
     } catch (error) {
