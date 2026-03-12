@@ -17,12 +17,10 @@ export const fetchRoom = {
     _root: GraphQLObjectType,
     args: { roomId: string }
   ): Promise<Room> => {
-    console.log("args", args);
     const res = await RoomModel.findOne({
       _id: args.roomId,
       deletedRoom: false,
     });
-    console.log("res", res);
     return res;
   },
 };

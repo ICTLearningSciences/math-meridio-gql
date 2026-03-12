@@ -365,19 +365,13 @@ export const GameDataType = new GraphQLObjectType({
       type: GraphQLScalarType,
       resolve: async function (gameData: GameDataDocument) {
         if (!gameData.gameId) {
-          console.log("no gameId");
           return {};
         }
-        console.log("here1");
         const discussionStages = await DiscussionStageModel.find({});
-        console.log("here2");
         const game = getGameById(gameData.gameId, discussionStages);
-        console.log("here3");
         const allStartingPhases = getAllStartingPhasesFromGame(game);
-        console.log("allStartingPhases", allStartingPhases);
         const allLearningObjecives: LearningObjective[] =
           allStartingPhases.flatMap((step) => step.learningObjectives);
-        console.log("allLearningObjecives", allLearningObjecives);
         return allLearningObjecives.reduce((acc, objective) => {
           acc[objective.title] =
             gameData.globalStateData.gameStateData[objective.variableName] ===
