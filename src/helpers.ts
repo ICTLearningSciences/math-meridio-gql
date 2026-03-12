@@ -20,7 +20,9 @@ import {
   DiscussionStage,
   DiscussionStageStepType,
   isDiscussionStage,
+  StartOfPhaseStep,
 } from "./schemas/models/DiscussionStage/types";
+import { AbstractGameData } from "./authoritative-server/llm-request/types";
 
 const queryPayloadSchema = {
   type: "object",
@@ -135,6 +137,26 @@ export function canModifyClassroom(userId: string, classroom: Class): boolean {
     classroom.teacherId === userId ||
     classroom.sharedWithInstructorIds.includes(userId)
   );
+}
+
+export function getAllStartingPhasesFromGame(
+  game: AbstractGameData
+): StartOfPhaseStep[] {
+  try {
+    const allDiscussionStages: DiscussionStage[] = game.stageList
+      .map((s) => s.stage)
+      .filter((s) => isDiscussionStage(s)) as any[];
+    const allDiscussionSteps = allDiscussionStages
+      .flatMap((stage) => stage.flowsList)
+      .flatMap((flowItem) => flowItem.steps);
+    const allStartOfPhaseSteps: StartOfPhaseStep[] = allDiscussionSteps.filter(
+      (step) => step.stepType === DiscussionStageStepType.START_OF_PHASE
+    ) as StartOfPhaseStep[];
+    return allStartOfPhaseSteps;
+  } catch (error) {
+    console.error("error", error);
+    return [];
+  }
 }
 
 export function getStartingPhasesInOrderForGame(

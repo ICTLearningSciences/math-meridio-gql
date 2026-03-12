@@ -10,11 +10,7 @@ import {
   DiscussionStage,
   IStage,
 } from "../../schemas/models/DiscussionStage/types";
-import {
-  AbstractGameData,
-  MathStandardsCompletionRequirements,
-  SimulationStage,
-} from "../llm-request/types";
+import { AbstractGameData, SimulationStage } from "../llm-request/types";
 import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "./game-helpers";
 
 const introductionDiscussionStage = "de0b94b9-1fc2-4ea1-995e-21a75670c16d";
@@ -43,27 +39,6 @@ export class BasketballStateHandler extends AbstractGameData {
     "understands_shot_points",
     "best_strategy_found",
   ];
-
-  mathStandardsCompletedRequirements: MathStandardsCompletionRequirements = {
-    "Understands Adding Results from Different Shot Types": {
-      understands_addition: "true",
-    },
-    "Understands Multiplying Attempts, Points, and Chance": {
-      understands_multiplication: "true",
-    },
-    "Understands Points per Shot as a Rate": {
-      understands_success_shots: "true",
-    },
-    "Understands Unit Rates in Word Problems": {
-      understands_shot_points: "true",
-    },
-    "Understands How to Follow a Step-by-Step Formula": {
-      understands_addition: "true",
-      understands_multiplication: "true",
-      understands_success_shots: "true",
-      understands_shot_points: "true",
-    },
-  };
 
   constructor(discussionStages: DiscussionStage[], skipStages?: boolean) {
     super();

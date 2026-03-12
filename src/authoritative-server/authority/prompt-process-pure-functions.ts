@@ -18,11 +18,10 @@ import {
   PromptStageStep,
   PromptConfiguration,
 } from "../../schemas/models/DiscussionStage/types";
-import { Player, PlayerDocument } from "../../schemas/models/Player";
+import { PlayerDocument } from "../../schemas/models/Player";
 import { GameData } from "../../schemas/models/Room";
 import {
   replaceStoredDataInString,
-  chatLogToString,
   recursivelyConvertExpectedDataToAiPromptString,
   recursiveUpdateAdditionalInfo,
   isJsonString,

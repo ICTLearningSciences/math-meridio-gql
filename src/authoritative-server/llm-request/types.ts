@@ -152,7 +152,6 @@ export abstract class AbstractGameData {
   abstract name: string;
   abstract stageList: CurrentStage<IStage>[];
   abstract persistTruthGlobalStateData: string[];
-  abstract mathStandardsCompletedRequirements: MathStandardsCompletionRequirements;
 }
 
 export interface SimulationStage extends IStage {

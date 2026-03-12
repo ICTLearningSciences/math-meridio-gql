@@ -31,6 +31,31 @@ module.exports = {
 
   rooms: [
     {
+      _id: new ObjectId("5f748650f4b3f2a2f1f1f1f5"),
+      name: "Room with learning objective",
+      gameData: {
+        gameId: "unit-test-analyze-learning-objectives",
+        players: [player1Id],
+        chat: [],
+        globalStateData: {
+          curStageId: "Stage 1",
+          curStepId: "Step 1",
+          roomOwnerId: player1Id,
+          discussionData: {},
+          gameStateData: {
+            test_learning_objective_1: "true",
+          },
+        },
+        playersGameStateData: {
+          [player1Id]: {
+            test_learning_objective_1: "true",
+          },
+        },
+      },
+      deletedRoom: false,
+    },
+
+    {
       _id: new ObjectId(room1Id),
       name: "Basketball Room 1",
       gameData: {

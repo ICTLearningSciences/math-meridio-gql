@@ -36,8 +36,12 @@ import {
   LearningObjective,
 } from "./DiscussionStage/types";
 import { PlayerStatusRecord } from "../../schemas/types/types";
-import { getPlayerComputedState } from "../../helpers";
+import {
+  getAllStartingPhasesFromGame,
+  getPlayerComputedState,
+} from "../../helpers";
 import { getGameById } from "../../authoritative-server/games/game-helpers";
+import DiscussionStageModel from "./DiscussionStage/DiscussionStage";
 
 /** mongoose */
 
@@ -359,22 +363,27 @@ export const GameDataType = new GraphQLObjectType({
     phaseProgression: { type: PhaseProgressionType },
     mathStandardsCompleted: {
       type: GraphQLScalarType,
-      resolve: function (gameData: GameDataDocument) {
+      resolve: async function (gameData: GameDataDocument) {
         if (!gameData.gameId) {
+          console.log("no gameId");
           return {};
         }
-        const game = getGameById(gameData.gameId, [], true);
-        return Object.entries(game.mathStandardsCompletedRequirements).reduce(
-          (acc, [standardName, requiredKeyValuePairs]) => {
-            acc[standardName] = Object.entries(requiredKeyValuePairs).every(
-              ([key, value]) => {
-                return gameData.globalStateData.gameStateData[key] === value;
-              }
-            );
-            return acc;
-          },
-          {} as Record<string, boolean>
-        );
+        console.log("here1");
+        const discussionStages = await DiscussionStageModel.find({});
+        console.log("here2");
+        const game = getGameById(gameData.gameId, discussionStages);
+        console.log("here3");
+        const allStartingPhases = getAllStartingPhasesFromGame(game);
+        console.log("allStartingPhases", allStartingPhases);
+        const allLearningObjecives: LearningObjective[] =
+          allStartingPhases.flatMap((step) => step.learningObjectives);
+        console.log("allLearningObjecives", allLearningObjecives);
+        return allLearningObjecives.reduce((acc, objective) => {
+          acc[objective.title] =
+            gameData.globalStateData.gameStateData[objective.variableName] ===
+            "true";
+          return acc;
+        }, {} as Record<string, boolean>);
       },
     },
     globalStateData: { type: GlobalStateDataType },
