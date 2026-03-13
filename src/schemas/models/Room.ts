@@ -171,12 +171,16 @@ export const CurGameStateSchema = new Schema<CurGameStateDocument>(
     curState: { type: String },
     playersLeftToRespond: [{ type: String }],
     studentReadyToContinue: { type: Boolean },
-    curRoundNumber: { type: Number },
+    curRoundNumber: { type: Number, default: 0 },
     endOfPhaseStep: { type: EndOfPhaseReflectionStepSchema },
     selectedQuestion: { type: String },
     studentReflections: { type: Schema.Types.Mixed, default: {} },
   },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
+  {
+    timestamps: true,
+    collation: { locale: "en", strength: 2 },
+    minimize: false,
+  }
 );
 export const GlobalStateSchema = new Schema<GlobalStateDataDocument>(
   {

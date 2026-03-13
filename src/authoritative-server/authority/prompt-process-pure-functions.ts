@@ -17,6 +17,7 @@ import { CancelToken } from "axios";
 import {
   PromptStageStep,
   PromptConfiguration,
+  isDiscussionStage,
 } from "../../schemas/models/DiscussionStage/types";
 import { PlayerDocument } from "../../schemas/models/Player";
 import { GameData } from "../../schemas/models/Room";
@@ -43,9 +44,14 @@ import {
 } from "../../schemas/models/DiscussionStage/objects";
 import { generateChatContext } from "../../helpers/chatContextGenerator";
 import LearningObjectiveModel from "../../schemas/models/LearningObjective";
+import { findRequestUserInputStepByStepId } from "../../helpers";
+import { DiscussionStage } from "../../schemas/models/DiscussionStage/types";
+import { getGameById } from "../games/game-helpers";
+import StudentSubmissionLogModel from "../../schemas/models/StudentSubmissionLog";
+import { Room } from "../../schemas/models/Room";
 
 export async function processPromptStep(
-  gameData: GameData,
+  room: Room,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -54,7 +60,8 @@ export async function processPromptStep(
   ) => Promise<AiServicesResponseTypes>,
   playerIdToUpdate: string,
   sessionId: string,
-  activePlayerData: PlayerDocument[]
+  activePlayerData: PlayerDocument[],
+  discussionStages: DiscussionStage[]
 ): Promise<AtomicRoomModiticationAction[]> {
   // Execute all prompts in parallel
   const promptResults = await Promise.all(
@@ -63,7 +70,7 @@ export async function processPromptStep(
       if (promptConfig.processPromptAs === ProcessPromptAs.GROUP) {
         return processGroupPrompt(
           promptConfig,
-          gameData,
+          room,
           curStep,
           targetAiServiceModel,
           executePrompt,
@@ -73,12 +80,13 @@ export async function processPromptStep(
       } else {
         return processIndividualPrompts(
           promptConfig,
-          gameData,
+          room,
           curStep,
           targetAiServiceModel,
           executePrompt,
           sessionId,
-          activePlayerData
+          activePlayerData,
+          discussionStages
         );
       }
     })
@@ -91,7 +99,7 @@ export async function processPromptStep(
 // Process a single prompt in GROUP mode
 async function processGroupPrompt(
   promptConfig: PromptConfiguration,
-  gameData: GameData,
+  room: Room,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -102,7 +110,7 @@ async function processGroupPrompt(
   activePlayerData: PlayerDocument[]
 ): Promise<AtomicRoomModiticationAction[]> {
   const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
-
+  const gameData = room.gameData;
   // Build aggregated state data for find-and-replace
   const aggregatedStateData = buildAggregatedStateDataForGroup(
     promptConfig.promptText,
@@ -235,7 +243,7 @@ async function processGroupPrompt(
 // Process prompts in INDIVIDUALLY mode (one per student, in parallel)
 async function processIndividualPrompts(
   promptConfig: PromptConfiguration,
-  gameData: GameData,
+  room: Room,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -243,8 +251,10 @@ async function processIndividualPrompts(
     cancelToken?: CancelToken
   ) => Promise<AiServicesResponseTypes>,
   sessionId: string,
-  activePlayerData: PlayerDocument[]
+  activePlayerData: PlayerDocument[],
+  discussionStages: DiscussionStage[]
 ): Promise<AtomicRoomModiticationAction[]> {
+  const gameData = room.gameData;
   try {
     // Check if this is an analyze learning objectives prompt
     if (promptConfig.analyzeLearningObjectives) {
@@ -253,11 +263,12 @@ async function processIndividualPrompts(
           return processAnalyzeLearningObjectivePrompt(
             promptConfig,
             player,
-            gameData,
+            room,
             curStep,
             targetAiServiceModel,
             executePrompt,
-            sessionId
+            sessionId,
+            discussionStages
           );
         })
       );
@@ -270,7 +281,7 @@ async function processIndividualPrompts(
         return processSingleStudentPrompt(
           promptConfig,
           player,
-          gameData,
+          room,
           curStep,
           targetAiServiceModel,
           executePrompt,
@@ -291,15 +302,21 @@ async function processIndividualPrompts(
 async function processAnalyzeLearningObjectivePrompt(
   promptConfig: PromptConfiguration,
   player: PlayerDocument,
-  gameData: GameData,
+  room: Room,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
     llmRequest: GenericLlmRequest,
     cancelToken?: CancelToken
   ) => Promise<AiServicesResponseTypes>,
-  sessionId: string
+  sessionId: string,
+  _discussionStages: DiscussionStage[]
 ): Promise<AtomicRoomModiticationAction[]> {
+  const gameData = room.gameData;
+  const game = getGameById(gameData.gameId, _discussionStages);
+  const discussionStages = game.stageList
+    .map((s) => s.stage)
+    .filter((s) => isDiscussionStage(s)) as DiscussionStage[];
   const playerId = String(player._id);
   console.log(
     "PROCESSING analyzeLearningObjectivePrompt for player: ",
@@ -326,8 +343,25 @@ async function processAnalyzeLearningObjectivePrompt(
   };
 
   // Add learning objectives to context
-  const learningObjectiveIds =
-    gameData.phaseProgression?.learningObjectives || [];
+  const requestUserInputStepsToPullLOIdsFrom =
+    promptConfig.includeMessageContext.stepIds;
+  console.log(
+    "requestUserInputStepsToPullLOIdsFrom: ",
+    requestUserInputStepsToPullLOIdsFrom
+  );
+  const learningObjectiveIds = Array.from(
+    new Set(
+      requestUserInputStepsToPullLOIdsFrom
+        .map((stepId) => {
+          const requestUserInputStep = findRequestUserInputStepByStepId(
+            stepId,
+            discussionStages
+          );
+          return requestUserInputStep?.learningObjectives || [];
+        })
+        .flat()
+    )
+  );
   const learningObjectives = await LearningObjectiveModel.find({
     _id: { $in: learningObjectiveIds },
   });
@@ -423,6 +457,20 @@ async function processAnalyzeLearningObjectivePrompt(
       newData: newDataToAdd,
     } as UpdateGlobalGameStateDataRoomAtomicAction);
   }
+
+  const coveredLearningObjectives = Object.fromEntries(
+    Object.entries(resData).filter(([_, value]) => value === "true")
+  );
+  if (Object.keys(coveredLearningObjectives).length > 0) {
+    await updateStudentSubmissionLog(
+      playerId,
+      room._id,
+      room.gameData.curGameState.curRoundNumber,
+      room.gameData.phaseProgression.curPhaseStepId,
+      coveredLearningObjectives
+    );
+  }
+
   console.log(
     "Player actions for analyzeLearningObjectivePrompt: ",
     JSON.stringify(playerActions, null, 2)
@@ -430,11 +478,29 @@ async function processAnalyzeLearningObjectivePrompt(
   return playerActions;
 }
 
+async function updateStudentSubmissionLog(
+  userId: string,
+  roomId: string,
+  roundNumber: number,
+  phaseStepId: string,
+  newDataToAdd: Record<string, string>
+): Promise<void> {
+  const res = await StudentSubmissionLogModel.findOneAndUpdate(
+    { userId, roomId, roundNumber, phaseStepId },
+    {
+      $addToSet: {
+        studentCoveredLearningObjectives: Object.keys(newDataToAdd),
+      },
+    },
+    { new: true, upsert: false }
+  );
+}
+
 // Process a single student's prompt in INDIVIDUALLY mode
 async function processSingleStudentPrompt(
   promptConfig: PromptConfiguration,
   player: PlayerDocument,
-  gameData: GameData,
+  room: Room,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -443,6 +509,7 @@ async function processSingleStudentPrompt(
   ) => Promise<AiServicesResponseTypes>,
   sessionId: string
 ): Promise<AtomicRoomModiticationAction[]> {
+  const gameData = room.gameData;
   const playerId = String(player._id);
   const playerActions: AtomicRoomModiticationAction[] = [];
 

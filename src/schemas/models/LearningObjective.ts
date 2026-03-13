@@ -10,7 +10,7 @@ import {
   GraphQLString,
   GraphQLID,
 } from "graphql";
-import mongoose, { Document, Model, plugin, Schema } from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 import {
   PaginatedResolveResult,
   PaginateOptions,

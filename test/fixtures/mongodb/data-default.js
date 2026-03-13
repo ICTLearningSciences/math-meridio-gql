@@ -697,6 +697,10 @@ module.exports = {
               requireInputType:
                 RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
               predefinedResponses: [],
+              learningObjectives: [
+                "5ffdf1231ee2b62321a49e32",
+                "5ffdf1231ee2b62321a49e34",
+              ],
             },
             {
               lastStep: true,
@@ -716,8 +720,8 @@ module.exports = {
                   customSystemRole: "",
                   analyzeLearningObjectives: true,
                   includeMessageContext: {
-                    type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
-                    stepIds: [],
+                    type: IncludeMessagesContextTypeEnum.FROM_INPUT_STEPS,
+                    stepIds: ["1"],
 
                     includeMessagesFromOtherUsers: false,
                   },
