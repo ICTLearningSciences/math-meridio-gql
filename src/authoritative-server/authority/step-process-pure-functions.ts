@@ -11,7 +11,6 @@ import {
   DiscussionStageStepType,
   EndOfPhaseReflectionStep,
   isDiscussionStage,
-  LearningObjective,
   RequestUserInputStageStep,
   StartOfPhaseStep,
   SystemMessageStageStep,
@@ -79,7 +78,7 @@ export async function applyAtomicRoomModificationActions(
   let phaseStarting: null | {
     startingPhaseStepId: string;
     phaseTitle: string;
-    learningObjectives: LearningObjective[];
+    learningObjectives: string[];
   } = null;
 
   const phasesToComplete: string[] = [];
@@ -233,11 +232,10 @@ export async function applyAtomicRoomModificationActions(
   return updatedRoom.gameData;
 }
 
-export function startOfPhaseStep(
+export async function startOfPhaseStep(
   _gameData: GameData,
   curStep: StartOfPhaseStep
-): AtomicRoomModiticationAction[] {
-  console.log(`startOfPhaseStep: ${JSON.stringify(curStep, null, 2)}`);
+): Promise<AtomicRoomModiticationAction[]> {
   const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
   atomicRoomModificationActions.push({
     actionType: RoomModificationEnum.STARTING_PHASE,
@@ -488,7 +486,7 @@ export async function processCurStep(
   switch (curStep.stepType) {
     case DiscussionStageStepType.START_OF_PHASE:
       const startOfPhaseStepActions: AtomicRoomModiticationAction[] =
-        startOfPhaseStep(gameData, curStep);
+        await startOfPhaseStep(gameData, curStep);
       gameData = await applyAtomicRoomModificationActions(
         gameData,
         startOfPhaseStepActions,

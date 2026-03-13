@@ -42,6 +42,7 @@ import {
   ProcessPromptAs,
 } from "../../schemas/models/DiscussionStage/objects";
 import { generateChatContext } from "../../helpers/chatContextGenerator";
+import LearningObjectiveModel from "../../schemas/models/LearningObjective";
 
 export async function processPromptStep(
   gameData: GameData,
@@ -325,8 +326,11 @@ async function processAnalyzeLearningObjectivePrompt(
   };
 
   // Add learning objectives to context
-  const learningObjectives =
+  const learningObjectiveIds =
     gameData.phaseProgression?.learningObjectives || [];
+  const learningObjectives = await LearningObjectiveModel.find({
+    _id: { $in: learningObjectiveIds },
+  });
   if (learningObjectives.length > 0) {
     let learningObjectivesContext = `
       Your task is to analyze both user responses to questions and extra provided user data to determine if the user has demonstrated the learning objectives.

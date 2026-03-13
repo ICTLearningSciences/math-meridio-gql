@@ -24,6 +24,8 @@ import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
 
 import fetchInstructorDataHydration from "./query/fetch-instructor-data-hydration";
 import fetchStudentDataHydration from "./query/fetch-student-data-hydration";
+import createNewLearningObjective from "./mutation/learning-objectives/create-new-learning-objective";
+import updateLearningObjective from "./mutation/learning-objectives/update-learning-objective";
 
 import loginGoogle from "./mutation/login-google";
 import refreshAccessToken from "./mutation/refresh-access-token";
@@ -56,6 +58,7 @@ import createClassMembership from "./mutation/create-class-membership";
 import shareClassroomWithInstructor from "./mutation/share-classroom-with-instructor";
 import fetchGamePhaseReflections from "./query/fetch-game-phase-reflections";
 import setNeedsHelpInGameRoom from "./mutation/needs-help-in-game-room";
+import fetchLearningObjectives from "./query/fetch-learning-objectives";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -70,6 +73,7 @@ const PublicRootQuery = new GraphQLObjectType({
     fetchRoomHeartbeats,
     fetchGamesList,
     fetchGamePhaseReflections,
+    fetchLearningObjectives,
   },
 });
 
@@ -112,6 +116,8 @@ const PublicMutation = new GraphQLObjectType({
     viewGameRoomSimulation,
     submitGamePhaseReflection,
     setNeedsHelpInGameRoom,
+    createNewLearningObjective,
+    updateLearningObjective,
   },
 });
 

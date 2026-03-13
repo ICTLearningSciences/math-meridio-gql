@@ -66,6 +66,7 @@ export const fullRoomData = `
           curPhaseStepId
           startingPhaseStepsOrdered
           learningObjectives{
+            _id
             variableName
             title
             criteria

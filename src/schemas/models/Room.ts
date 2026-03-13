@@ -27,14 +27,9 @@ import { Class } from "./classes/Class";
 import {
   EndOfPhaseReflectionStepSchema,
   EndOfPhaseReflectionStepType,
-  LearningObjectiveSchema,
-  LearningObjectiveType,
   RequireInputType,
 } from "./DiscussionStage/objects";
-import {
-  EndOfPhaseReflectionStep,
-  LearningObjective,
-} from "./DiscussionStage/types";
+import { EndOfPhaseReflectionStep } from "./DiscussionStage/types";
 import { PlayerStatusRecord } from "../../schemas/types/types";
 import {
   getAllStartingPhasesFromGame,
@@ -43,6 +38,10 @@ import {
 import { getGameById } from "../../authoritative-server/games/game-helpers";
 import DiscussionStageModel from "./DiscussionStage/DiscussionStage";
 import { DiscussionStageStepType } from "./DiscussionStage/types";
+import LearningObjectiveModel, {
+  LearningObjectiveDocument,
+  LearningObjectiveType,
+} from "./LearningObjective";
 
 /** mongoose */
 
@@ -81,7 +80,7 @@ export interface PhaseProgression {
   curPhaseTitle: string;
   curPhaseStepId: string;
   startingPhaseStepsOrdered: string[];
-  learningObjectives: LearningObjective[];
+  learningObjectives: string[];
 }
 
 export interface CurGameState {
@@ -161,7 +160,7 @@ export const PhaseProgressionSchema = new Schema<PhaseProgression>(
     curPhaseTitle: { type: String },
     curPhaseStepId: { type: String },
     startingPhaseStepsOrdered: [{ type: String }],
-    learningObjectives: [{ type: LearningObjectiveSchema }],
+    learningObjectives: [{ type: String }],
   },
   { collation: { locale: "en", strength: 2 } }
 );
@@ -372,8 +371,13 @@ export const GameDataType = new GraphQLObjectType({
         const discussionStages = await DiscussionStageModel.find({});
         const game = getGameById(gameData.gameId, discussionStages);
         const allStartingPhases = getAllStartingPhasesFromGame(game);
-        const allLearningObjecives: LearningObjective[] =
-          allStartingPhases.flatMap((step) => step.learningObjectives);
+        const allLearningObjeciveIds: string[] = allStartingPhases.flatMap(
+          (step) => step.learningObjectives
+        );
+        const allLearningObjecives: LearningObjectiveDocument[] =
+          await LearningObjectiveModel.find({
+            _id: { $in: allLearningObjeciveIds },
+          });
         return allLearningObjecives.reduce((acc, objective) => {
           acc[objective.title] =
             gameData.globalStateData.gameStateData[objective.variableName] ===

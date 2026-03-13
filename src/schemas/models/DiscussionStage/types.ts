@@ -115,16 +115,10 @@ export interface PromptStageStep extends StageBuilderStep {
   prompts: PromptConfiguration[];
 }
 
-export interface LearningObjective {
-  variableName: string;
-  title: string;
-  criteria: string;
-}
-
 export interface StartOfPhaseStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.START_OF_PHASE;
   phaseTitle: string;
-  learningObjectives: LearningObjective[];
+  learningObjectives: string[];
 }
 // LogicOperation
 export enum NumericOperations {

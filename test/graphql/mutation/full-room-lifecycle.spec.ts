@@ -1361,6 +1361,7 @@ describe("full room lifecycle", () => {
       "unit-test-end-of-phase",
       ownerStudentToken
     );
+    console.log(JSON.stringify(createNewGameRoomResponse.body, null, 2));
     expect(createNewGameRoomResponse.status).to.equal(200);
     expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
     const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
@@ -2048,13 +2049,7 @@ describe("full room lifecycle", () => {
     expect(currentRoom?.gameData.curGameState.curRoundNumber).to.equal(1);
     expect(
       currentRoom?.gameData.phaseProgression.learningObjectives
-    ).to.deep.include.members([
-      {
-        title: "Test Learning Objective",
-        criteria: "Test Learning Objective Criteria",
-        variableName: "test_learning_objective",
-      },
-    ]);
+    ).to.deep.equal(["5ffdf1231ee2b62321a49e31"]);
 
     // 4. owner submits reflection + ping room
     const submitSecondReflectionOwner = await submitGamePhaseReflection(
@@ -2593,10 +2588,8 @@ describe("full room lifecycle", () => {
     // ENSURE the learning objectives are in the phaseProgress
     expect(currentRoom?.gameData.phaseProgression?.learningObjectives).to.exist;
     expect(
-      currentRoom?.gameData.phaseProgression?.learningObjectives?.map(
-        (lo: any) => lo.title
-      )
-    ).to.deep.equal(["Test Learning Objective 1", "Test Learning Objective 2"]);
+      currentRoom?.gameData.phaseProgression?.learningObjectives
+    ).to.deep.equal(["5ffdf1231ee2b62321a49e32", "5ffdf1231ee2b62321a49e34"]);
 
     // setup mock for llmRequest
 

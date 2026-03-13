@@ -627,13 +627,7 @@ module.exports = {
               stepId: "0",
               stepType: DiscussionStageStepType.START_OF_PHASE,
               phaseTitle: "Start of Phase",
-              learningObjectives: [
-                {
-                  title: "Test Learning Objective",
-                  criteria: "Test Learning Objective Criteria",
-                  variableName: "test_learning_objective",
-                },
-              ],
+              learningObjectives: ["5ffdf1231ee2b62321a49e31"],
               lastStep: false,
             },
             {
@@ -686,16 +680,8 @@ module.exports = {
               stepType: DiscussionStageStepType.START_OF_PHASE,
               phaseTitle: "Start of Phase",
               learningObjectives: [
-                {
-                  title: "Test Learning Objective 1",
-                  criteria: "Test Learning Objective 1 Criteria",
-                  variableName: "test_learning_objective_1",
-                },
-                {
-                  title: "Test Learning Objective 2",
-                  criteria: "Test Learning Objective 2 Criteria",
-                  variableName: "test_learning_objective_2",
-                },
+                "5ffdf1231ee2b62321a49e32",
+                "5ffdf1231ee2b62321a49e34",
               ],
               lastStep: false,
             },
@@ -899,6 +885,27 @@ module.exports = {
       reflections: {
         [player1Id]: "value",
       },
+    },
+  ],
+
+  learningobjectives: [
+    {
+      _id: new ObjectId("5ffdf1231ee2b62321a49e31"),
+      title: "Test Learning Objective",
+      criteria: "Test Learning Objective Criteria",
+      variableName: "test_learning_objective",
+    },
+    {
+      _id: new ObjectId("5ffdf1231ee2b62321a49e32"),
+      title: "Test Learning Objective 1",
+      criteria: "Test Learning Objective 1 Criteria",
+      variableName: "test_learning_objective_1",
+    },
+    {
+      _id: new ObjectId("5ffdf1231ee2b62321a49e34"),
+      title: "Test Learning Objective 2",
+      criteria: "Test Learning Objective 2 Criteria",
+      variableName: "test_learning_objective_2",
     },
   ],
 };
