@@ -413,7 +413,10 @@ export const StartOfPhaseStepSchema = new Schema({
   ...StageBuilderStepSchema.obj,
   stepType: { type: String, default: DiscussionStageStepType.START_OF_PHASE },
   phaseTitle: { type: String },
-  learningObjectives: [{ type: String }],
+  learningObjectives: {
+    type: [{ type: String }],
+    default: [],
+  },
 });
 
 export const EndOfPhaseReflectionStepSchema = new Schema({

@@ -161,7 +161,10 @@ export const PhaseProgressionSchema = new Schema<PhaseProgression>(
     curPhaseTitle: { type: String },
     curPhaseStepId: { type: String },
     startingPhaseStepsOrdered: [{ type: String }],
-    learningObjectives: [{ type: String }],
+    learningObjectives: {
+      type: [String],
+      default: [],
+    },
   },
   { collation: { locale: "en", strength: 2 } }
 );
