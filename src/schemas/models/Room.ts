@@ -149,6 +149,7 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
     disableUserInput: { type: Boolean },
     mcqChoices: [{ type: String }],
     fromStepId: { type: String },
+    fromStepType: { type: String },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -272,6 +273,7 @@ export const ChatMessageType = new GraphQLObjectType({
     mcqChoices: { type: new GraphQLList(GraphQLString) },
     sessionId: { type: GraphQLString },
     fromStepId: { type: GraphQLString },
+    fromStepType: { type: GraphQLString },
   }),
 });
 
@@ -285,28 +287,6 @@ export const GlobalStateDataType = new GraphQLObjectType({
     gameStateData: { type: GraphQLScalarType },
   }),
 });
-
-// gamePhases:
-// WAITING_FOR_SINGLE_PLAYERS_INPUT
-//  - no extra data
-//  - Set when: request user input step started without requireAllUsersInput
-// WAITING_FOR_ALL_PLAYERS_INPUT_FREE_FOR_ALL
-//  - list of players we are waiting for a response from
-//  - Set when: request user input step started with requireAllUsersInput
-
-// WAITING_FOR_ALL_PLAYERS_IN_ORDER
-//  - next player we need a response from
-//  - Set when:
-//      - on create room
-//      - on ping process
-//      - When: request user input step started with requireAllUsersInput and requireAllUsersInput is ALL_REQUIRED_IN_ORDER
-// PROCESSING_REQUEST
-//  - no extra data
-// WAITING_FOR_SIMULATION
-// COLLECTING_PHASE_REFLECTION
-//  - playersLeftToRespond (reflect)
-//  - studentReflections (just for frontend display)
-//  - roundNumber (how many times this phase has been run)
 
 export const PhaseProgressionType = new GraphQLObjectType({
   name: "PhaseProgressionType",

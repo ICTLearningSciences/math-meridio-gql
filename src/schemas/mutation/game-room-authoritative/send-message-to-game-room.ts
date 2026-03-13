@@ -17,6 +17,8 @@ import {
 } from "../../models/DiscussionStage/types";
 import { buildUserMessage } from "../../../authoritative-server/authority/state-modifier-helpers";
 import { updateNumWordsSentInPhases } from "../../../authoritative-server/authority/step-process-pure-functions";
+import { initializeStudentSubmissionLog } from "../../../helpers";
+import LearningObjectiveModel from "../../models/LearningObjective";
 
 export const sendMessageToGameRoom = {
   type: RoomType,
@@ -53,11 +55,32 @@ export const sendMessageToGameRoom = {
     const discussionStages = _discussionStages.map((stage) => stage.toObject());
     const stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
 
+    const learningObjectives = await LearningObjectiveModel.find({});
+
     const shouldUpdateDiscussionData =
       isDiscussionStage(stageAndStep.curStage) &&
       stageAndStep.curStep?.stepType ===
         DiscussionStageStepType.REQUEST_USER_INPUT &&
       stageAndStep.curStep.saveResponseVariableName;
+
+    try {
+      if (room.gameData.phaseProgression.curPhaseStepId) {
+        await initializeStudentSubmissionLog(
+          context.userId,
+          args.message,
+          room,
+          discussionStages,
+          learningObjectives
+        );
+      } else {
+        console.log(
+          "not currently in a phase step, so not initializing student submission log"
+        );
+      }
+    } catch (error) {
+      console.error("Error initializing student submission log", error);
+      throw new Error("Failed to initialize student submission log");
+    }
 
     const updatedRoom = await RoomModel.findOneAndUpdate(
       { _id: args.roomId },

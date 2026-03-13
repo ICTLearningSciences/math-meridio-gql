@@ -71,6 +71,7 @@ describe("update discussion stage", () => {
             ],
             lastStep: false,
             requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+            learningObjectives: [],
           },
           {
             stepId: "789",
@@ -156,6 +157,7 @@ describe("update discussion stage", () => {
             ],
             lastStep: false,
             requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+            learningObjectives: [],
           },
           {
             stepId: "789",
@@ -251,6 +253,7 @@ describe("update discussion stage", () => {
             ],
             lastStep: false,
             requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+            learningObjectives: [],
           },
           {
             stepId: "789",

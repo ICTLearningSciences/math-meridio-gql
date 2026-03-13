@@ -57,6 +57,7 @@ export const fullDiscussionStageQueryData = `
                               jumpToStepId
                               message
                               saveResponseVariableName
+                              learningObjectives
                               disableFreeInput
                               predefinedResponses{
                                   clientId

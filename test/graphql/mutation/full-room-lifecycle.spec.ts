@@ -9,9 +9,8 @@ import createApp, { appStart, appStop } from "../../../src/app";
 import { expect } from "chai";
 import { Express } from "express";
 import mongoUnit from "mongo-unit";
-import request from "supertest";
 import { player1Id } from "../../fixtures/mongodb/data";
-import { assertSuccessfullGqlResponse, createUser } from "../../helpers";
+import { createUser } from "../../helpers";
 import mongoose from "mongoose";
 const { ObjectId } = mongoose.Types;
 import RoomModel, { Room } from "../../../src/schemas/models/Room";
@@ -1400,6 +1399,7 @@ describe("full room lifecycle", () => {
       "session1",
       ownerStudentToken
     );
+    console.log(JSON.stringify(sendMessageResponse.body, null, 2));
     expect(sendMessageResponse.status).to.equal(200);
     expect(sendMessageResponse.body.data.sendMessageToGameRoom).to.exist;
 
@@ -2544,7 +2544,7 @@ describe("full room lifecycle", () => {
     ).to.equal("Student Two's individual response");
   });
 
-  it("analyzeLearningObjectives prompt sends the proper structure for analysis1", async () => {
+  it("analyzeLearningObjectives prompt sends the proper structure for analysis", async () => {
     // 1. Create a room for game "unit-test-analyze-learning-objectives", add two students, ping process
     const ownerStudentId = new ObjectId().toString();
     const studentTwoId = new ObjectId().toString();

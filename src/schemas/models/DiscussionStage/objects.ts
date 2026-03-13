@@ -111,6 +111,7 @@ export const RequestUserInputStageStepType = new GraphQLObjectType({
     disableFreeInput: { type: GraphQLBoolean },
     predefinedResponses: { type: GraphQLList(PredefinedResponseType) },
     requireInputType: { type: GraphQLString },
+    learningObjectives: { type: GraphQLList(GraphQLString) },
   }),
 });
 
@@ -129,6 +130,7 @@ export const RequestUserInputStageStepTypeInput = new GraphQLInputObjectType({
     disableFreeInput: { type: GraphQLBoolean },
     predefinedResponses: { type: GraphQLList(PredefinedResponseTypeInput) },
     requireInputType: { type: GraphQLString },
+    learningObjectives: { type: GraphQLList(GraphQLString) },
   }),
 });
 
@@ -346,6 +348,7 @@ export const RequestUserInputStageStepSchema = new Schema({
     type: GraphQLString,
     default: RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
   },
+  learningObjectives: { type: [String], default: [] },
 });
 
 export const SingleConditionalSchema = new Schema({

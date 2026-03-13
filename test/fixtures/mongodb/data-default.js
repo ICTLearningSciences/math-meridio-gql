@@ -639,6 +639,7 @@ module.exports = {
               predefinedResponses: [],
               requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
               lastStep: false,
+              learningObjectives: ["5ffdf1231ee2b62321a49e31"],
             },
             {
               stepId: "2",

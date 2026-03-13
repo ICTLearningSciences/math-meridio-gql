@@ -89,6 +89,7 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
   disableFreeInput: boolean;
   predefinedResponses: PredefinedResponse[];
   requireInputType: RequireInputType;
+  learningObjectives: string[];
 }
 
 export interface IncludeMessageContext {
