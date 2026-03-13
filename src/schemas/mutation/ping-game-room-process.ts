@@ -54,312 +54,323 @@ export const pingGameRoomProcess = {
       userEducationalRole: EducationalRole;
     }
   ): Promise<Room> => {
-    const { roomId, sessionId } = args;
-    let room = await updatePlayersHeartbeat(roomId, context.userId);
-    if (room.gameData.players.length === 0) {
-      console.log("no players in room, returning room as is");
-      return room;
-    }
-    room = await updateRoomPlayerStatusedRecord(
-      room,
-      context.userId,
-      RoomModel
-    );
-    const activePlayers = Object.entries(
-      room.gameData.playersStatusRecord
-    ).filter(
-      ([_, playerStatus]) =>
-        playerStatus.computedState === PlayerComputedState.ACTIVE
-    );
-    if (activePlayers.length === 0) {
-      console.log("no active players in room, returning room as is");
-      return room;
-    }
-
-    const activePlayerDocuments = (
-      await PlayerModel.find({
-        _id: { $in: activePlayers.map(([playerId, _]) => playerId) },
-      })
-    ).map((player) => player.toObject());
-
-    if (!room.gameData.gameId) {
-      console.log("no gameId selected for room, returning room as is");
-      return room;
-    }
-
-    const _discussionStages = await DiscussionStageModel.find();
-    const discussionStages = _discussionStages.map((stage) => stage.toObject());
-
-    if (
-      !room.gameData.phaseProgression.startingPhaseStepsOrdered.length &&
-      room.gameData.gameId
-    ) {
-      const startingPhases = getStartingPhasesInOrderForGame(
-        room.gameData.gameId,
-        discussionStages
-      );
-      room = (
-        await RoomModel.findOneAndUpdate(
-          { _id: args.roomId },
-          {
-            $set: {
-              "gameData.phaseProgression.startingPhaseStepsOrdered":
-                startingPhases,
-            },
-          },
-          { new: true }
-        )
-      ).toObject();
-    }
-
-    let stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
-    let _stepRoundGamePhaseReflections =
-      await GamePhaseReflectionsModel.findOne({
-        roomId: roomId,
-        stepId: stageAndStep.curStep?.stepId,
-        roundNumber: room.gameData.curGameState.curRoundNumber,
-      });
-    let stepRoundGamePhaseReflections =
-      _stepRoundGamePhaseReflections?.toObject();
-    let isDiscussionStage = _isDiscussionStage(stageAndStep.curStage);
-    let isRequestUserInputStep =
-      isDiscussionStage &&
-      stageAndStep.curStep?.stepType ===
-        DiscussionStageStepType.REQUEST_USER_INPUT;
-    let requestUserInputStageStatus =
-      isRequestUserInputStep &&
-      _isRequestUserInputStepComplete(
-        room.gameData,
-        stageAndStep.curStep as RequestUserInputStageStep
-      );
-    let isSimulationStage =
-      stageAndStep.curStage.clientId === WAIT_FOR_SIMULATION_STAGE_CLIENT_ID;
-    let isSimulationStageComplete =
-      isSimulationStage && _isSimulationStageComplete(room.gameData);
-    let roomIsProcessing = room.phase === RoomPhase.PROCESSING;
-
-    let isEndOfPhaseReflectionStep =
-      isDiscussionStage &&
-      stageAndStep.curStep?.stepType ===
-        DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
-      room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION";
-    let endOfPhaseReflectionStepStatus =
-      isEndOfPhaseReflectionStep &&
-      _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections);
-
-    const isWaitingForEndOfPhaseReflectionReadyUp =
-      isDiscussionStage &&
-      stageAndStep.curStep?.stepType ===
-        DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
-      room.gameData.curGameState.curState ===
-        "WAITING_FOR_STUDENT_READY_TO_CONTINUE";
-    const isEndOfPhaseReflectionReadyUpComplete = Boolean(
-      room.gameData.curGameState.studentReadyToContinue
-    );
-
-    const isCompleteRequestUserInputStep =
-      isDiscussionStage &&
-      isRequestUserInputStep &&
-      requestUserInputStageStatus.isComplete;
-    const isCompleteSimulationStage =
-      isSimulationStage && isSimulationStageComplete;
-    const isCompleteEndOfPhaseReflectionStep =
-      isEndOfPhaseReflectionStep && endOfPhaseReflectionStepStatus.isComplete;
-    const isCompleteEndOfPhaseReflectionReadyUp =
-      isWaitingForEndOfPhaseReflectionReadyUp &&
-      isEndOfPhaseReflectionReadyUpComplete;
-
-    console.log("-------------------------------- FIRST CHECKING VARS -----");
-    console.log(
-      "isCompleteRequestUserInputStep",
-      isCompleteRequestUserInputStep
-    );
-    console.log("isCompleteSimulationStage", isCompleteSimulationStage);
-    console.log(
-      "isCompleteEndOfPhaseReflectionStep",
-      isCompleteEndOfPhaseReflectionStep
-    );
-    console.log(
-      "isCompleteEndOfPhaseReflectionReadyUp",
-      isCompleteEndOfPhaseReflectionReadyUp
-    );
-    console.log("roomIsProcessing", roomIsProcessing);
-    console.log("-------------------------------- FIRST CHECKING VARS -----");
-
-    // Transition from end of phase reflection step to waiting for student ready to continue
-    if (isCompleteEndOfPhaseReflectionStep) {
-      console.log(
-        "Transitioning to WAITING_FOR_STUDENT_READY_TO_CONTINUE state"
-      );
-      room = await RoomModel.findOneAndUpdate(
-        { _id: args.roomId },
-        {
-          $set: {
-            "gameData.curGameState.curState":
-              "WAITING_FOR_STUDENT_READY_TO_CONTINUE",
-            "gameData.curGameState.studentReadyToContinue": false,
-            "gameData.curGameState.studentReflections":
-              endOfPhaseReflectionStepStatus.studentReflections,
-          },
-        },
-        { new: true }
-      );
-    } else if (
-      (isCompleteRequestUserInputStep ||
-        isCompleteSimulationStage ||
-        isCompleteEndOfPhaseReflectionReadyUp) &&
-      !roomIsProcessing
-    ) {
-      const lockResult = await acquireProcessingLock(
-        args.roomId,
-        room.versionNumber,
+    try {
+      const { roomId, sessionId } = args;
+      let room = await updatePlayersHeartbeat(roomId, context.userId);
+      if (room.gameData.players.length === 0) {
+        console.log("no players in room, returning room as is");
+        return room;
+      }
+      room = await updateRoomPlayerStatusedRecord(
+        room,
+        context.userId,
         RoomModel
       );
-      if (!lockResult.success) {
-        console.log(
-          `Failed to acquire processing lock: ${lockResult.reason}. Returning room with just new messages added.`
-        );
-        return lockResult.room || room;
+      const activePlayers = Object.entries(
+        room.gameData.playersStatusRecord
+      ).filter(
+        ([_, playerStatus]) =>
+          playerStatus.computedState === PlayerComputedState.ACTIVE
+      );
+      if (activePlayers.length === 0) {
+        console.log("no active players in room, returning room as is");
+        return room;
       }
-      room = lockResult.room;
 
-      // check if we are ready to move on from the current step and continue processing.
-      console.log(
-        "we are ready to move on from an input step and continue processing."
+      const activePlayerDocuments = (
+        await PlayerModel.find({
+          _id: { $in: activePlayers.map(([playerId, _]) => playerId) },
+        })
+      ).map((player) => player.toObject());
+
+      if (!room.gameData.gameId) {
+        console.log("no gameId selected for room, returning room as is");
+        return room;
+      }
+
+      const _discussionStages = await DiscussionStageModel.find();
+      const discussionStages = _discussionStages.map((stage) =>
+        stage.toObject()
       );
-      room = await processStepsUntilNextStallingPhase(
-        room,
-        discussionStages,
-        {
-          serviceName: AiServiceNames.OPEN_AI,
-          model: "gpt-4o-mini",
-        },
-        room.gameData.globalStateData.roomOwnerId,
-        sessionId,
-        activePlayerDocuments
-      );
-      room = await RoomModel.findOneAndUpdate(
-        { _id: args.roomId },
-        {
-          $set: {
-            gameData: room.gameData,
-            phase: RoomPhase.NO_ACTIVE_PROCESSING,
-          },
-          $inc: {
-            versionNumber: 1,
-          },
-        },
-        { new: true }
-      );
-    }
 
-    // After some processing occurred, re-check the rooms state and see if we need to update the rooms curGameState
-    stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
-    isDiscussionStage = _isDiscussionStage(stageAndStep.curStage);
-    isRequestUserInputStep =
-      isDiscussionStage &&
-      stageAndStep.curStep?.stepType ===
-        DiscussionStageStepType.REQUEST_USER_INPUT;
-    requestUserInputStageStatus =
-      isRequestUserInputStep &&
-      _isRequestUserInputStepComplete(
-        room.gameData,
-        stageAndStep.curStep as RequestUserInputStageStep
-      );
-    isSimulationStage =
-      stageAndStep.curStage.clientId === WAIT_FOR_SIMULATION_STAGE_CLIENT_ID;
-    isSimulationStageComplete =
-      isSimulationStage && _isSimulationStageComplete(room.gameData);
-    roomIsProcessing = room.phase === RoomPhase.PROCESSING;
-
-    isEndOfPhaseReflectionStep =
-      isDiscussionStage &&
-      stageAndStep.curStep?.stepType ===
-        DiscussionStageStepType.END_OF_PHASE_REFLECTION;
-    _stepRoundGamePhaseReflections = await GamePhaseReflectionsModel.findOne({
-      roomId: roomId,
-      stepId: stageAndStep.curStep?.stepId,
-      roundNumber: room.gameData.curGameState.curRoundNumber,
-    });
-    stepRoundGamePhaseReflections = _stepRoundGamePhaseReflections?.toObject();
-    console.log("stepRoundGamePhaseReflections", stepRoundGamePhaseReflections);
-    endOfPhaseReflectionStepStatus =
-      isEndOfPhaseReflectionStep &&
-      _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections);
-
-    console.log("----- RECHECKING VARS -----");
-    console.log("isDiscussionStage", isDiscussionStage);
-    console.log("isRequestUserInputStep", isRequestUserInputStep);
-    console.log("requestUserInputStageStatus", requestUserInputStageStatus);
-    console.log("isSimulationStage", isSimulationStage);
-    console.log("isSimulationStageComplete", isSimulationStageComplete);
-    console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
-    console.log(
-      "endOfPhaseReflectionStepStatus",
-      endOfPhaseReflectionStepStatus
-    );
-    console.log("roomIsProcessing", roomIsProcessing);
-    console.log("----- RECHECKING VARS -----");
-
-    // if we are now in a request user input step and it is not complete, check the status of the request user input step.
-    if (isRequestUserInputStep && !requestUserInputStageStatus.isComplete) {
-      const newGameState = (stageAndStep.curStep as RequestUserInputStageStep)
-        .requireInputType;
-
-      room = await RoomModel.findOneAndUpdate(
-        { _id: args.roomId },
-        {
-          $set: {
-            "gameData.curGameState": {
-              curState: newGameState,
-              playersLeftToRespond:
-                requestUserInputStageStatus.playersLeftToRespond || [],
-            },
-          },
-        },
-        { new: true }
-      );
-    }
-
-    // if we are now in a game phase reflection state and it is not complete, check and update the status of the request user input step
-    if (
-      isEndOfPhaseReflectionStep &&
-      !endOfPhaseReflectionStepStatus.isComplete &&
-      room.gameData.curGameState.curState !==
-        "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
-    ) {
-      console.log("incomplete end of phase reflection step, checking status");
-      if (room.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION") {
-        console.log("transitioning to end of phase reflection state");
-        const numStepGamePhaseReflections =
-          await GamePhaseReflectionsModel.countDocuments({
-            roomId: roomId,
-            stepId: stageAndStep.curStep?.stepId,
-          });
-        room = await transitionToEndOfPhaseReflectionState(
-          room,
-          stageAndStep.curStep as EndOfPhaseReflectionStep,
-          numStepGamePhaseReflections
+      if (
+        !room.gameData.phaseProgression.startingPhaseStepsOrdered.length &&
+        room.gameData.gameId
+      ) {
+        const startingPhases = getStartingPhasesInOrderForGame(
+          room.gameData.gameId,
+          discussionStages
         );
-      } else {
-        // We are in an incomplete end of phase reflection step, so we need to apply the endOfPhaseReflectionStepStatus to the room.
-        console.log("applying endOfPhaseReflectionStepStatus to room");
+        room = (
+          await RoomModel.findOneAndUpdate(
+            { _id: args.roomId },
+            {
+              $set: {
+                "gameData.phaseProgression.startingPhaseStepsOrdered":
+                  startingPhases,
+              },
+            },
+            { new: true }
+          )
+        ).toObject();
+      }
+
+      let stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
+      let _stepRoundGamePhaseReflections =
+        await GamePhaseReflectionsModel.findOne({
+          roomId: roomId,
+          stepId: stageAndStep.curStep?.stepId,
+          roundNumber: room.gameData.curGameState.curRoundNumber,
+        });
+      let stepRoundGamePhaseReflections =
+        _stepRoundGamePhaseReflections?.toObject();
+      let isDiscussionStage = _isDiscussionStage(stageAndStep.curStage);
+      let isRequestUserInputStep =
+        isDiscussionStage &&
+        stageAndStep.curStep?.stepType ===
+          DiscussionStageStepType.REQUEST_USER_INPUT;
+      let requestUserInputStageStatus =
+        isRequestUserInputStep &&
+        _isRequestUserInputStepComplete(
+          room.gameData,
+          stageAndStep.curStep as RequestUserInputStageStep
+        );
+      let isSimulationStage =
+        stageAndStep.curStage.clientId === WAIT_FOR_SIMULATION_STAGE_CLIENT_ID;
+      let isSimulationStageComplete =
+        isSimulationStage && _isSimulationStageComplete(room.gameData);
+      let roomIsProcessing = room.phase === RoomPhase.PROCESSING;
+
+      let isEndOfPhaseReflectionStep =
+        isDiscussionStage &&
+        stageAndStep.curStep?.stepType ===
+          DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
+        room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION";
+      let endOfPhaseReflectionStepStatus =
+        isEndOfPhaseReflectionStep &&
+        _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections);
+
+      const isWaitingForEndOfPhaseReflectionReadyUp =
+        isDiscussionStage &&
+        stageAndStep.curStep?.stepType ===
+          DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
+        room.gameData.curGameState.curState ===
+          "WAITING_FOR_STUDENT_READY_TO_CONTINUE";
+      const isEndOfPhaseReflectionReadyUpComplete = Boolean(
+        room.gameData.curGameState.studentReadyToContinue
+      );
+
+      const isCompleteRequestUserInputStep =
+        isDiscussionStage &&
+        isRequestUserInputStep &&
+        requestUserInputStageStatus.isComplete;
+      const isCompleteSimulationStage =
+        isSimulationStage && isSimulationStageComplete;
+      const isCompleteEndOfPhaseReflectionStep =
+        isEndOfPhaseReflectionStep && endOfPhaseReflectionStepStatus.isComplete;
+      const isCompleteEndOfPhaseReflectionReadyUp =
+        isWaitingForEndOfPhaseReflectionReadyUp &&
+        isEndOfPhaseReflectionReadyUpComplete;
+
+      console.log("-------------------------------- FIRST CHECKING VARS -----");
+      console.log(
+        "isCompleteRequestUserInputStep",
+        isCompleteRequestUserInputStep
+      );
+      console.log("isCompleteSimulationStage", isCompleteSimulationStage);
+      console.log(
+        "isCompleteEndOfPhaseReflectionStep",
+        isCompleteEndOfPhaseReflectionStep
+      );
+      console.log(
+        "isCompleteEndOfPhaseReflectionReadyUp",
+        isCompleteEndOfPhaseReflectionReadyUp
+      );
+      console.log("roomIsProcessing", roomIsProcessing);
+      console.log("-------------------------------- FIRST CHECKING VARS -----");
+
+      // Transition from end of phase reflection step to waiting for student ready to continue
+      if (isCompleteEndOfPhaseReflectionStep) {
+        console.log(
+          "Transitioning to WAITING_FOR_STUDENT_READY_TO_CONTINUE state"
+        );
         room = await RoomModel.findOneAndUpdate(
           { _id: args.roomId },
           {
             $set: {
-              "gameData.curGameState.curState": "END_OF_PHASE_REFLECTION",
-              "gameData.curGameState.playersLeftToRespond":
-                endOfPhaseReflectionStepStatus.playersLeftToRespond,
+              "gameData.curGameState.curState":
+                "WAITING_FOR_STUDENT_READY_TO_CONTINUE",
+              "gameData.curGameState.studentReadyToContinue": false,
               "gameData.curGameState.studentReflections":
                 endOfPhaseReflectionStepStatus.studentReflections,
             },
           },
           { new: true }
         );
+      } else if (
+        (isCompleteRequestUserInputStep ||
+          isCompleteSimulationStage ||
+          isCompleteEndOfPhaseReflectionReadyUp) &&
+        !roomIsProcessing
+      ) {
+        const lockResult = await acquireProcessingLock(
+          args.roomId,
+          room.versionNumber,
+          RoomModel
+        );
+        if (!lockResult.success) {
+          console.log(
+            `Failed to acquire processing lock: ${lockResult.reason}. Returning room with just new messages added.`
+          );
+          return lockResult.room || room;
+        }
+        room = lockResult.room;
+
+        // check if we are ready to move on from the current step and continue processing.
+        console.log(
+          "we are ready to move on from an input step and continue processing."
+        );
+        room = await processStepsUntilNextStallingPhase(
+          room,
+          discussionStages,
+          {
+            serviceName: AiServiceNames.OPEN_AI,
+            model: "gpt-4o-mini",
+          },
+          room.gameData.globalStateData.roomOwnerId,
+          sessionId,
+          activePlayerDocuments
+        );
+        room = await RoomModel.findOneAndUpdate(
+          { _id: args.roomId },
+          {
+            $set: {
+              gameData: room.gameData,
+              phase: RoomPhase.NO_ACTIVE_PROCESSING,
+            },
+            $inc: {
+              versionNumber: 1,
+            },
+          },
+          { new: true }
+        );
       }
+
+      // After some processing occurred, re-check the rooms state and see if we need to update the rooms curGameState
+      stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
+      isDiscussionStage = _isDiscussionStage(stageAndStep.curStage);
+      isRequestUserInputStep =
+        isDiscussionStage &&
+        stageAndStep.curStep?.stepType ===
+          DiscussionStageStepType.REQUEST_USER_INPUT;
+      requestUserInputStageStatus =
+        isRequestUserInputStep &&
+        _isRequestUserInputStepComplete(
+          room.gameData,
+          stageAndStep.curStep as RequestUserInputStageStep
+        );
+      isSimulationStage =
+        stageAndStep.curStage.clientId === WAIT_FOR_SIMULATION_STAGE_CLIENT_ID;
+      isSimulationStageComplete =
+        isSimulationStage && _isSimulationStageComplete(room.gameData);
+      roomIsProcessing = room.phase === RoomPhase.PROCESSING;
+
+      isEndOfPhaseReflectionStep =
+        isDiscussionStage &&
+        stageAndStep.curStep?.stepType ===
+          DiscussionStageStepType.END_OF_PHASE_REFLECTION;
+      _stepRoundGamePhaseReflections = await GamePhaseReflectionsModel.findOne({
+        roomId: roomId,
+        stepId: stageAndStep.curStep?.stepId,
+        roundNumber: room.gameData.curGameState.curRoundNumber,
+      });
+      stepRoundGamePhaseReflections =
+        _stepRoundGamePhaseReflections?.toObject();
+      console.log(
+        "stepRoundGamePhaseReflections",
+        stepRoundGamePhaseReflections
+      );
+      endOfPhaseReflectionStepStatus =
+        isEndOfPhaseReflectionStep &&
+        _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections);
+
+      console.log("----- RECHECKING VARS -----");
+      console.log("isDiscussionStage", isDiscussionStage);
+      console.log("isRequestUserInputStep", isRequestUserInputStep);
+      console.log("requestUserInputStageStatus", requestUserInputStageStatus);
+      console.log("isSimulationStage", isSimulationStage);
+      console.log("isSimulationStageComplete", isSimulationStageComplete);
+      console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
+      console.log(
+        "endOfPhaseReflectionStepStatus",
+        endOfPhaseReflectionStepStatus
+      );
+      console.log("roomIsProcessing", roomIsProcessing);
+      console.log("----- RECHECKING VARS -----");
+
+      // if we are now in a request user input step and it is not complete, check the status of the request user input step.
+      if (isRequestUserInputStep && !requestUserInputStageStatus.isComplete) {
+        const newGameState = (stageAndStep.curStep as RequestUserInputStageStep)
+          .requireInputType;
+
+        room = await RoomModel.findOneAndUpdate(
+          { _id: args.roomId },
+          {
+            $set: {
+              "gameData.curGameState": {
+                curState: newGameState,
+                playersLeftToRespond:
+                  requestUserInputStageStatus.playersLeftToRespond || [],
+              },
+            },
+          },
+          { new: true }
+        );
+      }
+
+      // if we are now in a game phase reflection state and it is not complete, check and update the status of the request user input step
+      if (
+        isEndOfPhaseReflectionStep &&
+        !endOfPhaseReflectionStepStatus.isComplete &&
+        room.gameData.curGameState.curState !==
+          "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
+      ) {
+        console.log("incomplete end of phase reflection step, checking status");
+        if (room.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION") {
+          console.log("transitioning to end of phase reflection state");
+          const numStepGamePhaseReflections =
+            await GamePhaseReflectionsModel.countDocuments({
+              roomId: roomId,
+              stepId: stageAndStep.curStep?.stepId,
+            });
+          room = await transitionToEndOfPhaseReflectionState(
+            room,
+            stageAndStep.curStep as EndOfPhaseReflectionStep,
+            numStepGamePhaseReflections
+          );
+        } else {
+          // We are in an incomplete end of phase reflection step, so we need to apply the endOfPhaseReflectionStepStatus to the room.
+          console.log("applying endOfPhaseReflectionStepStatus to room");
+          room = await RoomModel.findOneAndUpdate(
+            { _id: args.roomId },
+            {
+              $set: {
+                "gameData.curGameState.curState": "END_OF_PHASE_REFLECTION",
+                "gameData.curGameState.playersLeftToRespond":
+                  endOfPhaseReflectionStepStatus.playersLeftToRespond,
+                "gameData.curGameState.studentReflections":
+                  endOfPhaseReflectionStepStatus.studentReflections,
+              },
+            },
+            { new: true }
+          );
+        }
+      }
+      return room;
+    } catch (error) {
+      console.error("Error pinging game room: ", error);
+      throw error;
     }
-    return room;
   },
 };
 

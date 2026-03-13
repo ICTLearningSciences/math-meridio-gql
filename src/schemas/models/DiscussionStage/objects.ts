@@ -111,6 +111,7 @@ export const RequestUserInputStageStepType = new GraphQLObjectType({
     disableFreeInput: { type: GraphQLBoolean },
     predefinedResponses: { type: GraphQLList(PredefinedResponseType) },
     requireInputType: { type: GraphQLString },
+    learningObjectives: { type: GraphQLList(GraphQLString) },
   }),
 });
 
@@ -129,6 +130,7 @@ export const RequestUserInputStageStepTypeInput = new GraphQLInputObjectType({
     disableFreeInput: { type: GraphQLBoolean },
     predefinedResponses: { type: GraphQLList(PredefinedResponseTypeInput) },
     requireInputType: { type: GraphQLString },
+    learningObjectives: { type: GraphQLList(GraphQLString) },
   }),
 });
 
@@ -181,6 +183,16 @@ export const ConditionalActivityStepTypeInput = new GraphQLInputObjectType({
   }),
 });
 
+export const IncludeMessageContextType = new GraphQLObjectType({
+  name: "IncludeMessageContextType",
+  fields: () => ({
+    type: { type: GraphQLString, enum: IncludeMessagesContextTypeEnum },
+    stepIds: { type: GraphQLList(GraphQLString) },
+    // numRecentMessages: { type: GraphQLInt },
+    includeMessagesFromOtherUsers: { type: GraphQLBoolean },
+  }),
+});
+
 export const PromptConfigurationType = new GraphQLObjectType({
   name: "PromptConfigurationType",
   fields: () => ({
@@ -188,6 +200,8 @@ export const PromptConfigurationType = new GraphQLObjectType({
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
+    analyzeLearningObjectives: { type: GraphQLBoolean },
+    includeMessageContext: { type: IncludeMessageContextType },
     outputDataType: { type: GraphQLString },
     jsonResponseData: { type: GraphQLString },
     customSystemRole: { type: GraphQLString },
@@ -205,6 +219,16 @@ export const PromptStageStepType = new GraphQLObjectType({
   }),
 });
 
+export const IncludeMessageContextTypeInput = new GraphQLInputObjectType({
+  name: "IncludeMessageContextTypeInput",
+  fields: () => ({
+    type: { type: GraphQLString, enum: IncludeMessagesContextTypeEnum },
+    stepIds: { type: GraphQLList(GraphQLString) },
+    // numRecentMessages: { type: GraphQLInt },
+    includeMessagesFromOtherUsers: { type: GraphQLBoolean },
+  }),
+});
+
 export const PromptConfigurationTypeInput = new GraphQLInputObjectType({
   name: "PromptConfigurationTypeInput",
   fields: () => ({
@@ -212,6 +236,8 @@ export const PromptConfigurationTypeInput = new GraphQLInputObjectType({
     promptText: { type: GraphQLString },
     responseFormat: { type: GraphQLString },
     includeChatLogContext: { type: GraphQLBoolean },
+    analyzeLearningObjectives: { type: GraphQLBoolean },
+    includeMessageContext: { type: IncludeMessageContextTypeInput },
     outputDataType: { type: GraphQLString },
     jsonResponseData: { type: GraphQLString },
     customSystemRole: { type: GraphQLString },
@@ -254,6 +280,7 @@ export const StartOfPhaseStepType = new GraphQLObjectType({
       value: DiscussionStageStepType.START_OF_PHASE,
     },
     phaseTitle: { type: GraphQLString },
+    learningObjectives: { type: GraphQLList(GraphQLString) },
     lastStep: { type: GraphQLBoolean },
   }),
 });
@@ -268,6 +295,7 @@ export const StartOfPhaseStepTypeInput = new GraphQLInputObjectType({
     },
     phaseTitle: { type: GraphQLString },
     lastStep: { type: GraphQLBoolean },
+    learningObjectives: { type: GraphQLList(GraphQLString) },
   }),
 });
 
@@ -320,6 +348,7 @@ export const RequestUserInputStageStepSchema = new Schema({
     type: GraphQLString,
     default: RequireInputType.ALL_USER_RESPONSES_REQUIRED_FREE_FOR_ALL,
   },
+  learningObjectives: { type: [String], default: [] },
 });
 
 export const SingleConditionalSchema = new Schema({
@@ -341,9 +370,32 @@ export enum ProcessPromptAs {
   INDIVIDUALLY = "INDIVIDUALLY",
 }
 
+export enum IncludeMessagesContextTypeEnum {
+  NONE = "NONE",
+  ALL_MESSAGES = "ALL_MESSAGES",
+  // NUM_RECENT_MESSAGES = "NUM_RECENT_MESSAGES",
+  FROM_INPUT_STEPS = "FROM_INPUT_STEPS",
+}
+
+export const IncludeMessageContextSchema = new Schema({
+  type: { type: String, enum: IncludeMessagesContextTypeEnum },
+  stepIds: { type: [String], default: [] },
+  // numRecentMessages: { type: Number, default: 10 },
+  includeMessagesFromOtherUsers: { type: Boolean, default: false },
+});
+
 export const PromptConfigurationSchema = new Schema({
   processPromptAs: { type: String, default: ProcessPromptAs.INDIVIDUALLY },
   promptText: { type: String },
+  analyzeLearningObjectives: { type: Boolean },
+  includeMessageContext: {
+    type: IncludeMessageContextSchema,
+    default: {
+      type: IncludeMessagesContextTypeEnum.NONE,
+      stepIds: [],
+      includeMessagesFromOtherUsers: false,
+    },
+  },
   responseFormat: { type: String },
   includeChatLogContext: { type: Boolean },
   outputDataType: { type: String },
@@ -361,6 +413,10 @@ export const StartOfPhaseStepSchema = new Schema({
   ...StageBuilderStepSchema.obj,
   stepType: { type: String, default: DiscussionStageStepType.START_OF_PHASE },
   phaseTitle: { type: String },
+  learningObjectives: {
+    type: [{ type: String }],
+    default: [],
+  },
 });
 
 export const EndOfPhaseReflectionStepSchema = new Schema({

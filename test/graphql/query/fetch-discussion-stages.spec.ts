@@ -37,6 +37,7 @@ export const fullDiscussionStageQueryData = `
                               stepId
                               stepType
                               phaseTitle
+                              learningObjectives
                           }
 
                           ... on EndOfPhaseReflectionStepType {
@@ -56,6 +57,7 @@ export const fullDiscussionStageQueryData = `
                               jumpToStepId
                               message
                               saveResponseVariableName
+                              learningObjectives
                               disableFreeInput
                               predefinedResponses{
                                   clientId
@@ -80,6 +82,12 @@ export const fullDiscussionStageQueryData = `
                                 outputDataType
                                 jsonResponseData
                                 customSystemRole
+                                analyzeLearningObjectives
+                                includeMessageContext{
+                                  type
+                                  stepIds
+                                  includeMessagesFromOtherUsers
+                                }
                               }
                           }
 

@@ -151,7 +151,6 @@ export abstract class AbstractGameData {
   abstract name: string;
   abstract stageList: CurrentStage<IStage>[];
   abstract persistTruthGlobalStateData: string[];
-  abstract mathStandardsCompletedRequirements: MathStandardsCompletionRequirements;
 }
 
 export interface SimulationStage extends IStage {
@@ -216,6 +215,7 @@ export interface StartPhaseAtomicAction
   actionType: RoomModificationEnum.STARTING_PHASE;
   startingPhaseStepId: string;
   phaseTitle: string;
+  learningObjectives: string[];
 }
 
 export interface CompletePhaseAtomicAction

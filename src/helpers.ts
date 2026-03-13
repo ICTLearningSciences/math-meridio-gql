@@ -20,7 +20,18 @@ import {
   DiscussionStage,
   DiscussionStageStepType,
   isDiscussionStage,
+  RequestUserInputStageStep,
+  StartOfPhaseStep,
 } from "./schemas/models/DiscussionStage/types";
+import { AbstractGameData } from "./authoritative-server/llm-request/types";
+import StudentSubmissionLogModel, {
+  StudentSubmissionLog,
+} from "./schemas/models/StudentSubmissionLog";
+import { ChatMessage, Room } from "./schemas/models/Room";
+import {
+  LearningObjective,
+  LearningObjectiveDocument,
+} from "./schemas/models/LearningObjective";
 
 const queryPayloadSchema = {
   type: "object",
@@ -137,6 +148,26 @@ export function canModifyClassroom(userId: string, classroom: Class): boolean {
   );
 }
 
+export function getAllStartingPhasesFromGame(
+  game: AbstractGameData
+): StartOfPhaseStep[] {
+  try {
+    const allDiscussionStages: DiscussionStage[] = game.stageList
+      .map((s) => s.stage)
+      .filter((s) => isDiscussionStage(s)) as any[];
+    const allDiscussionSteps = allDiscussionStages
+      .flatMap((stage) => stage.flowsList)
+      .flatMap((flowItem) => flowItem.steps);
+    const allStartOfPhaseSteps: StartOfPhaseStep[] = allDiscussionSteps.filter(
+      (step) => step.stepType === DiscussionStageStepType.START_OF_PHASE
+    ) as StartOfPhaseStep[];
+    return allStartOfPhaseSteps;
+  } catch (error) {
+    console.error("error", error);
+    return [];
+  }
+}
+
 export function getStartingPhasesInOrderForGame(
   gameId: string,
   discussionStages: DiscussionStage[]
@@ -152,4 +183,124 @@ export function getStartingPhasesInOrderForGame(
     (step) => step.stepType === DiscussionStageStepType.START_OF_PHASE
   );
   return allStartOfPhaseSteps.map((step) => step.stepId);
+}
+
+export function getAllStartingPhasesFromAllDiscussionStages(
+  discussionStages: DiscussionStage[]
+): StartOfPhaseStep[] {
+  const allStartingPhases = discussionStages
+    .flatMap((stage) => stage.flowsList)
+    .flatMap((flowItem) => flowItem.steps)
+    .filter((step) => step.stepType === DiscussionStageStepType.START_OF_PHASE);
+  return allStartingPhases as StartOfPhaseStep[];
+}
+
+export function findStartingPhaseStepByPhaseStepId(
+  phaseStepId: string,
+  discussionStages: DiscussionStage[]
+): StartOfPhaseStep | null {
+  const allStartingPhases =
+    getAllStartingPhasesFromAllDiscussionStages(discussionStages);
+  const startingPhaseStep = allStartingPhases.find(
+    (step) => step.stepId === phaseStepId
+  );
+  return startingPhaseStep || null;
+}
+
+export function findRequestUserInputStepByStepId(
+  stepId: string,
+  discussionStages: DiscussionStage[]
+): RequestUserInputStageStep | null {
+  const allRequestUserInputSteps = discussionStages
+    .flatMap((stage) => stage.flowsList)
+    .flatMap((flowItem) => flowItem.steps)
+    .filter(
+      (step) => step.stepType === DiscussionStageStepType.REQUEST_USER_INPUT
+    ) as RequestUserInputStageStep[];
+  const requestUserInputStep = allRequestUserInputSteps.find(
+    (step) => step.stepId === stepId
+  );
+  return requestUserInputStep || null;
+}
+
+export async function initializeStudentSubmissionLog(
+  senderStudentId: string,
+  message: string,
+  room: Room,
+  _discussionStages: DiscussionStage[],
+  allLearningObjectives: LearningObjectiveDocument[]
+): Promise<StudentSubmissionLog | null> {
+  const game = getGameById(room.gameData.gameId, _discussionStages);
+  const discussionStages = game.stageList
+    .map((s) => s.stage)
+    .filter((s) => isDiscussionStage(s)) as DiscussionStage[];
+  const allLearningObjectivesMap = allLearningObjectives.reduce(
+    (acc, objective) => {
+      acc[objective._id] = objective;
+      return acc;
+    },
+    {} as Record<string, LearningObjective>
+  );
+  const userId = senderStudentId;
+  const roomId = room._id;
+  const roundNumber = room.gameData.curGameState.curRoundNumber;
+  const phaseStepId = room.gameData.phaseProgression.curPhaseStepId;
+
+  const startingPhaseStep = findStartingPhaseStepByPhaseStepId(
+    phaseStepId,
+    discussionStages
+  );
+  if (!startingPhaseStep) {
+    console.error(
+      "Starting phase step not found when trying to initialize student submission log"
+    );
+    return null;
+  }
+
+  const phaseLearningObjectives = startingPhaseStep.learningObjectives
+    .map((objectiveId) => allLearningObjectivesMap[objectiveId])
+    .filter((objective) => objective !== undefined);
+  // We know we are currently in a request user input step, so we can get the request user input step id from the global state data
+  const requestUserInputStepId = room.gameData.globalStateData.curStepId;
+
+  const chatLogCopy: ChatMessage[] = JSON.parse(
+    JSON.stringify(room.gameData.chat)
+  );
+  const mostRecentRequestUserInputMessage = chatLogCopy
+    .reverse()
+    .find(
+      (msg: ChatMessage) =>
+        msg.fromStepType === DiscussionStageStepType.REQUEST_USER_INPUT
+    );
+  const requestUserInputStep = findRequestUserInputStepByStepId(
+    requestUserInputStepId,
+    discussionStages
+  );
+  if (!requestUserInputStep) {
+    console.error(
+      "Request user input step not found when trying to initialize student submission log"
+    );
+    return null;
+  }
+
+  const systemMessage = mostRecentRequestUserInputMessage?.message;
+  const studentResponse = message;
+  const expectedLearningObjectives: LearningObjective[] =
+    requestUserInputStep.learningObjectives
+      .map((objectiveId) => allLearningObjectivesMap[objectiveId])
+      .filter((objective) => objective !== undefined);
+  const submissionData = {
+    userId,
+    roomId,
+    roundNumber: roundNumber || 0,
+    phaseStepId,
+    phaseLearningObjectives,
+    requestUserInputStepId,
+    systemMessage,
+    studentResponse,
+    expectedLearningObjectives,
+    studentCoveredLearningObjectives: [] as string[],
+  };
+  console.log("submission data", JSON.stringify(submissionData, null, 2));
+  return StudentSubmissionLogModel.create(submissionData);
 }

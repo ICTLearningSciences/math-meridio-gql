@@ -54,6 +54,8 @@ export const joinGameRoom = {
           },
           pausedByAdmin: false,
           computedState: PlayerComputedState.ACTIVE,
+          phaseMetrics: {},
+          needsHelpInRoom: false,
         };
       } else {
         room.gameData.playersStatusRecord[player._id].lastHeartbeatAt = now;

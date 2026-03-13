@@ -5,24 +5,34 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLID, GraphQLObjectType } from "graphql";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import { GraphQLBoolean, GraphQLObjectType, GraphQLString } from "graphql";
+import RoomModel from "../models/Room";
+import { Room, RoomType } from "../models/Room";
 
-export const fetchRoom = {
+export const setNeedsHelpInGameRoom = {
   type: RoomType,
   args: {
-    roomId: { type: GraphQLID },
+    roomId: { type: GraphQLString },
+    needsHelp: { type: GraphQLBoolean },
   },
   resolve: async (
     _root: GraphQLObjectType,
-    args: { roomId: string }
+    args: { roomId: string; needsHelp: boolean },
+    context: { userId: string }
   ): Promise<Room> => {
-    const res = await RoomModel.findOne({
-      _id: args.roomId,
-      deletedRoom: false,
-    });
-    return res;
+    return await RoomModel.findOneAndUpdate(
+      {
+        _id: args.roomId,
+      },
+      {
+        $set: {
+          [`gameData.playersStatusRecord.${context.userId}.needsHelpInRoom`]:
+            args.needsHelp,
+        },
+      },
+      { new: true }
+    );
   },
 };
 
-export default fetchRoom;
+export default setNeedsHelpInGameRoom;

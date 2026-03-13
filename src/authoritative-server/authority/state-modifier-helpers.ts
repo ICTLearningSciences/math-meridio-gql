@@ -10,6 +10,7 @@ import { ChatMessage, GameData } from "../../schemas/models/Room";
 
 import * as crypto from "node:crypto"; // Use 'node:crypto' for ESM or require('crypto') for CommonJS
 import { replaceStoredDataInString } from "./helpers/helpers";
+import { DiscussionStageStepType } from "../../schemas/models/DiscussionStage/types";
 
 export function getGameDataCopy(gameData: GameData): GameData {
   return JSON.parse(JSON.stringify(gameData));
@@ -19,7 +20,8 @@ export function buildSystemMessage(
   _gameData: GameData,
   newMessage: string,
   sessionId: string,
-  fromStepId: string
+  fromStepId: string,
+  fromStepType: DiscussionStageStepType
 ): ChatMessage {
   const gameData: GameData = getGameDataCopy(_gameData);
   const processMessageWithDiscussionData = replaceStoredDataInString(
@@ -36,6 +38,7 @@ export function buildSystemMessage(
     senderId: "",
     senderName: "",
     fromStepId: fromStepId,
+    fromStepType: fromStepType,
     disableUserInput: false,
     mcqChoices: [],
     message: processedMessageWithGameStateData,
@@ -56,6 +59,7 @@ export function buildUserMessage(
     senderId: senderId,
     senderName: senderName,
     fromStepId: "",
+    fromStepType: DiscussionStageStepType.SYSTEM_MESSAGE,
     disableUserInput: false,
     mcqChoices: [],
     message: newMessage,

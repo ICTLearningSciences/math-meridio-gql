@@ -6,7 +6,11 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import { GameStateData } from "../Room";
-import { ProcessPromptAs, RequireInputType } from "./objects";
+import {
+  IncludeMessagesContextTypeEnum,
+  ProcessPromptAs,
+  RequireInputType,
+} from "./objects";
 
 export interface IStage {
   stageType: "discussion" | "simulation";
@@ -85,6 +89,14 @@ export interface RequestUserInputStageStep extends StageBuilderStep {
   disableFreeInput: boolean;
   predefinedResponses: PredefinedResponse[];
   requireInputType: RequireInputType;
+  learningObjectives: string[];
+}
+
+export interface IncludeMessageContext {
+  type: IncludeMessagesContextTypeEnum;
+  stepIds: string[];
+  // numRecentMessages: number;
+  includeMessagesFromOtherUsers: boolean;
 }
 
 export interface PromptConfiguration {
@@ -92,6 +104,8 @@ export interface PromptConfiguration {
   processPromptAs: ProcessPromptAs;
   responseFormat: string;
   includeChatLogContext: boolean;
+  includeMessageContext: IncludeMessageContext;
+  analyzeLearningObjectives: boolean;
   outputDataType: string;
   jsonResponseData?: string;
   customSystemRole: string;
@@ -105,6 +119,7 @@ export interface PromptStageStep extends StageBuilderStep {
 export interface StartOfPhaseStep extends StageBuilderStep {
   stepType: DiscussionStageStepType.START_OF_PHASE;
   phaseTitle: string;
+  learningObjectives: string[];
 }
 // LogicOperation
 export enum NumericOperations {

@@ -14,6 +14,9 @@ import ClassMembershipModel, {
 import { canModifyClassroom } from "../../helpers";
 import { initializeGroupGameRoomWithoutGameId } from "./game-room-authoritative/create-new-game-room";
 import RoomModel, { Room, RoomType } from "../models/Room";
+import PlayerModel from "../models/Player";
+import { addPlayerToRoomAtomically } from "../../authoritative-server/authority/step-process-pure-functions";
+import { PlayerComputedState } from "../types/types";
 
 export interface AssignClassGroupsAndStartResponse {
   updatedClassroom: Class;
@@ -60,11 +63,6 @@ export const assignClassGroupsAndStart = {
         throw new Error("User is not the teacher of this classroom");
       }
 
-      // Ensure the class has not already started
-      if (classroom.startedAt !== undefined) {
-        throw new Error("Classroom is already in session");
-      }
-
       // Update group assignments
       const classMemberships = await ClassMembershipModel.find({
         classId: classId,
@@ -87,26 +85,73 @@ export const assignClassGroupsAndStart = {
         acc[membership.groupId].push(membership);
         return acc;
       }, {} as Record<number, ClassMembership[]>);
+      let createdRooms: Room[] = [];
 
-      const roomsToCreate: Room[] = [];
-      for (const [groupId, memberships] of Object.entries(
-        classMembershipsByGroupId
-      )) {
-        const gameRoom = initializeGroupGameRoomWithoutGameId(
-          userId,
-          Number(groupId),
-          memberships.map((m) => m.userId),
-          classroom._id
-        );
-        roomsToCreate.push(gameRoom);
+      // Update existing classroom assignments
+      if (classroom.startedAt !== undefined) {
+        const now = new Date();
+        const rooms = await RoomModel.find({ classId: classId });
+        for (const [groupId, memberships] of Object.entries(
+          classMembershipsByGroupId
+        )) {
+          const room = rooms.find(
+            (r) => r.name === `Group #${groupId} Solution Space`
+          );
+          // Create new room
+          if (!room) {
+            const gameRoom = initializeGroupGameRoomWithoutGameId(
+              userId,
+              Number(groupId),
+              memberships.map((m) => m.userId),
+              classroom._id
+            );
+            createdRooms.push(await RoomModel.create(gameRoom));
+          }
+          // Update existing room
+          else {
+            for (const member of memberships) {
+              // Add new player to room
+              if (!room.gameData.players.includes(member.userId)) {
+                const player = await PlayerModel.findOne({ _id: userId });
+                room.gameData.players.push(player._id);
+                room.gameData.playersStatusRecord[player._id] = {
+                  lastHeartbeatAt: now,
+                  reportedAwayStatus: {
+                    isAway: false,
+                  },
+                  pausedByAdmin: false,
+                  computedState: PlayerComputedState.ACTIVE,
+                  phaseMetrics: {},
+                  needsHelpInRoom: false,
+                };
+                await addPlayerToRoomAtomically(room, player);
+              }
+            }
+            createdRooms.push(await room.save());
+          }
+        }
       }
-      const createdRooms = await RoomModel.create(roomsToCreate);
-
-      // Update start date
-      classroom.startedAt = new Date();
-      const updatedClassroom = await classroom.save();
+      // Create new classroom assignments
+      else {
+        const roomsToCreate: Room[] = [];
+        for (const [groupId, memberships] of Object.entries(
+          classMembershipsByGroupId
+        )) {
+          const gameRoom = initializeGroupGameRoomWithoutGameId(
+            userId,
+            Number(groupId),
+            memberships.map((m) => m.userId),
+            classroom._id
+          );
+          roomsToCreate.push(gameRoom);
+        }
+        createdRooms = await RoomModel.create(roomsToCreate);
+        // Update start date
+        classroom.startedAt = new Date();
+      }
 
       // Return updated classroom
+      const updatedClassroom = await classroom.save();
       return {
         updatedClassroom,
         createdRooms,

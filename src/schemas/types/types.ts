@@ -37,11 +37,19 @@ export interface ReportedAwayStatus {
   reportedBy?: "STUDENT" | "FRONTEND_SYSTEM";
 }
 
+export interface UserPhaseMetrics {
+  phaseTitle: string;
+  timeSpentInPhase: number;
+  numWordsSentInPhase: number;
+}
+
 export interface PlayerStatusData {
   lastHeartbeatAt?: Date;
   reportedAwayStatus: ReportedAwayStatus;
   pausedByAdmin: boolean;
   computedState: PlayerComputedState;
+  needsHelpInRoom: boolean;
+  phaseMetrics: Record<string, UserPhaseMetrics>;
 }
 
 export type PlayerStatusRecord = Record<string, PlayerStatusData>;
@@ -57,6 +65,12 @@ export const fullRoomData = `
           curPhaseTitle
           curPhaseStepId
           startingPhaseStepsOrdered
+          learningObjectives{
+            _id
+            variableName
+            title
+            criteria
+          }
         }
         gameId
         players {
@@ -181,6 +195,17 @@ export const shareClassroomWithInstructorMutation = `
   mutation ShareClassroomWithInstructor($classId: String!, $instructorEmail: String!) {
     shareClassroomWithInstructor(classId: $classId, instructorEmail: $instructorEmail) {
       ${fullClassroomData}
+    }
+  }
+`;
+
+export const submitGamePhaseReflectionMutation = `
+  mutation SubmitGamePhaseReflection($roomId: ID!, $reflection: String!) {
+    submitGamePhaseReflection(roomId: $roomId, reflection: $reflection) {
+      roomId
+      stepId
+      roundNumber
+      reflections
     }
   }
 `;

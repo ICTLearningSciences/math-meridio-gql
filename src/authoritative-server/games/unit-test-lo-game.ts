@@ -12,30 +12,30 @@ import {
   IStage,
 } from "../../schemas/models/DiscussionStage/types";
 
-export const REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID =
-  "test-require-all-user-inputs-discussion-client-id";
+export const TEST_LEARNING_OBJECTIVES_DISCUSSION_CLIENT_ID =
+  "test-analyze-learning-objectives-discussion-client-id";
 
-export class UnitTestMultipleUsersGame extends AbstractGameData {
-  id = "unit-test-multiple-users";
-  name = "Unit Test Multiple Users";
+export class UnitTestLearningObjectivesGame extends AbstractGameData {
+  id = "unit-test-analyze-learning-objectives";
+  name = "Unit Test Analyze Learning Objectives";
   stageList: CurrentStage<IStage>[] = [];
   persistTruthGlobalStateData: string[] = [];
 
   constructor(discussionStages: DiscussionStage[]) {
     super();
-    const requireAllUserInputsDiscussionStage = discussionStages.find(
-      (s) => s.clientId === REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    const analyzeLearningObjectivesDiscussionStage = discussionStages.find(
+      (s) => s.clientId === TEST_LEARNING_OBJECTIVES_DISCUSSION_CLIENT_ID
     );
 
-    if (!requireAllUserInputsDiscussionStage) {
+    if (!analyzeLearningObjectivesDiscussionStage) {
       throw new Error("missing discussion stage");
     }
     const stageList: CurrentStage<IStage>[] = [
       {
-        id: "require-all-user-inputs-discussion",
-        stage: requireAllUserInputsDiscussionStage,
+        id: "analyze-learning-objectives-discussion",
+        stage: analyzeLearningObjectivesDiscussionStage,
         getNextStage: () => {
-          return requireAllUserInputsDiscussionStage;
+          return analyzeLearningObjectivesDiscussionStage;
         },
       },
     ];

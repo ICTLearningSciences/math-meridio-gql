@@ -21,6 +21,7 @@ import {
 import DiscussionStageModel from "../../../src/schemas/models/DiscussionStage/DiscussionStage";
 import { fullDiscussionStageQueryData } from "../query/fetch-discussion-stages.spec";
 import {
+  IncludeMessagesContextTypeEnum,
   ProcessPromptAs,
   RequireInputType,
 } from "../../../src/schemas/models/DiscussionStage/objects";
@@ -70,6 +71,7 @@ describe("update discussion stage", () => {
             ],
             lastStep: false,
             requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+            learningObjectives: [],
           },
           {
             stepId: "789",
@@ -85,6 +87,12 @@ describe("update discussion stage", () => {
                 includeChatLogContext: true,
                 outputDataType: "JSON",
                 customSystemRole: "custom system role 1",
+                analyzeLearningObjectives: false,
+                includeMessageContext: {
+                  type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                  stepIds: [],
+                  includeMessagesFromOtherUsers: false,
+                },
               },
             ],
           },
@@ -149,6 +157,7 @@ describe("update discussion stage", () => {
             ],
             lastStep: false,
             requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+            learningObjectives: [],
           },
           {
             stepId: "789",
@@ -164,6 +173,12 @@ describe("update discussion stage", () => {
                 includeChatLogContext: true,
                 outputDataType: "JSON",
                 customSystemRole: "custom system role 1",
+                analyzeLearningObjectives: false,
+                includeMessageContext: {
+                  type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                  stepIds: [],
+                  includeMessagesFromOtherUsers: false,
+                },
               },
             ],
           },
@@ -210,6 +225,7 @@ describe("update discussion stage", () => {
             stepId: "0",
             stepType: DiscussionStageStepType.START_OF_PHASE,
             phaseTitle: "phase title 0",
+            learningObjectives: [],
             lastStep: false,
           },
           {
@@ -237,6 +253,7 @@ describe("update discussion stage", () => {
             ],
             lastStep: false,
             requireInputType: RequireInputType.SINGLE_RESPONSE_REQUIRED,
+            learningObjectives: [],
           },
           {
             stepId: "789",
@@ -252,6 +269,12 @@ describe("update discussion stage", () => {
                 includeChatLogContext: true,
                 outputDataType: "JSON",
                 customSystemRole: "custom system role 1",
+                analyzeLearningObjectives: false,
+                includeMessageContext: {
+                  type: IncludeMessagesContextTypeEnum.ALL_MESSAGES,
+                  stepIds: [],
+                  includeMessagesFromOtherUsers: false,
+                },
               },
             ],
           },
@@ -397,6 +420,12 @@ describe("update discussion stage", () => {
                                   outputDataType
                                   jsonResponseData
                                   customSystemRole
+                                  analyzeLearningObjectives
+                                  includeMessageContext{
+                                    type
+                                    stepIds
+                                    includeMessagesFromOtherUsers
+                                  }
                                 }
                             }
                         }

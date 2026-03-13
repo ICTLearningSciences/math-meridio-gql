@@ -44,7 +44,7 @@ import {
   WAIT_FOR_SIMULATION_STAGE_CLIENT_ID,
 } from "../../authoritative-server/games/game-helpers";
 import RoomModel from "../../schemas/models/Room";
-import { Player, PlayerDocument } from "../../schemas/models/Player";
+import { PlayerDocument } from "../../schemas/models/Player";
 import { RequireInputType } from "../../schemas/models/DiscussionStage/objects";
 import { GamePhaseReflections } from "../../schemas/models/GamePhaseReflections";
 import GamePhaseReflectionsModel from "../../schemas/models/GamePhaseReflections";
@@ -78,6 +78,7 @@ export async function applyAtomicRoomModificationActions(
   let phaseStarting: null | {
     startingPhaseStepId: string;
     phaseTitle: string;
+    learningObjectives: string[];
   } = null;
 
   const phasesToComplete: string[] = [];
@@ -98,6 +99,7 @@ export async function applyAtomicRoomModificationActions(
         phaseStarting = {
           startingPhaseStepId: addPhaseAction.startingPhaseStepId,
           phaseTitle: addPhaseAction.phaseTitle,
+          learningObjectives: addPhaseAction.learningObjectives,
         };
         break;
 
@@ -191,6 +193,8 @@ export async function applyAtomicRoomModificationActions(
     updateOperations.$set = {
       ...updateOperations.$set,
       "gameData.phaseProgression.curPhaseTitle": phaseStarting.phaseTitle,
+      "gameData.phaseProgression.learningObjectives":
+        phaseStarting.learningObjectives,
       "gameData.phaseProgression.curPhaseStepId":
         phaseStarting.startingPhaseStepId,
     };
@@ -228,16 +232,16 @@ export async function applyAtomicRoomModificationActions(
   return updatedRoom.gameData;
 }
 
-export function startOfPhaseStep(
+export async function startOfPhaseStep(
   _gameData: GameData,
   curStep: StartOfPhaseStep
-): AtomicRoomModiticationAction[] {
-  console.log(`startOfPhaseStep: ${JSON.stringify(curStep, null, 2)}`);
+): Promise<AtomicRoomModiticationAction[]> {
   const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
   atomicRoomModificationActions.push({
     actionType: RoomModificationEnum.STARTING_PHASE,
     startingPhaseStepId: curStep.stepId,
     phaseTitle: curStep.phaseTitle,
+    learningObjectives: curStep.learningObjectives,
   } as StartPhaseAtomicAction);
   return atomicRoomModificationActions;
 }
@@ -252,7 +256,8 @@ export function endOfPhaseReflectionStep(
     _gameData,
     curStep.message,
     sessionId,
-    curStep.stepId
+    curStep.stepId,
+    curStep.stepType
   );
 
   atomicRoomModificationActions.push({
@@ -277,7 +282,8 @@ export function startRequestUserInputStep(
     _gameData,
     curStep.message,
     sessionId,
-    curStep.stepId
+    curStep.stepId,
+    curStep.stepType
   );
   return {
     actionType: RoomModificationEnum.ADD_MESSAGE,
@@ -294,7 +300,8 @@ export function processNewSystemMessageStep(
     _gameData,
     curStep.message,
     sessionId,
-    curStep.stepId
+    curStep.stepId,
+    curStep.stepType
   );
   return {
     actionType: RoomModificationEnum.ADD_MESSAGE,
@@ -316,6 +323,8 @@ export const defaultPlayerStatusRecord: PlayerStatusData = {
   },
   pausedByAdmin: false,
   computedState: PlayerComputedState.ACTIVE,
+  phaseMetrics: {},
+  needsHelpInRoom: false,
 };
 
 export async function updatePlayersHeartbeat(
@@ -354,6 +363,33 @@ export async function updatePlayersHeartbeat(
     );
   }
   return room.toObject();
+}
+
+export async function updateNumWordsSentInPhases(
+  room: Room,
+  playerId: string,
+  incomingMessage: string
+): Promise<Room> {
+  const curPhaseStepId = room.gameData.phaseProgression.curPhaseStepId;
+  if (!curPhaseStepId) {
+    return room;
+  }
+  const numNewWords = incomingMessage.split(" ").length;
+
+  const updatedRoom = await RoomModel.findOneAndUpdate(
+    { _id: room._id },
+    {
+      $inc: {
+        [`gameData.playersStatusRecord.${playerId}.phaseMetrics.${curPhaseStepId}.numWordsSentInPhase`]:
+          numNewWords,
+      },
+    },
+    { new: true }
+  );
+  if (!updatedRoom) {
+    throw new Error(`Failed to update room: ${room._id}`);
+  }
+  return updatedRoom.toObject();
 }
 
 export function addPlayerToRoomNonAtomically(
@@ -450,7 +486,7 @@ export async function processCurStep(
   switch (curStep.stepType) {
     case DiscussionStageStepType.START_OF_PHASE:
       const startOfPhaseStepActions: AtomicRoomModiticationAction[] =
-        startOfPhaseStep(gameData, curStep);
+        await startOfPhaseStep(gameData, curStep);
       gameData = await applyAtomicRoomModificationActions(
         gameData,
         startOfPhaseStepActions,
@@ -506,13 +542,14 @@ export async function processCurStep(
     case DiscussionStageStepType.PROMPT:
       const atomicRoomModificationActions: AtomicRoomModiticationAction[] =
         await processPromptStep(
-          gameData,
+          room,
           curStep,
           targetAiServiceModel,
           syncLlmRequest,
           playerIdToUpdate,
           sessionId,
-          activePlayerData
+          activePlayerData,
+          discussionStages
         );
       gameData = await applyAtomicRoomModificationActions(
         gameData,

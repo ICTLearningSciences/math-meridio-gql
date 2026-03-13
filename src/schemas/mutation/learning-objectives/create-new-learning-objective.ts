@@ -4,25 +4,24 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
+import LearningObjectiveModel, {
+  LearningObjective,
+  LearningObjectiveType,
+  LearningObjectiveTypeInput,
+} from "../../../schemas/models/LearningObjective";
+import { GraphQLObjectType, GraphQLNonNull } from "graphql";
 
-import { GraphQLID, GraphQLObjectType } from "graphql";
-import RoomModel, { Room, RoomType } from "../models/Room";
-
-export const fetchRoom = {
-  type: RoomType,
+export const createNewLearningObjective = {
+  type: LearningObjectiveType,
   args: {
-    roomId: { type: GraphQLID },
+    learningObjective: { type: new GraphQLNonNull(LearningObjectiveTypeInput) },
   },
   resolve: async (
     _root: GraphQLObjectType,
-    args: { roomId: string }
-  ): Promise<Room> => {
-    const res = await RoomModel.findOne({
-      _id: args.roomId,
-      deletedRoom: false,
-    });
-    return res;
+    args: { learningObjective: LearningObjective }
+  ): Promise<LearningObjective> => {
+    return await LearningObjectiveModel.create(args.learningObjective);
   },
 };
 
-export default fetchRoom;
+export default createNewLearningObjective;

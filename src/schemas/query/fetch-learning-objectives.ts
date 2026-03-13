@@ -5,24 +5,14 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GraphQLID, GraphQLObjectType } from "graphql";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import findAll from "./find-all";
+import LearningObjectiveModel, {
+  LearningObjectiveType,
+} from "../models/LearningObjective";
 
-export const fetchRoom = {
-  type: RoomType,
-  args: {
-    roomId: { type: GraphQLID },
-  },
-  resolve: async (
-    _root: GraphQLObjectType,
-    args: { roomId: string }
-  ): Promise<Room> => {
-    const res = await RoomModel.findOne({
-      _id: args.roomId,
-      deletedRoom: false,
-    });
-    return res;
-  },
-};
+export const fetchLearningObjectives = findAll({
+  nodeType: LearningObjectiveType,
+  model: LearningObjectiveModel,
+});
 
-export default fetchRoom;
+export default fetchLearningObjectives;

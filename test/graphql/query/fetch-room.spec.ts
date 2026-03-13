@@ -130,18 +130,15 @@ describe("fetch room", () => {
           }
         }`,
         variables: {
-          roomId: room4Id,
+          roomId: "5f748650f4b3f2a2f1f1f1f5",
         },
       });
     expect(response.status).to.equal(200);
     expect(response.body.data.fetchRoom).to.eql({
       gameData: {
         mathStandardsCompleted: {
-          "Understands Adding Results from Different Shot Types": true,
-          "Understands How to Follow a Step-by-Step Formula": false,
-          "Understands Multiplying Attempts, Points, and Chance": true,
-          "Understands Points per Shot as a Rate": false,
-          "Understands Unit Rates in Word Problems": false,
+          "Test Learning Objective 1": true,
+          "Test Learning Objective 2": false,
         },
       },
     });

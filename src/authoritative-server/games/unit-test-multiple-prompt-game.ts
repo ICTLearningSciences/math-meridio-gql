@@ -4,10 +4,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-import {
-  AbstractGameData,
-  MathStandardsCompletionRequirements,
-} from "../llm-request/types";
+import { AbstractGameData } from "../llm-request/types";
 
 import {
   CurrentStage,
@@ -23,7 +20,6 @@ export class UnitTestMultiplePromptGame extends AbstractGameData {
   name = "Unit Test Multiple Prompt";
   stageList: CurrentStage<IStage>[] = [];
   persistTruthGlobalStateData: string[] = [];
-  mathStandardsCompletedRequirements: MathStandardsCompletionRequirements = {};
 
   constructor(discussionStages: DiscussionStage[]) {
     super();

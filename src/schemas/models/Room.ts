@@ -31,8 +31,17 @@ import {
 } from "./DiscussionStage/objects";
 import { EndOfPhaseReflectionStep } from "./DiscussionStage/types";
 import { PlayerStatusRecord } from "../../schemas/types/types";
-import { getPlayerComputedState } from "../../helpers";
+import {
+  getAllStartingPhasesFromGame,
+  getPlayerComputedState,
+} from "../../helpers";
 import { getGameById } from "../../authoritative-server/games/game-helpers";
+import DiscussionStageModel from "./DiscussionStage/DiscussionStage";
+import { DiscussionStageStepType } from "./DiscussionStage/types";
+import LearningObjectiveModel, {
+  LearningObjectiveDocument,
+  LearningObjectiveType,
+} from "./LearningObjective";
 
 /** mongoose */
 
@@ -47,6 +56,7 @@ export interface ChatMessage {
   mcqChoices: string[];
   sessionId: string;
   fromStepId?: string;
+  fromStepType?: DiscussionStageStepType;
 }
 
 export interface ChatMessageDocument extends Document, ChatMessage {}
@@ -70,6 +80,7 @@ export interface PhaseProgression {
   curPhaseTitle: string;
   curPhaseStepId: string;
   startingPhaseStepsOrdered: string[];
+  learningObjectives: string[];
 }
 
 export interface CurGameState {
@@ -138,6 +149,7 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
     disableUserInput: { type: Boolean },
     mcqChoices: [{ type: String }],
     fromStepId: { type: String },
+    fromStepType: { type: String },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
@@ -149,6 +161,10 @@ export const PhaseProgressionSchema = new Schema<PhaseProgression>(
     curPhaseTitle: { type: String },
     curPhaseStepId: { type: String },
     startingPhaseStepsOrdered: [{ type: String }],
+    learningObjectives: {
+      type: [String],
+      default: [],
+    },
   },
   { collation: { locale: "en", strength: 2 } }
 );
@@ -158,12 +174,16 @@ export const CurGameStateSchema = new Schema<CurGameStateDocument>(
     curState: { type: String },
     playersLeftToRespond: [{ type: String }],
     studentReadyToContinue: { type: Boolean },
-    curRoundNumber: { type: Number },
+    curRoundNumber: { type: Number, default: 0 },
     endOfPhaseStep: { type: EndOfPhaseReflectionStepSchema },
     selectedQuestion: { type: String },
     studentReflections: { type: Schema.Types.Mixed, default: {} },
   },
-  { timestamps: true, collation: { locale: "en", strength: 2 } }
+  {
+    timestamps: true,
+    collation: { locale: "en", strength: 2 },
+    minimize: false,
+  }
 );
 export const GlobalStateSchema = new Schema<GlobalStateDataDocument>(
   {
@@ -193,6 +213,7 @@ export const GameSchema = new Schema<GameDataDocument>(
         curPhaseTitle: "",
         curPhaseStepId: "",
         startingPhaseStepsOrdered: [],
+        learningObjectives: [],
       },
     },
     chat: [{ type: ChatMessageSchema }],
@@ -259,6 +280,7 @@ export const ChatMessageType = new GraphQLObjectType({
     mcqChoices: { type: new GraphQLList(GraphQLString) },
     sessionId: { type: GraphQLString },
     fromStepId: { type: GraphQLString },
+    fromStepType: { type: GraphQLString },
   }),
 });
 
@@ -273,28 +295,6 @@ export const GlobalStateDataType = new GraphQLObjectType({
   }),
 });
 
-// gamePhases:
-// WAITING_FOR_SINGLE_PLAYERS_INPUT
-//  - no extra data
-//  - Set when: request user input step started without requireAllUsersInput
-// WAITING_FOR_ALL_PLAYERS_INPUT_FREE_FOR_ALL
-//  - list of players we are waiting for a response from
-//  - Set when: request user input step started with requireAllUsersInput
-
-// WAITING_FOR_ALL_PLAYERS_IN_ORDER
-//  - next player we need a response from
-//  - Set when:
-//      - on create room
-//      - on ping process
-//      - When: request user input step started with requireAllUsersInput and requireAllUsersInput is ALL_REQUIRED_IN_ORDER
-// PROCESSING_REQUEST
-//  - no extra data
-// WAITING_FOR_SIMULATION
-// COLLECTING_PHASE_REFLECTION
-//  - playersLeftToRespond (reflect)
-//  - studentReflections (just for frontend display)
-//  - roundNumber (how many times this phase has been run)
-
 export const PhaseProgressionType = new GraphQLObjectType({
   name: "PhaseProgressionType",
   fields: () => ({
@@ -303,6 +303,7 @@ export const PhaseProgressionType = new GraphQLObjectType({
     curPhaseStepId: { type: GraphQLString },
     curPhaseTitle: { type: GraphQLString },
     startingPhaseStepsOrdered: { type: new GraphQLList(GraphQLString) },
+    learningObjectives: { type: new GraphQLList(LearningObjectiveType) },
   }),
 });
 
@@ -350,22 +351,26 @@ export const GameDataType = new GraphQLObjectType({
     phaseProgression: { type: PhaseProgressionType },
     mathStandardsCompleted: {
       type: GraphQLScalarType,
-      resolve: function (gameData: GameDataDocument) {
+      resolve: async function (gameData: GameDataDocument) {
         if (!gameData.gameId) {
           return {};
         }
-        const game = getGameById(gameData.gameId, [], true);
-        return Object.entries(game.mathStandardsCompletedRequirements).reduce(
-          (acc, [standardName, requiredKeyValuePairs]) => {
-            acc[standardName] = Object.entries(requiredKeyValuePairs).every(
-              ([key, value]) => {
-                return gameData.globalStateData.gameStateData[key] === value;
-              }
-            );
-            return acc;
-          },
-          {} as Record<string, boolean>
+        const discussionStages = await DiscussionStageModel.find({});
+        const game = getGameById(gameData.gameId, discussionStages);
+        const allStartingPhases = getAllStartingPhasesFromGame(game);
+        const allLearningObjeciveIds: string[] = allStartingPhases.flatMap(
+          (step) => step.learningObjectives
         );
+        const allLearningObjecives: LearningObjectiveDocument[] =
+          await LearningObjectiveModel.find({
+            _id: { $in: allLearningObjeciveIds },
+          });
+        return allLearningObjecives.reduce((acc, objective) => {
+          acc[objective.title] =
+            gameData.globalStateData.gameStateData[objective.variableName] ===
+            "true";
+          return acc;
+        }, {} as Record<string, boolean>);
       },
     },
     globalStateData: { type: GlobalStateDataType },

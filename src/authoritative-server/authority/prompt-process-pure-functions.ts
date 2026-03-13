@@ -11,17 +11,18 @@ import {
   PromptOutputTypes,
   JsonResponseData,
   PromptRoles,
+  JsonResponseDataType,
 } from "../../authoritative-server/llm-request/types";
 import { CancelToken } from "axios";
 import {
   PromptStageStep,
   PromptConfiguration,
+  isDiscussionStage,
 } from "../../schemas/models/DiscussionStage/types";
-import { Player, PlayerDocument } from "../../schemas/models/Player";
+import { PlayerDocument } from "../../schemas/models/Player";
 import { GameData } from "../../schemas/models/Room";
 import {
   replaceStoredDataInString,
-  chatLogToString,
   recursivelyConvertExpectedDataToAiPromptString,
   recursiveUpdateAdditionalInfo,
   isJsonString,
@@ -37,10 +38,20 @@ import {
   UpdatePlayerGameStateDataRoomAtomicAction,
   AddMessageRoomAtomicAction,
 } from "../llm-request/types";
-import { ProcessPromptAs } from "../../schemas/models/DiscussionStage/objects";
+import {
+  IncludeMessagesContextTypeEnum,
+  ProcessPromptAs,
+} from "../../schemas/models/DiscussionStage/objects";
+import { generateChatContext } from "../../helpers/chatContextGenerator";
+import LearningObjectiveModel from "../../schemas/models/LearningObjective";
+import { findRequestUserInputStepByStepId } from "../../helpers";
+import { DiscussionStage } from "../../schemas/models/DiscussionStage/types";
+import { getGameById } from "../games/game-helpers";
+import StudentSubmissionLogModel from "../../schemas/models/StudentSubmissionLog";
+import { Room } from "../../schemas/models/Room";
 
 export async function processPromptStep(
-  gameData: GameData,
+  room: Room,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -49,7 +60,8 @@ export async function processPromptStep(
   ) => Promise<AiServicesResponseTypes>,
   playerIdToUpdate: string,
   sessionId: string,
-  activePlayerData: PlayerDocument[]
+  activePlayerData: PlayerDocument[],
+  discussionStages: DiscussionStage[]
 ): Promise<AtomicRoomModiticationAction[]> {
   // Execute all prompts in parallel
   const promptResults = await Promise.all(
@@ -58,7 +70,7 @@ export async function processPromptStep(
       if (promptConfig.processPromptAs === ProcessPromptAs.GROUP) {
         return processGroupPrompt(
           promptConfig,
-          gameData,
+          room,
           curStep,
           targetAiServiceModel,
           executePrompt,
@@ -68,12 +80,13 @@ export async function processPromptStep(
       } else {
         return processIndividualPrompts(
           promptConfig,
-          gameData,
+          room,
           curStep,
           targetAiServiceModel,
           executePrompt,
           sessionId,
-          activePlayerData
+          activePlayerData,
+          discussionStages
         );
       }
     })
@@ -86,7 +99,7 @@ export async function processPromptStep(
 // Process a single prompt in GROUP mode
 async function processGroupPrompt(
   promptConfig: PromptConfiguration,
-  gameData: GameData,
+  room: Room,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -97,7 +110,7 @@ async function processGroupPrompt(
   activePlayerData: PlayerDocument[]
 ): Promise<AtomicRoomModiticationAction[]> {
   const atomicRoomModificationActions: AtomicRoomModiticationAction[] = [];
-
+  const gameData = room.gameData;
   // Build aggregated state data for find-and-replace
   const aggregatedStateData = buildAggregatedStateDataForGroup(
     promptConfig.promptText,
@@ -130,19 +143,26 @@ async function processGroupPrompt(
     systemRole: customSystemRole,
   };
 
-  if (promptConfig.includeChatLogContext) {
-    llmRequest.prompts.push({
-      promptText: `Current state of chat log between user and system: ${chatLogToString(
-        gameData.chat
-      )}`,
-      promptRole: PromptRoles.SYSTEM,
-    });
-  }
-
   llmRequest.prompts.push({
     promptText: promptText,
     promptRole: PromptRoles.SYSTEM,
   });
+
+  if (
+    promptConfig.includeMessageContext?.type !==
+    IncludeMessagesContextTypeEnum.NONE
+  ) {
+    const chatContext = generateChatContext(
+      gameData,
+      "",
+      false,
+      promptConfig.includeMessageContext
+    );
+    llmRequest.prompts.push({
+      promptText: chatContext,
+      promptRole: PromptRoles.SYSTEM,
+    });
+  }
 
   if (
     promptConfig.jsonResponseData &&
@@ -211,7 +231,8 @@ async function processGroupPrompt(
         gameData,
         response,
         sessionId,
-        curStep.stepId
+        curStep.stepId,
+        curStep.stepType
       ),
     } as AddMessageRoomAtomicAction);
   }
@@ -222,7 +243,7 @@ async function processGroupPrompt(
 // Process prompts in INDIVIDUALLY mode (one per student, in parallel)
 async function processIndividualPrompts(
   promptConfig: PromptConfiguration,
-  gameData: GameData,
+  room: Room,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -230,32 +251,256 @@ async function processIndividualPrompts(
     cancelToken?: CancelToken
   ) => Promise<AiServicesResponseTypes>,
   sessionId: string,
-  activePlayerData: PlayerDocument[]
+  activePlayerData: PlayerDocument[],
+  discussionStages: DiscussionStage[]
 ): Promise<AtomicRoomModiticationAction[]> {
-  // Process each student individually in parallel
-  const individualResults = await Promise.all(
-    activePlayerData.map(async (player) => {
-      return processSingleStudentPrompt(
-        promptConfig,
-        player,
-        gameData,
-        curStep,
-        targetAiServiceModel,
-        executePrompt,
-        sessionId
+  const gameData = room.gameData;
+  try {
+    // Check if this is an analyze learning objectives prompt
+    if (promptConfig.analyzeLearningObjectives) {
+      const individualResults = await Promise.all(
+        activePlayerData.map(async (player) => {
+          return processAnalyzeLearningObjectivePrompt(
+            promptConfig,
+            player,
+            room,
+            curStep,
+            targetAiServiceModel,
+            executePrompt,
+            sessionId,
+            discussionStages
+          );
+        })
       );
-    })
+      return individualResults.flat();
+    }
+
+    // Process each student individually in parallel
+    const individualResults = await Promise.all(
+      activePlayerData.map(async (player) => {
+        return processSingleStudentPrompt(
+          promptConfig,
+          player,
+          room,
+          curStep,
+          targetAiServiceModel,
+          executePrompt,
+          sessionId
+        );
+      })
+    );
+
+    // Flatten and return all actions
+    return individualResults.flat();
+  } catch (error) {
+    console.error("Error processing individual prompts: ", error);
+    return [];
+  }
+}
+
+// Process a single student's prompt for analyzing learning objectives
+async function processAnalyzeLearningObjectivePrompt(
+  promptConfig: PromptConfiguration,
+  player: PlayerDocument,
+  room: Room,
+  curStep: PromptStageStep,
+  targetAiServiceModel: TargetAiModelServiceType,
+  executePrompt: (
+    llmRequest: GenericLlmRequest,
+    cancelToken?: CancelToken
+  ) => Promise<AiServicesResponseTypes>,
+  sessionId: string,
+  _discussionStages: DiscussionStage[]
+): Promise<AtomicRoomModiticationAction[]> {
+  const gameData = room.gameData;
+  const game = getGameById(gameData.gameId, _discussionStages);
+  const discussionStages = game.stageList
+    .map((s) => s.stage)
+    .filter((s) => isDiscussionStage(s)) as DiscussionStage[];
+  const playerId = String(player._id);
+  console.log(
+    "PROCESSING analyzeLearningObjectivePrompt for player: ",
+    playerId
+  );
+  const playerActions: AtomicRoomModiticationAction[] = [];
+
+  // Build student-specific state data (player data takes precedence over global)
+  const studentStateData = buildStudentStateData(playerId, gameData);
+
+  // Replace variables with student-specific data
+  const promptText = replaceStoredDataInString(
+    promptConfig.promptText,
+    studentStateData
   );
 
-  // Flatten and return all actions
-  return individualResults.flat();
+  // Build LLM request
+  const llmRequest: GenericLlmRequest = {
+    prompts: [],
+    outputDataType: PromptOutputTypes.JSON, // Force JSON output for learning objectives
+    targetAiServiceModel: targetAiServiceModel,
+    responseFormat: "",
+    systemRole: "",
+  };
+
+  // Add learning objectives to context
+  const requestUserInputStepsToPullLOIdsFrom =
+    promptConfig.includeMessageContext.stepIds;
+  console.log(
+    "requestUserInputStepsToPullLOIdsFrom: ",
+    requestUserInputStepsToPullLOIdsFrom
+  );
+  const learningObjectiveIds = Array.from(
+    new Set(
+      requestUserInputStepsToPullLOIdsFrom
+        .map((stepId) => {
+          const requestUserInputStep = findRequestUserInputStepByStepId(
+            stepId,
+            discussionStages
+          );
+          return requestUserInputStep?.learningObjectives || [];
+        })
+        .flat()
+    )
+  );
+  const learningObjectives = await LearningObjectiveModel.find({
+    _id: { $in: learningObjectiveIds },
+  });
+  if (learningObjectives.length > 0) {
+    let learningObjectivesContext = `
+      Your task is to analyze both user responses to questions and extra provided user data to determine if the user has demonstrated the learning objectives.
+      Here are the active learning objectives:\n`;
+    learningObjectives.forEach((lo) => {
+      learningObjectivesContext += `- ${lo.title}: ${lo.criteria}\n`;
+    });
+
+    llmRequest.prompts.push({
+      promptText: learningObjectivesContext.trim(),
+      promptRole: PromptRoles.SYSTEM,
+    });
+  }
+
+  if (
+    promptConfig.includeMessageContext?.type !==
+    IncludeMessagesContextTypeEnum.NONE
+  ) {
+    const chatContext = generateChatContext(
+      gameData,
+      playerId,
+      true,
+      promptConfig.includeMessageContext
+    );
+    llmRequest.prompts.push({
+      promptText: chatContext,
+      promptRole: PromptRoles.SYSTEM,
+    });
+  }
+
+  llmRequest.prompts.push({
+    promptText: promptText,
+    promptRole: PromptRoles.SYSTEM,
+  });
+
+  // Build JSON response data from learning objectives
+  const jsonResponseData: JsonResponseData[] = learningObjectives.map((lo) => ({
+    name: lo.variableName,
+    additionalInfo: `Respond with either a string "true" or "false", Set to "true" if the ${lo.title} learning objective was met by the provided user data, else return "false".`,
+    clientId: lo.variableName,
+    type: JsonResponseDataType.STRING,
+    isRequired: true,
+  }));
+
+  llmRequest.responseFormat += recursivelyConvertExpectedDataToAiPromptString(
+    recursiveUpdateAdditionalInfo(jsonResponseData, studentStateData)
+  );
+
+  // Execute prompt
+  const _response = await executePrompt(llmRequest);
+  const response = _response.answer;
+
+  // Process response
+  if (!isJsonString(response)) {
+    throw new Error(`Did not receive valid JSON data: ${response}`);
+  }
+
+  if (jsonResponseData.length > 0) {
+    if (!receivedExpectedData(jsonResponseData, response)) {
+      throw new Error(
+        `Did not receive expected JSON data: ${response}. \n Expected: ${JSON.stringify(
+          jsonResponseData
+        )}`
+      );
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const resData: Record<string, any> = JSON.parse(response);
+  const _newDataToAdd = removePersistTruthDataFromNewData(gameData, resData);
+  // only keep the true values since we only care about newly met learning objectives
+  const newDataToAdd = Object.fromEntries(
+    Object.entries(_newDataToAdd).filter(([_, value]) => value === "true")
+  );
+
+  if (Object.keys(newDataToAdd).length > 0) {
+    playerActions.push({
+      actionType: RoomModificationEnum.ADD_TO_DISCUSSION_DATA,
+      newData: newDataToAdd,
+    } as UpdateDiscussionDataRoomAtomicAction);
+
+    playerActions.push({
+      actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
+      playerId: playerId,
+      newData: newDataToAdd,
+    } as UpdatePlayerGameStateDataRoomAtomicAction);
+
+    playerActions.push({
+      actionType: RoomModificationEnum.ADD_TO_GLOBAL_STATE_DATA,
+      newData: newDataToAdd,
+    } as UpdateGlobalGameStateDataRoomAtomicAction);
+  }
+
+  const coveredLearningObjectives = Object.fromEntries(
+    Object.entries(resData).filter(([_, value]) => value === "true")
+  );
+  if (Object.keys(coveredLearningObjectives).length > 0) {
+    await updateStudentSubmissionLog(
+      playerId,
+      room._id,
+      room.gameData.curGameState.curRoundNumber,
+      room.gameData.phaseProgression.curPhaseStepId,
+      coveredLearningObjectives
+    );
+  }
+
+  console.log(
+    "Player actions for analyzeLearningObjectivePrompt: ",
+    JSON.stringify(playerActions, null, 2)
+  );
+  return playerActions;
+}
+
+async function updateStudentSubmissionLog(
+  userId: string,
+  roomId: string,
+  roundNumber: number,
+  phaseStepId: string,
+  newDataToAdd: Record<string, string>
+): Promise<void> {
+  const res = await StudentSubmissionLogModel.findOneAndUpdate(
+    { userId, roomId, roundNumber, phaseStepId },
+    {
+      $addToSet: {
+        studentCoveredLearningObjectives: Object.keys(newDataToAdd),
+      },
+    },
+    { new: true, upsert: false }
+  );
 }
 
 // Process a single student's prompt in INDIVIDUALLY mode
 async function processSingleStudentPrompt(
   promptConfig: PromptConfiguration,
   player: PlayerDocument,
-  gameData: GameData,
+  room: Room,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -264,10 +509,12 @@ async function processSingleStudentPrompt(
   ) => Promise<AiServicesResponseTypes>,
   sessionId: string
 ): Promise<AtomicRoomModiticationAction[]> {
+  const gameData = room.gameData;
+  const playerId = String(player._id);
   const playerActions: AtomicRoomModiticationAction[] = [];
 
   // Build student-specific state data (player data takes precedence over global)
-  const studentStateData = buildStudentStateData(player._id, gameData);
+  const studentStateData = buildStudentStateData(playerId, gameData);
 
   // Replace variables with student-specific data
   const promptText = replaceStoredDataInString(
@@ -293,10 +540,14 @@ async function processSingleStudentPrompt(
   };
 
   if (promptConfig.includeChatLogContext) {
+    const chatContext = generateChatContext(
+      gameData,
+      playerId,
+      true,
+      promptConfig.includeMessageContext
+    );
     llmRequest.prompts.push({
-      promptText: `Current state of chat log between user and system: ${chatLogToString(
-        gameData.chat
-      )}`,
+      promptText: chatContext,
       promptRole: PromptRoles.SYSTEM,
     });
   }
@@ -355,7 +606,7 @@ async function processSingleStudentPrompt(
 
       playerActions.push({
         actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
-        playerId: player._id,
+        playerId: playerId,
         newData: newDataToAdd,
       } as UpdatePlayerGameStateDataRoomAtomicAction);
 
@@ -371,7 +622,8 @@ async function processSingleStudentPrompt(
         gameData,
         response,
         sessionId,
-        curStep.stepId
+        curStep.stepId,
+        curStep.stepType
       ),
     } as AddMessageRoomAtomicAction);
   }
@@ -444,7 +696,8 @@ function buildAggregatedStateDataForGroup(
     const studentValues: { name: string; value: any }[] = [];
 
     for (const player of activePlayerData) {
-      const playerStateData = gameData.playersGameStateData[player._id] || {};
+      const playerStateData =
+        gameData.playersGameStateData[String(player._id)] || {};
       const value = getValueByPath(playerStateData, varPath);
 
       if (value !== undefined && value !== null && value !== "") {
@@ -485,7 +738,7 @@ function buildStudentStateData(
   gameData: GameData
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Record<string, any> {
-  const playerStateData = gameData.playersGameStateData[playerId] || {};
+  const playerStateData = gameData.playersGameStateData[String(playerId)] || {};
   const globalStateData = gameData.globalStateData.gameStateData || {};
 
   // Merge with player data taking precedence over global data

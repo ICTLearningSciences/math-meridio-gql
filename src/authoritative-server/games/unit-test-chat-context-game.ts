@@ -12,30 +12,30 @@ import {
   IStage,
 } from "../../schemas/models/DiscussionStage/types";
 
-export const REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID =
-  "test-require-all-user-inputs-discussion-client-id";
+export const TEST_INCLUDE_MESSAGE_CONTEXT_DISCUSSION_CLIENT_ID =
+  "test-include-message-context-discussion-client-id";
 
-export class UnitTestMultipleUsersGame extends AbstractGameData {
-  id = "unit-test-multiple-users";
-  name = "Unit Test Multiple Users";
+export class UnitTestChatContextGame extends AbstractGameData {
+  id = "unit-test-chat-context";
+  name = "Unit Test Chat Context";
   stageList: CurrentStage<IStage>[] = [];
   persistTruthGlobalStateData: string[] = [];
 
   constructor(discussionStages: DiscussionStage[]) {
     super();
-    const requireAllUserInputsDiscussionStage = discussionStages.find(
-      (s) => s.clientId === REQUIRE_ALL_USER_INPUTS_DISCUSSION_CLIENT_ID
+    const includeMessageContextDiscussionStage = discussionStages.find(
+      (s) => s.clientId === TEST_INCLUDE_MESSAGE_CONTEXT_DISCUSSION_CLIENT_ID
     );
 
-    if (!requireAllUserInputsDiscussionStage) {
+    if (!includeMessageContextDiscussionStage) {
       throw new Error("missing discussion stage");
     }
     const stageList: CurrentStage<IStage>[] = [
       {
-        id: "require-all-user-inputs-discussion",
-        stage: requireAllUserInputsDiscussionStage,
+        id: "include-message-context-discussion",
+        stage: includeMessageContextDiscussionStage,
         getNextStage: () => {
-          return requireAllUserInputsDiscussionStage;
+          return includeMessageContextDiscussionStage;
         },
       },
     ];
