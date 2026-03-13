@@ -222,7 +222,8 @@ async function processGroupPrompt(
         gameData,
         response,
         sessionId,
-        curStep.stepId
+        curStep.stepId,
+        curStep.stepType
       ),
     } as AddMessageRoomAtomicAction);
   }
@@ -550,7 +551,8 @@ async function processSingleStudentPrompt(
         gameData,
         response,
         sessionId,
-        curStep.stepId
+        curStep.stepId,
+        curStep.stepType
       ),
     } as AddMessageRoomAtomicAction);
   }

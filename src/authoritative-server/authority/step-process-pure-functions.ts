@@ -258,7 +258,8 @@ export function endOfPhaseReflectionStep(
     _gameData,
     curStep.message,
     sessionId,
-    curStep.stepId
+    curStep.stepId,
+    curStep.stepType
   );
 
   atomicRoomModificationActions.push({
@@ -283,7 +284,8 @@ export function startRequestUserInputStep(
     _gameData,
     curStep.message,
     sessionId,
-    curStep.stepId
+    curStep.stepId,
+    curStep.stepType
   );
   return {
     actionType: RoomModificationEnum.ADD_MESSAGE,
@@ -300,7 +302,8 @@ export function processNewSystemMessageStep(
     _gameData,
     curStep.message,
     sessionId,
-    curStep.stepId
+    curStep.stepId,
+    curStep.stepType
   );
   return {
     actionType: RoomModificationEnum.ADD_MESSAGE,

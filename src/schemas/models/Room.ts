@@ -42,6 +42,7 @@ import {
 } from "../../helpers";
 import { getGameById } from "../../authoritative-server/games/game-helpers";
 import DiscussionStageModel from "./DiscussionStage/DiscussionStage";
+import { DiscussionStageStepType } from "./DiscussionStage/types";
 
 /** mongoose */
 
@@ -56,6 +57,7 @@ export interface ChatMessage {
   mcqChoices: string[];
   sessionId: string;
   fromStepId?: string;
+  fromStepType?: DiscussionStageStepType;
 }
 
 export interface ChatMessageDocument extends Document, ChatMessage {}
