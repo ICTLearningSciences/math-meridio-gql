@@ -10,7 +10,6 @@ import { expect } from "chai";
 import e, { Express } from "express";
 import mongoUnit from "mongo-unit";
 import request from "supertest";
-import { nonExistentId, player1Id } from "../../fixtures/mongodb/data";
 import mongoose from "mongoose";
 import { getToken, createUser, createClassroom } from "../../helpers";
 import { UserRole } from "../../../src/schemas/types/types";
@@ -87,6 +86,12 @@ describe("create a new classroom", () => {
     expect(response.body.data.createClassroom.teacherId).to.equal(
       instructorUserId
     );
+    const inviteCodes = response.body.data.createClassroom.inviteCodes;
+    expect(inviteCodes.length).to.equal(1);
+    expect(inviteCodes[0].uses).to.equal(0);
+    expect(inviteCodes[0].maxUses).to.equal(50);
+    const date = new Date(inviteCodes[0].validUntil);
+    expect(date.getFullYear()).to.equal(new Date().getFullYear() + 1);
   });
 
   it(`fails if requesting user is not an instructor`, async () => {
