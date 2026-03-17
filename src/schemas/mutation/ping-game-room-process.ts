@@ -58,7 +58,6 @@ export const pingGameRoomProcess = {
       const { roomId, sessionId } = args;
       let room = await updatePlayersHeartbeat(roomId, context.userId);
       if (room.gameData.players.length === 0) {
-        console.log("no players in room, returning room as is");
         return room;
       }
       room = await updateRoomPlayerStatusedRecord(
@@ -73,7 +72,6 @@ export const pingGameRoomProcess = {
           playerStatus.computedState === PlayerComputedState.ACTIVE
       );
       if (activePlayers.length === 0) {
-        console.log("no active players in room, returning room as is");
         return room;
       }
 
@@ -84,7 +82,6 @@ export const pingGameRoomProcess = {
       ).map((player) => player.toObject());
 
       if (!room.gameData.gameId) {
-        console.log("no gameId selected for room, returning room as is");
         return room;
       }
 
@@ -172,28 +169,8 @@ export const pingGameRoomProcess = {
         isWaitingForEndOfPhaseReflectionReadyUp &&
         isEndOfPhaseReflectionReadyUpComplete;
 
-      console.log("-------------------------------- FIRST CHECKING VARS -----");
-      console.log(
-        "isCompleteRequestUserInputStep",
-        isCompleteRequestUserInputStep
-      );
-      console.log("isCompleteSimulationStage", isCompleteSimulationStage);
-      console.log(
-        "isCompleteEndOfPhaseReflectionStep",
-        isCompleteEndOfPhaseReflectionStep
-      );
-      console.log(
-        "isCompleteEndOfPhaseReflectionReadyUp",
-        isCompleteEndOfPhaseReflectionReadyUp
-      );
-      console.log("roomIsProcessing", roomIsProcessing);
-      console.log("-------------------------------- FIRST CHECKING VARS -----");
-
       // Transition from end of phase reflection step to waiting for student ready to continue
       if (isCompleteEndOfPhaseReflectionStep) {
-        console.log(
-          "Transitioning to WAITING_FOR_STUDENT_READY_TO_CONTINUE state"
-        );
         room = await RoomModel.findOneAndUpdate(
           { _id: args.roomId },
           {
@@ -219,17 +196,11 @@ export const pingGameRoomProcess = {
           RoomModel
         );
         if (!lockResult.success) {
-          console.log(
-            `Failed to acquire processing lock: ${lockResult.reason}. Returning room with just new messages added.`
-          );
           return lockResult.room || room;
         }
         room = lockResult.room;
 
         // check if we are ready to move on from the current step and continue processing.
-        console.log(
-          "we are ready to move on from an input step and continue processing."
-        );
         room = await processStepsUntilNextStallingPhase(
           room,
           discussionStages,
@@ -286,27 +257,9 @@ export const pingGameRoomProcess = {
       });
       stepRoundGamePhaseReflections =
         _stepRoundGamePhaseReflections?.toObject();
-      console.log(
-        "stepRoundGamePhaseReflections",
-        stepRoundGamePhaseReflections
-      );
       endOfPhaseReflectionStepStatus =
         isEndOfPhaseReflectionStep &&
         _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections);
-
-      console.log("----- RECHECKING VARS -----");
-      console.log("isDiscussionStage", isDiscussionStage);
-      console.log("isRequestUserInputStep", isRequestUserInputStep);
-      console.log("requestUserInputStageStatus", requestUserInputStageStatus);
-      console.log("isSimulationStage", isSimulationStage);
-      console.log("isSimulationStageComplete", isSimulationStageComplete);
-      console.log("isEndOfPhaseReflectionStep", isEndOfPhaseReflectionStep);
-      console.log(
-        "endOfPhaseReflectionStepStatus",
-        endOfPhaseReflectionStepStatus
-      );
-      console.log("roomIsProcessing", roomIsProcessing);
-      console.log("----- RECHECKING VARS -----");
 
       // if we are now in a request user input step and it is not complete, check the status of the request user input step.
       if (isRequestUserInputStep && !requestUserInputStageStatus.isComplete) {
@@ -335,9 +288,7 @@ export const pingGameRoomProcess = {
         room.gameData.curGameState.curState !==
           "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
       ) {
-        console.log("incomplete end of phase reflection step, checking status");
         if (room.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION") {
-          console.log("transitioning to end of phase reflection state");
           const numStepGamePhaseReflections =
             await GamePhaseReflectionsModel.countDocuments({
               roomId: roomId,
@@ -350,7 +301,6 @@ export const pingGameRoomProcess = {
           );
         } else {
           // We are in an incomplete end of phase reflection step, so we need to apply the endOfPhaseReflectionStepStatus to the room.
-          console.log("applying endOfPhaseReflectionStepStatus to room");
           room = await RoomModel.findOneAndUpdate(
             { _id: args.roomId },
             {

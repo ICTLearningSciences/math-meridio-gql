@@ -159,7 +159,6 @@ export function isJsonString(str: string): boolean {
   try {
     JSON.parse(str);
   } catch (e) {
-    console.log(`Error parsing string: ${str}`);
     return false;
   }
   return true;
@@ -213,12 +212,6 @@ export async function acquireProcessingLock(
   let versionNumber = currentVersionNumber;
 
   while (attempt < MAX_RETRIES) {
-    console.log(
-      `[acquireProcessingLock] Attempt ${
-        attempt + 1
-      }/${MAX_RETRIES} for room ${roomId} with version ${versionNumber}`
-    );
-
     // Try to acquire the lock by setting phase to PROCESSING
     const roomSetToProcessing = await RoomModel.findOneAndUpdate(
       {
@@ -235,9 +228,6 @@ export async function acquireProcessingLock(
 
     // Success! We got the lock
     if (roomSetToProcessing) {
-      console.log(
-        `[acquireProcessingLock] Successfully acquired lock for room ${roomId}`
-      );
       return {
         success: true,
         room: roomSetToProcessing.toObject(),
@@ -245,10 +235,6 @@ export async function acquireProcessingLock(
     }
 
     // Failed to get lock, fetch fresh room state to understand why
-    console.log(
-      `[acquireProcessingLock] Failed to acquire lock for room ${roomId}, checking room state...`
-    );
-
     const freshRoom = await RoomModel.findOne({
       _id: roomId,
       deletedRoom: false,
@@ -256,9 +242,6 @@ export async function acquireProcessingLock(
 
     // Edge case: Room doesn't exist or was deleted
     if (!freshRoom) {
-      console.log(
-        `[acquireProcessingLock] Room ${roomId} not found or was deleted`
-      );
       return {
         success: false,
         room: null,
@@ -268,9 +251,6 @@ export async function acquireProcessingLock(
 
     // Check if someone else already has the lock
     if (freshRoom.phase === RoomPhase.PROCESSING) {
-      console.log(
-        `[acquireProcessingLock] Room ${roomId} is already being processed by another request`
-      );
       return {
         success: false,
         room: freshRoom.toObject(),
@@ -279,17 +259,11 @@ export async function acquireProcessingLock(
     }
 
     // Room was updated for another reason (e.g., chat message), retry with new version
-    console.log(
-      `[acquireProcessingLock] Room ${roomId} was updated (version ${freshRoom.versionNumber}), retrying...`
-    );
     versionNumber = freshRoom.versionNumber;
     attempt++;
   }
 
   // Max retries exceeded, fetch final state and return
-  console.log(
-    `[acquireProcessingLock] Max retries exceeded for room ${roomId}`
-  );
   const finalRoom = await RoomModel.findOne({
     _id: roomId,
     deletedRoom: false,

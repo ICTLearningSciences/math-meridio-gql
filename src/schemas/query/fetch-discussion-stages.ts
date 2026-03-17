@@ -19,7 +19,6 @@ export const fetchDiscussionStages = {
     try {
       return await DiscussionStageModel.find({});
     } catch (e) {
-      console.log(e);
       throw new Error(String(e));
     }
   },

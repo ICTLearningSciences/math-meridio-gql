@@ -24,8 +24,6 @@ export function generateChatContext(
 
   const fullChatLog = gameData.chat || [];
 
-  console.log("fullChatLog", JSON.stringify(fullChatLog, null, 2));
-
   // Step 1: Filter by user if needed
   const userFilteredMessages = filterByUser(
     fullChatLog,
@@ -34,20 +32,10 @@ export function generateChatContext(
     isIndividualPrompt
   );
 
-  console.log(
-    "userFilteredMessages",
-    JSON.stringify(userFilteredMessages, null, 2)
-  );
-
   // Step 2: Filter by type (ALL_MESSAGES, NUM_RECENT_MESSAGES, FROM_INPUT_STEPS)
   const typeFilteredMessages = filterByType(
     userFilteredMessages,
     includeMessageContext
-  );
-
-  console.log(
-    "typeFilteredMessages",
-    JSON.stringify(typeFilteredMessages, null, 2)
   );
 
   // Step 3: Format the filtered messages into a string

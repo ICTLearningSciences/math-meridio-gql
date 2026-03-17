@@ -55,7 +55,6 @@ const authorization = (req: any, res: any, next: any) => {
     return next();
   }
   if (!req.body.data || !req.body.data.secret) {
-    console.log(`failed to authorize, expected body`);
     return res
       .status(403)
       .send({ error: `failed to authorize, expected body` });
@@ -63,13 +62,11 @@ const authorization = (req: any, res: any, next: any) => {
   //when sending from postman: req.body.secret, else from webpage: req.body.data.secret
   const secret = req.body.data.secret;
   if (!secret) {
-    console.log(`failed to authorize, expected secret`);
     return res
       .status(403)
       .send({ error: `failed to authorize, expected secret` });
   }
   if (secret !== process.env.GQL_SECRET) {
-    console.log(`failed to authorize, secrets do not match`);
     return res
       .status(403)
       .send({ error: `failed to authorize, secret does not match` });

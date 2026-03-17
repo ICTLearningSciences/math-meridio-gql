@@ -61,7 +61,6 @@ export function validateJson(req: any, res: any, schema: any) {
   const validate = ajv.compile(schema);
   const valid = validate(body);
   if (!valid) {
-    console.log(validate.errors);
     throw new Error(`invalid request`);
   }
 }
@@ -301,6 +300,5 @@ export async function initializeStudentSubmissionLog(
     expectedLearningObjectives,
     studentCoveredLearningObjectives: [] as string[],
   };
-  console.log("submission data", JSON.stringify(submissionData, null, 2));
   return StudentSubmissionLogModel.create(submissionData);
 }

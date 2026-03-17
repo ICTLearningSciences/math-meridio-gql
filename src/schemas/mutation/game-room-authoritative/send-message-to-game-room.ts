@@ -72,10 +72,6 @@ export const sendMessageToGameRoom = {
           discussionStages,
           learningObjectives
         );
-      } else {
-        console.log(
-          "not currently in a phase step, so not initializing student submission log"
-        );
       }
     } catch (error) {
       console.error("Error initializing student submission log", error);

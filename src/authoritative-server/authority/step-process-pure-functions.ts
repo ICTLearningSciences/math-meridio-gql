@@ -59,10 +59,6 @@ export async function applyAtomicRoomModificationActions(
   atomicRoomModificationActions: AtomicRoomModiticationAction[],
   roomId: string
 ): Promise<GameData> {
-  console.log(
-    "reached applyAtomicRoomModificationActions with actions: ",
-    JSON.stringify(atomicRoomModificationActions, null, 2)
-  );
   // Aggregate messages to add
   const messagesToAdd: ChatMessage[] = [];
 
@@ -152,10 +148,6 @@ export async function applyAtomicRoomModificationActions(
   }
 
   if (phasesToComplete.length > 0) {
-    console.log(
-      "phasesToComplete in applyAtomicRoomModificationActions: ",
-      phasesToComplete
-    );
     updateOperations.$addToSet = {
       ...(updateOperations.$addToSet || {}),
       "gameData.phaseProgression.phasesCompleted": {
@@ -205,16 +197,10 @@ export async function applyAtomicRoomModificationActions(
     };
   }
 
-  console.log(
-    "updateOperations in applyAtomicRoomModificationActions: ",
-    updateOperations
-  );
-
   if (
     !Object.keys(updateOperations).length &&
     !Object.keys(setOperations).length
   ) {
-    console.log("No updates to apply to room, returning original game data");
     return _gameData;
   }
 
@@ -397,7 +383,6 @@ export function addPlayerToRoomNonAtomically(
   playerId: string
 ): Room {
   if (room.gameData.players.includes(playerId)) {
-    console.log("Player already in room");
     return room;
   }
 
@@ -435,7 +420,6 @@ export async function addPlayerToRoomAtomically(
   player: PlayerDocument
 ): Promise<Room> {
   if (room.gameData.players.includes(player._id)) {
-    console.log("Player already in room");
     return room;
   }
 
@@ -478,9 +462,6 @@ export async function processCurStep(
   let gameData = getGameDataCopy(room.gameData);
   const { curStage, curStep } = getCurStageAndStep(gameData, discussionStages);
   if (!isDiscussionStage(curStage)) {
-    console.log(
-      "Cannot process step for simulation stage, returning original room"
-    );
     return room;
   }
   switch (curStep.stepType) {
@@ -597,7 +578,6 @@ export async function transitionToEndOfPhaseReflectionState(
   numStepGamePhaseReflections: number
 ) {
   if (room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION") {
-    console.log("already transitioned to end of phase reflection state");
     return room;
   }
   const roundNumber = numStepGamePhaseReflections + 1;
@@ -653,12 +633,7 @@ export function endOfPhaseReflectionStepStatus(
   room: Room,
   curRoundGameReflections: GamePhaseReflections
 ): EndOfPhaseReflectionStepCompletionStatus {
-  console.log(
-    "curRoundGameReflections going into endOfPhaseReflectionStepStatus",
-    curRoundGameReflections
-  );
   if (room.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION") {
-    console.log("not in end of phase reflection state, will not check status");
     return {
       isComplete: false,
       playersLeftToRespond:
@@ -687,7 +662,6 @@ export function requestUserInputStageStatus(
   let mostRecentUserMessageIdx = -1;
 
   if (!gameData.players.length) {
-    console.log("no players in room, will not progress step");
     return {
       isComplete: false,
       playersLeftToRespond: [],
@@ -719,9 +693,6 @@ export function requestUserInputStageStatus(
       RequireInputType.ALL_USER_RESPONSES_REQUIRED_IN_ORDER
   ) {
     // Both of these types require that every player provided a response, so check for that.
-    console.log(
-      `Requiring all player inputs with type: ${curStep.requireInputType}`
-    );
     const activePlayerIds = getActivePlayersInRoom(gameData);
     const messagesAfterInputStepMessage = gameData.chat.slice(
       mostRecentSystemMessageIdx + 1
@@ -733,7 +704,6 @@ export function requestUserInputStageStatus(
 
     // If no system message was found, then the step is not complete.
     if (mostRecentSystemMessageIdx === -1) {
-      console.log("no system message found, step is not complete");
       return {
         isComplete: false,
         playersLeftToRespond: [],
@@ -756,9 +726,6 @@ export function requestUserInputStageStatus(
     };
   } else {
     // Single input required, so just check that we got 1 user message after the input step message.
-    console.log(
-      `Single input required, checking for 1 user message after input step message`
-    );
     const isComplete = mostRecentUserMessageIdx > mostRecentSystemMessageIdx;
     return {
       isComplete: isComplete,
@@ -806,9 +773,6 @@ export async function processStepsUntilNextStallingPhase(
     );
     stepAndStage = getCurStageAndStep(latestRoom.gameData, discussionStages);
     if (isDiscussionStage(stepAndStage.curStage)) {
-      console.log(
-        `processing ${stepAndStage.curStep.stepType} step: ${stepAndStage.curStep.stepId}`
-      );
       latestRoom = await processCurStep(
         latestRoom,
         discussionStages,

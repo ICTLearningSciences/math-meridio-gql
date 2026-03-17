@@ -40,7 +40,6 @@ export const leaveGameRoom = {
     }
 
     if (!_room.gameData.players.includes(player._id)) {
-      console.log("player not in room");
       return _room;
     }
 
