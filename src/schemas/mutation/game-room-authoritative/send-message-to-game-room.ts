@@ -79,7 +79,6 @@ export const sendMessageToGameRoom = {
       }
     } catch (error) {
       console.error("Error initializing student submission log", error);
-      throw new Error("Failed to initialize student submission log");
     }
 
     const updatedRoom = await RoomModel.findOneAndUpdate(

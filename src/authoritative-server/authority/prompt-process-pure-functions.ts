@@ -729,6 +729,10 @@ function buildAggregatedStateDataForGroup(
     }
   }
 
+  // HACK: num_pumps must be pulled from the global state data since it should not be part of the player state data
+  aggregatedData["num_pumps"] =
+    gameData.globalStateData.gameStateData["num_pumps"] || 0;
+
   return aggregatedData;
 }
 

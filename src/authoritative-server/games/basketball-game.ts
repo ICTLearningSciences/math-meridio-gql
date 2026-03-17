@@ -135,23 +135,8 @@ export class BasketballStateHandler extends AbstractGameData {
       {
         id: "key-concepts-convo",
         stage: keyConceptsConvoStage,
-        beforeStart: () => {
-          // this.discussionStageHandler.exitEarlyCondition = (
-          //   data: CollectedDiscussionData
-          // ) => {
-          //   return data['understands_algorithm'] === 'true';
-          // };
-          console.log(
-            "WARNING: beforeStart called, doing nothing, used to exit early if player didn't understand algorithm"
-          );
-        },
-        getNextStage: (discussionData, globalGameStateData) => {
-          // this.discussionStageHandler.exitEarlyCondition = undefined;
-          if (!understandsAlgorithm(globalGameStateData)) {
-            return keyConceptsConvoStage;
-          } else {
-            return selectStrategyStage;
-          }
+        getNextStage: () => {
+          return selectStrategyStage;
         },
       },
       {
@@ -171,23 +156,15 @@ export class BasketballStateHandler extends AbstractGameData {
       {
         id: "discuss-new-strategy",
         stage: discussNewStrategyStage,
-        getNextStage: (data) => {
-          if (data["best_strategy_found"] === "false") {
-            return discussBestStrategyStage;
-          } else {
-            return finishedStage;
-          }
+        getNextStage: () => {
+          return finishedStage;
         },
       },
       {
         id: "discuss-best-strategy",
         stage: discussBestStrategyStage,
-        getNextStage: (data) => {
-          if (data["best_strategy_found"] === "false") {
-            return discussBestStrategyStage;
-          } else {
-            return finishedStage;
-          }
+        getNextStage: () => {
+          return finishedStage;
         },
       },
       {
