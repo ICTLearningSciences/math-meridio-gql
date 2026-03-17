@@ -17,15 +17,12 @@ import {
   PromptOutputTypes,
   PromptRoles,
 } from "../../../authoritative-server/llm-request/types";
-import { GraphQLObjectType, GraphQLString } from "graphql";
+import { GraphQLString } from "graphql";
 
 export const testLlmCall = {
   type: GraphQLString,
   args: {},
-  resolve: async (
-    _root: GraphQLObjectType,
-    _: any // eslint-disable-line  @typescript-eslint/no-explicit-any
-  ): Promise<string> => {
+  resolve: async (): Promise<string> => {
     try {
       // TODO: need to also pull the model from the ABE database
       const llmRequest: GenericLlmRequest = {

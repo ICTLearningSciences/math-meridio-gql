@@ -620,7 +620,7 @@ export function getActivePlayersInRoom(gameData: GameData): string[] {
         playersInRoom.includes(playerId) &&
         playerStatus.computedState === PlayerComputedState.ACTIVE
     )
-    .map(([playerId, _]) => playerId);
+    .map(([playerId]) => playerId);
   return activePlayersInRoom;
 }
 

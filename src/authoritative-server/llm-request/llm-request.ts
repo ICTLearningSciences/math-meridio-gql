@@ -81,7 +81,6 @@ export async function asyncLlmRequestStatus(
 export async function syncLlmRequest(
   llmRequest: GenericLlmRequest
 ): Promise<AiServicesResponseTypes> {
-  const requestId = Math.random().toString(36).substring(2, 15);
   const openAiJobId = await asyncLlmRequest(llmRequest);
   const pollFunction = () => {
     return asyncLlmRequestStatus(openAiJobId);

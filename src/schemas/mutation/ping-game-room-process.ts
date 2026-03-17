@@ -26,9 +26,7 @@ import {
 import { processStepsUntilNextStallingPhase } from "../../authoritative-server/authority/step-process-pure-functions";
 import { AiServiceNames } from "../../authoritative-server/llm-request/types";
 import DiscussionStageModel from "../../schemas/models/DiscussionStage/DiscussionStage";
-import GamePhaseReflectionsModel, {
-  GamePhaseReflections,
-} from "../../schemas/models/GamePhaseReflections";
+import GamePhaseReflectionsModel from "../../schemas/models/GamePhaseReflections";
 import { getCurStageAndStep } from "../../authoritative-server/authority/user-action-pure-functions";
 import { WAIT_FOR_SIMULATION_STAGE_CLIENT_ID } from "../../authoritative-server/games/game-helpers";
 import { PlayerComputedState } from "../../schemas/types/types";
