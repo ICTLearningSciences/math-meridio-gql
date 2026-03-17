@@ -203,7 +203,6 @@ describe("full room lifecycle", () => {
     const globalGameStateData =
       roomAfterProcessingPrompt?.gameData.globalStateData.gameStateData;
 
-    console.log(JSON.stringify(globalGameStateData, null, 2));
     const promptResponse = globalGameStateData?.["prompt_response"];
     expect(promptResponse).to.equal("Mocked analysis of the prompt");
 
@@ -1299,8 +1298,6 @@ describe("full room lifecycle", () => {
     );
     expect(viewSimulationResponse.status).to.equal(200);
 
-    console.log("pinging room process");
-
     const pingAfterSimulationResponse = await pingRoomProcess(
       app,
       roomId,
@@ -1360,7 +1357,6 @@ describe("full room lifecycle", () => {
       "unit-test-end-of-phase",
       ownerStudentToken
     );
-    console.log(JSON.stringify(createNewGameRoomResponse.body, null, 2));
     expect(createNewGameRoomResponse.status).to.equal(200);
     expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
     const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
@@ -1399,7 +1395,6 @@ describe("full room lifecycle", () => {
       "session1",
       ownerStudentToken
     );
-    console.log(JSON.stringify(sendMessageResponse.body, null, 2));
     expect(sendMessageResponse.status).to.equal(200);
     expect(sendMessageResponse.body.data.sendMessageToGameRoom).to.exist;
 
@@ -2042,6 +2037,8 @@ describe("full room lifecycle", () => {
 
     // ENSURE the room is now at the END_OF_PHASE_REFLECTION stage
     // ENSURE curGameState data is all set correctly (roundNumber 2, etc.)
+    const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+    await delay(1000);
     currentRoom = await RoomModel.findById(newRoomId).lean();
     expect(currentRoom?.gameData.curGameState.curState).to.equal(
       "END_OF_PHASE_REFLECTION"
@@ -2919,10 +2916,6 @@ User: Owner's second input
 User: Student Two's second input`);
 
     // Confirm the allMessagesWithoutOtherUsersCall request only includes one of the user's inputs
-    console.log(
-      "allMessagesWithoutOtherUsersCall",
-      JSON.stringify(allMessagesWithoutOtherUsersCall?.args[0].prompts, null, 2)
-    );
     messageContextString =
       allMessagesWithoutOtherUsersCall?.args[0].prompts.find((p: any) =>
         p.promptText.includes(questionPairPrefix)
