@@ -9,16 +9,6 @@ Project Requirements:
     - `nvm use 18.13`
     - verify using `$ node --version`
 
-## Local Development
-
-Required: Create a `.env` file at the root of the project and fill with the required values.
-
-1. Start the local server:
-```
-$ make develop
-```
-2. Visit graphql playground: http://localhost:3000/offline/graphql
-
 ## Local Unit Tests
 - We use various testing frameworks to run unit tests, including mocha, chai, mongo-unit, and supertest.
 - You may look at the *.spec.ts files under test/graphql/ for unit test examples.
@@ -30,3 +20,18 @@ $ make develop
 - ALWAYS push your changes to a separate branch and open a PR when your changes are ready to be reviewed.
 - Request a review from a team member.
 - Once the PR is approved, merge into main.
+
+## Deploying code changes to dev/qa/prod
+
+- Deploy to dev: Merging your changes into the `main` branch will automatically trigger a deployment to the dev environment.
+- Deploy to qa: Merging your changes into the `release` branch will automatically trigger a deployment to the qa environment.
+- Deploy to prod: Log into your ABE AWS account. Visit the CodePipeline service. Locate and access math-meridio-gql-release-cicd-pipeline. Locate the "Approve" card. Click Approval and approve the deployment. Note: You must wait for your QA deployment to finish processing before you can deploy those changes to prod.
+
+## Migrating Discussion Stage / Prompt Steps Between Environments
+
+- [Go to Migration Guide](./discussion-stage-migration.md)
+
+
+
+Tech Debt:
+- [ ] Automate Discussion Stage Step migration.
