@@ -42,22 +42,6 @@ export const joinGameRoom = {
       if (room.gameData.players.includes(player._id)) {
         return room;
       }
-      const now = new Date();
-
-      if (!room.gameData.playersStatusRecord[player._id]) {
-        room.gameData.playersStatusRecord[player._id] = {
-          lastHeartbeatAt: now,
-          reportedAwayStatus: {
-            isAway: false,
-          },
-          pausedByAdmin: false,
-          computedState: PlayerComputedState.ACTIVE,
-          phaseMetrics: {},
-          needsHelpInRoom: false,
-        };
-      } else {
-        room.gameData.playersStatusRecord[player._id].lastHeartbeatAt = now;
-      }
 
       return await addPlayerToRoomAtomically(room, player);
     } catch (error) {

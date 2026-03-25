@@ -302,16 +302,18 @@ export function processConditionalStep(): NoOpRoomAtomicAction {
   };
 }
 
-export const defaultPlayerStatusRecord: PlayerStatusData = {
-  lastHeartbeatAt: new Date(),
-  reportedAwayStatus: {
-    isAway: false,
-  },
-  pausedByAdmin: false,
-  computedState: PlayerComputedState.ACTIVE,
-  phaseMetrics: {},
-  needsHelpInRoom: false,
-};
+export function defaultPlayerStatusRecord(): PlayerStatusData {
+  return {
+    lastHeartbeatAt: new Date(),
+    reportedAwayStatus: {
+      isAway: false,
+    },
+    pausedByAdmin: false,
+    computedState: PlayerComputedState.ACTIVE,
+    phaseMetrics: {},
+    needsHelpInRoom: false,
+  };
+}
 
 export async function updatePlayersHeartbeat(
   roomId: string,
@@ -331,7 +333,7 @@ export async function updatePlayersHeartbeat(
       {
         $set: {
           [`gameData.playersStatusRecord.${playerId}`]:
-            defaultPlayerStatusRecord,
+            defaultPlayerStatusRecord(),
         },
       },
       { new: true }
@@ -400,7 +402,7 @@ export function addPlayerToRoomNonAtomically(
       playersStatusRecord: {
         ...room.gameData.playersStatusRecord,
         ...(shouldUpdateStatusRecord
-          ? { [playerId]: defaultPlayerStatusRecord }
+          ? { [playerId]: defaultPlayerStatusRecord() }
           : {}),
       },
       playersGameStateData: {
@@ -420,7 +422,16 @@ export async function addPlayerToRoomAtomically(
   player: PlayerDocument
 ): Promise<Room> {
   if (room.gameData.players.includes(player._id)) {
-    return room;
+    return await RoomModel.findOneAndUpdate(
+      { _id: room._id },
+      {
+        $set: {
+          [`gameData.playersStatusRecord.${player._id}.lastHeartbeatAt`]:
+            new Date(),
+        },
+      },
+      { new: true }
+    );
   }
 
   let shouldUpdateStatusRecord = false;
@@ -436,8 +447,10 @@ export async function addPlayerToRoomAtomically(
       $set: {
         ...(shouldUpdateStatusRecord
           ? {
-              [`gameData.playersStatusRecord.${player._id}`]:
-                defaultPlayerStatusRecord,
+              [`gameData.playersStatusRecord.${player._id}`]: {
+                ...defaultPlayerStatusRecord(),
+                lastHeartbeatAt: new Date(),
+              },
             }
           : {}),
         [`gameData.playersGameStateData.${player._id}`]: {
