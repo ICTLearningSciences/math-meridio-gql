@@ -39,6 +39,13 @@ export const submitGamePhaseReflection = {
     if (!roomIsInGamePhaseReflection)
       throw new Error("Room is not in game phase reflection");
 
+    let phaseId = "";
+    if (room.gameData.phaseProgression.phasesStarted?.length > 0) {
+      phaseId =
+        room.gameData.phaseProgression.phasesStarted[
+          room.gameData.phaseProgression.phasesStarted.length - 1
+        ];
+    }
     const phase = await GamePhaseReflectionsModel.findOneAndUpdate(
       {
         roomId: args.roomId,
@@ -48,6 +55,7 @@ export const submitGamePhaseReflection = {
       {
         $set: {
           [`reflections.${context.userId}`]: args.reflection,
+          phaseId,
         },
       },
       {

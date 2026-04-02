@@ -77,6 +77,9 @@ export const sendMessageToGameRoom = {
       console.error("Error initializing student submission log", error);
     }
 
+    const phases = room.gameData?.phaseProgression?.phasesStarted || [];
+    const phaseId = phases.length > 0 ? phases[phases.length - 1] : "";
+
     const updatedRoom = await RoomModel.findOneAndUpdate(
       { _id: args.roomId },
       {
@@ -88,7 +91,8 @@ export const sendMessageToGameRoom = {
             args.message,
             context.userId,
             player.name,
-            args.sessionId
+            args.sessionId,
+            phaseId
           ),
         },
         ...(shouldUpdateDiscussionData

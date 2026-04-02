@@ -55,6 +55,7 @@ export interface ChatMessage {
   disableUserInput: boolean;
   mcqChoices: string[];
   sessionId: string;
+  phaseId: string;
   fromStepId?: string;
   fromStepType?: DiscussionStageStepType;
 }
@@ -145,6 +146,7 @@ export const ChatMessageSchema = new Schema<ChatMessage>(
     senderId: { type: String },
     senderName: { type: String },
     sessionId: { type: String },
+    phaseId: { type: String },
     displayType: { type: String },
     disableUserInput: { type: Boolean },
     mcqChoices: [{ type: String }],
@@ -279,6 +281,7 @@ export const ChatMessageType = new GraphQLObjectType({
     disableUserInput: { type: GraphQLBoolean },
     mcqChoices: { type: new GraphQLList(GraphQLString) },
     sessionId: { type: GraphQLString },
+    phaseId: { type: GraphQLString },
     fromStepId: { type: GraphQLString },
     fromStepType: { type: GraphQLString },
   }),

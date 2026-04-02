@@ -96,11 +96,6 @@ describe("join a game room", () => {
         studentUserId
       ]
     ).to.exist;
-    const curDate = new Date();
-    console.log(curDate.toISOString());
-    console.log(
-      JSON.stringify(response.body.data.joinGameRoom.gameData, null, 2)
-    );
     expect(
       response.body.data.joinGameRoom.gameData.playersStatusRecord[
         studentUserId

@@ -32,6 +32,8 @@ export function buildSystemMessage(
     processMessageWithDiscussionData,
     gameData.globalStateData.gameStateData || {}
   );
+  const phases = _gameData?.phaseProgression?.phasesStarted || [];
+  const phaseId = phases.length > 0 ? phases[phases.length - 1] : "";
   return {
     messageId: crypto.randomUUID(),
     sender: SenderType.SYSTEM,
@@ -43,6 +45,7 @@ export function buildSystemMessage(
     mcqChoices: [],
     message: processedMessageWithGameStateData,
     sessionId: sessionId || "",
+    phaseId: phaseId || "",
     displayType: MessageDisplayType.TEXT,
   };
 }
@@ -51,7 +54,8 @@ export function buildUserMessage(
   newMessage: string,
   senderId: string,
   senderName: string,
-  sessionId: string
+  sessionId: string,
+  phaseId: string
 ): ChatMessage {
   return {
     messageId: crypto.randomUUID(),
@@ -64,6 +68,7 @@ export function buildUserMessage(
     mcqChoices: [],
     message: newMessage,
     sessionId: sessionId || "",
+    phaseId: phaseId || "",
     displayType: MessageDisplayType.TEXT,
   };
 }

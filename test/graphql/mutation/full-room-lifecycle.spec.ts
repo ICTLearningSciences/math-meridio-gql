@@ -1536,6 +1536,7 @@ describe("full room lifecycle", () => {
     );
 
     // ENSURE GamePhaseReflection document is created and has proper data.
+    const a = await GamePhaseReflectionsModel.find({});
     let gamePhaseReflection = await GamePhaseReflectionsModel.findOne({
       roomId: newRoomId,
       stepId: "2",
