@@ -16,7 +16,6 @@ import { initializeGroupGameRoomWithoutGameId } from "./game-room-authoritative/
 import RoomModel, { Room, RoomType } from "../models/Room";
 import PlayerModel from "../models/Player";
 import { addPlayerToRoomAtomically } from "../../authoritative-server/authority/step-process-pure-functions";
-import { PlayerComputedState } from "../types/types";
 
 export interface AssignClassGroupsAndStartResponse {
   updatedClassroom: Class;
@@ -89,7 +88,6 @@ export const assignClassGroupsAndStart = {
 
       // Update existing classroom assignments
       if (classroom.startedAt !== undefined) {
-        const now = new Date();
         const rooms = await RoomModel.find({ classId: classId });
         for (const [groupId, memberships] of Object.entries(
           classMembershipsByGroupId
@@ -111,19 +109,13 @@ export const assignClassGroupsAndStart = {
           else {
             for (const member of memberships) {
               // Add new player to room
-              if (!room.gameData.players.includes(member.userId)) {
-                const player = await PlayerModel.findOne({ _id: userId });
-                room.gameData.players.push(player._id);
-                room.gameData.playersStatusRecord[player._id] = {
-                  lastHeartbeatAt: now,
-                  reportedAwayStatus: {
-                    isAway: false,
-                  },
-                  pausedByAdmin: false,
-                  computedState: PlayerComputedState.ACTIVE,
-                  phaseMetrics: {},
-                  needsHelpInRoom: false,
-                };
+              if (
+                !room.gameData.players.includes(member.userId) &&
+                `${member.groupId}` === `${groupId}`
+              ) {
+                const player = await PlayerModel.findOne({
+                  _id: member.userId,
+                });
                 await addPlayerToRoomAtomically(room, player);
               }
             }

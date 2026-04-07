@@ -40,25 +40,7 @@ export const joinGameRoom = {
       }
 
       if (room.gameData.players.includes(player._id)) {
-        console.log("Player already in room");
         return room;
-      }
-      const now = new Date();
-      console.log("setting join game room heartbeat to now", now);
-
-      if (!room.gameData.playersStatusRecord[player._id]) {
-        room.gameData.playersStatusRecord[player._id] = {
-          lastHeartbeatAt: now,
-          reportedAwayStatus: {
-            isAway: false,
-          },
-          pausedByAdmin: false,
-          computedState: PlayerComputedState.ACTIVE,
-          phaseMetrics: {},
-          needsHelpInRoom: false,
-        };
-      } else {
-        room.gameData.playersStatusRecord[player._id].lastHeartbeatAt = now;
       }
 
       return await addPlayerToRoomAtomically(room, player);

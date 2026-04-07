@@ -39,9 +39,7 @@ export const assignGameToGameRoom = {
     }
   ): Promise<Room> => {
     try {
-      const userId = context.userId;
       const { roomId, gameId } = args;
-
       const _discussionStages = await DiscussionStageModel.find();
       const discussionStages = _discussionStages.map((stage) =>
         stage.toObject()

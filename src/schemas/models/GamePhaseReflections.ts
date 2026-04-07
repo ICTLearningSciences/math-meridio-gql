@@ -18,6 +18,7 @@ import {
 export interface GamePhaseReflections extends Document {
   roomId: string;
   stepId: string;
+  phaseId: string;
   question: string;
   roundNumber: number;
   reflections: Record<string, string>; // keyed by player ID
@@ -37,6 +38,7 @@ export const GamePhaseReflectionsSchema = new Schema<
   {
     roomId: { type: String, required: true },
     stepId: { type: String, required: true },
+    phaseId: { type: String },
     question: { type: String, required: true },
     roundNumber: { type: Number, required: true },
     reflections: { type: Schema.Types.Mixed, required: true },
@@ -55,6 +57,7 @@ export const GamePhaseReflectionsType = new GraphQLObjectType({
   fields: () => ({
     roomId: { type: GraphQLString },
     stepId: { type: GraphQLString },
+    phaseId: { type: GraphQLString },
     question: { type: GraphQLString },
     roundNumber: { type: GraphQLInt },
     reflections: { type: GraphQLScalarType },

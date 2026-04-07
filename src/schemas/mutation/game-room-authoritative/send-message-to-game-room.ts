@@ -72,14 +72,13 @@ export const sendMessageToGameRoom = {
           discussionStages,
           learningObjectives
         );
-      } else {
-        console.log(
-          "not currently in a phase step, so not initializing student submission log"
-        );
       }
     } catch (error) {
       console.error("Error initializing student submission log", error);
     }
+
+    const phases = room.gameData?.phaseProgression?.phasesStarted || [];
+    const phaseId = phases.length > 0 ? phases[phases.length - 1] : "";
 
     const updatedRoom = await RoomModel.findOneAndUpdate(
       { _id: args.roomId },
@@ -92,7 +91,8 @@ export const sendMessageToGameRoom = {
             args.message,
             context.userId,
             player.name,
-            args.sessionId
+            args.sessionId,
+            phaseId
           ),
         },
         ...(shouldUpdateDiscussionData

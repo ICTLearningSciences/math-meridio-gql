@@ -318,10 +318,6 @@ async function processAnalyzeLearningObjectivePrompt(
     .map((s) => s.stage)
     .filter((s) => isDiscussionStage(s)) as DiscussionStage[];
   const playerId = String(player._id);
-  console.log(
-    "PROCESSING analyzeLearningObjectivePrompt for player: ",
-    playerId
-  );
   const playerActions: AtomicRoomModiticationAction[] = [];
 
   // Build student-specific state data (player data takes precedence over global)
@@ -345,10 +341,6 @@ async function processAnalyzeLearningObjectivePrompt(
   // Add learning objectives to context
   const requestUserInputStepsToPullLOIdsFrom =
     promptConfig.includeMessageContext.stepIds;
-  console.log(
-    "requestUserInputStepsToPullLOIdsFrom: ",
-    requestUserInputStepsToPullLOIdsFrom
-  );
   const learningObjectiveIds = Array.from(
     new Set(
       requestUserInputStepsToPullLOIdsFrom
@@ -470,11 +462,6 @@ async function processAnalyzeLearningObjectivePrompt(
       coveredLearningObjectives
     );
   }
-
-  console.log(
-    "Player actions for analyzeLearningObjectivePrompt: ",
-    JSON.stringify(playerActions, null, 2)
-  );
   return playerActions;
 }
 

@@ -214,7 +214,6 @@ export async function updateRoomStageAndOrStep(
   if (stepId) {
     updateOperations[`gameData.globalStateData.curStepId`] = stepId;
   }
-  // console.log(`updateOperations: ${JSON.stringify(updateOperations, null, 2)}`);
   const updatedRoom = await RoomModel.findOneAndUpdate(
     { _id: room._id },
     { $set: updateOperations },

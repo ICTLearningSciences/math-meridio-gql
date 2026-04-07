@@ -24,7 +24,7 @@ export interface StaticGame {
 
 export const fetchGamesList = {
   type: new GraphQLList(GameType),
-  resolve: async (_root: GraphQLObjectType): Promise<StaticGame[]> => {
+  resolve: async (): Promise<StaticGame[]> => {
     const basketBallGame = new BasketballStateHandler([], true);
     const concertTicketSalesGame = new ConcertTicketSalesStateHandler([], true);
     const games = [basketBallGame, concertTicketSalesGame];
