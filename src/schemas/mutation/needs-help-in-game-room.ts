@@ -8,6 +8,8 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLBoolean, GraphQLObjectType, GraphQLString } from "graphql";
 import RoomModel from "../models/Room";
 import { Room, RoomType } from "../models/Room";
+import ClassEventModel from "../models/ClassEvent";
+import PlayerModel from "../models/Player";
 
 export const setNeedsHelpInGameRoom = {
   type: RoomType,
@@ -20,6 +22,20 @@ export const setNeedsHelpInGameRoom = {
     args: { roomId: string; needsHelp: boolean },
     context: { userId: string }
   ): Promise<Room> => {
+    const player = await PlayerModel.findOne({ _id: context.userId });
+    const room = await RoomModel.findOne({
+      _id: args.roomId,
+      deletedRoom: false,
+    });
+    await ClassEventModel.create({
+      roomId: args.roomId,
+      userId: context.userId,
+      event: `${player?.name || "Player"} in room ${room?.name} has ${
+        args.needsHelp ? "requested help" : "cancelled their help request"
+      }`,
+      eventAt: new Date(),
+    });
+
     return await RoomModel.findOneAndUpdate(
       {
         _id: args.roomId,

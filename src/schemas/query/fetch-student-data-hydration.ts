@@ -18,6 +18,10 @@ import { BasketballStateHandler } from "../../authoritative-server/games/basketb
 import { ConcertTicketSalesStateHandler } from "../../authoritative-server/games/concert-ticket-game";
 import { StaticGame } from "./fetch-games-list";
 import { GameType } from "./fetch-games-list";
+import ClassEventModel, {
+  ClassEvent,
+  ClassEventType,
+} from "../models/ClassEvent";
 
 const StudentDataHydrationType = new GraphQLObjectType({
   name: "StudentDataHydration",
@@ -27,6 +31,7 @@ const StudentDataHydrationType = new GraphQLObjectType({
     students: { type: new GraphQLList(PlayerType) },
     classMemberships: { type: new GraphQLList(ClassMembershipType) },
     gameList: { type: new GraphQLList(GameType) },
+    events: { type: new GraphQLList(ClassEventType) },
   }),
 });
 
@@ -36,6 +41,7 @@ interface StudentDataHydration {
   students: Player[];
   classMemberships: ClassMembership[];
   gameList: StaticGame[];
+  events: ClassEvent[];
 }
 
 export default {
@@ -93,12 +99,17 @@ export default {
         name: game.name,
       }));
 
+      const events = await ClassEventModel.find({
+        userId: userId,
+      });
+
       return {
         classes,
         rooms,
         students,
         classMemberships,
         gameList,
+        events,
       };
     } catch (error) {
       throw new Error(error);

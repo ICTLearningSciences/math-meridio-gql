@@ -9,7 +9,7 @@ import { Room, RoomType } from "../models/Room";
 import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
 import { addPlayerToRoomAtomically } from "../../authoritative-server/authority/step-process-pure-functions";
-import { PlayerComputedState } from "../types/types";
+import ClassEventModel from "../models/ClassEvent";
 
 export const joinGameRoom = {
   type: RoomType,
@@ -42,6 +42,13 @@ export const joinGameRoom = {
       if (room.gameData.players.includes(player._id)) {
         return room;
       }
+
+      await ClassEventModel.create({
+        roomId: room._id,
+        userId: userId,
+        event: `${player?.name || "Player"} joined room ${room?.name}`,
+        eventAt: new Date(),
+      });
 
       return await addPlayerToRoomAtomically(room, player);
     } catch (error) {

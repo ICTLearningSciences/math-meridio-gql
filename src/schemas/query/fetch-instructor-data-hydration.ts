@@ -12,7 +12,12 @@ import ClassMembershipModel, {
   ClassMembershipType,
 } from "../models/classes/ClassMembership";
 import RoomModel, { Room, RoomType } from "../models/Room";
+import ClassEventModel, {
+  ClassEvent,
+  ClassEventType,
+} from "../models/ClassEvent";
 import PlayerModel, { Player } from "../models/Player";
+
 import GamePhaseReflectionsModel, {
   GamePhaseReflections,
   GamePhaseReflectionsType,
@@ -30,6 +35,7 @@ const InstructorDataHydrationType = new GraphQLObjectType({
     classMemberships: { type: new GraphQLList(ClassMembershipType) },
     phaseReflections: { type: new GraphQLList(GamePhaseReflectionsType) },
     gameList: { type: new GraphQLList(GameType) },
+    events: { type: new GraphQLList(ClassEventType) },
   }),
 });
 
@@ -40,6 +46,7 @@ interface InstructorDataHydration {
   classMemberships: ClassMembership[];
   phaseReflections: GamePhaseReflections[];
   gameList: StaticGame[];
+  events: ClassEvent[];
 }
 
 export default {
@@ -65,7 +72,6 @@ export default {
       const classes = await ClassModel.find({
         $or: [{ teacherId: userId }, { sharedWithInstructorIds: userId }],
       });
-
       const classIds = classes.map((c) => c._id);
 
       // Fetch all rooms created within the classes
@@ -100,6 +106,11 @@ export default {
         id: game.id,
         name: game.name,
       }));
+
+      const events = await ClassEventModel.find({
+        $or: [{ classId: { $in: classIds } }, { roomId: { $in: roomIds } }],
+      });
+
       return {
         classes,
         rooms,
@@ -107,6 +118,7 @@ export default {
         classMemberships,
         phaseReflections,
         gameList,
+        events,
       };
     } catch (error) {
       throw new Error(error);
