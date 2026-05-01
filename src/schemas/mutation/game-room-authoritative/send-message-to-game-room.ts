@@ -42,6 +42,13 @@ export const sendMessageToGameRoom = {
       deletedRoom: false,
     });
     if (!__room) throw new Error("Failed to find room");
+    const myClass = await ClassModel.findOne({
+      _id: __room.classId,
+    });
+    if (myClass?.archivedAt) {
+      throw new Error("Classroom has been archived");
+    }
+
     let room = await updateNumWordsSentInPhases(
       __room.toObject(),
       context.userId,

@@ -5,19 +5,21 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 import { GraphQLObjectType, GraphQLList } from "graphql";
-import { EducationalRole, PlayerType } from "../models/Player";
+import PlayerModel, {
+  EducationalRole,
+  Player,
+  PlayerType,
+} from "../models/Player";
 import ClassModel, { Class, ClassType } from "../models/classes/Class";
 import ClassMembershipModel, {
   ClassMembership,
   ClassMembershipType,
 } from "../models/classes/ClassMembership";
 import RoomModel, { Room, RoomType } from "../models/Room";
-import ClassEventModel, {
-  ClassEvent,
-  ClassEventType,
-} from "../models/ClassEvent";
-import PlayerModel, { Player } from "../models/Player";
-
+import NotificationEventModel, {
+  NotificationEvent,
+  NotificationEventType,
+} from "../models/NotificationEvent";
 import GamePhaseReflectionsModel, {
   GamePhaseReflections,
   GamePhaseReflectionsType,
@@ -35,7 +37,7 @@ const InstructorDataHydrationType = new GraphQLObjectType({
     classMemberships: { type: new GraphQLList(ClassMembershipType) },
     phaseReflections: { type: new GraphQLList(GamePhaseReflectionsType) },
     gameList: { type: new GraphQLList(GameType) },
-    events: { type: new GraphQLList(ClassEventType) },
+    notifications: { type: new GraphQLList(NotificationEventType) },
   }),
 });
 
@@ -46,7 +48,7 @@ interface InstructorDataHydration {
   classMemberships: ClassMembership[];
   phaseReflections: GamePhaseReflections[];
   gameList: StaticGame[];
-  events: ClassEvent[];
+  notifications: NotificationEvent[];
 }
 
 export default {
@@ -107,7 +109,7 @@ export default {
         name: game.name,
       }));
 
-      const events = await ClassEventModel.find({
+      const notifications = await NotificationEventModel.find({
         $or: [{ classId: { $in: classIds } }, { roomId: { $in: roomIds } }],
       });
 
@@ -118,7 +120,7 @@ export default {
         classMemberships,
         phaseReflections,
         gameList,
-        events,
+        notifications,
       };
     } catch (error) {
       throw new Error(error);

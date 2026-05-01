@@ -254,7 +254,6 @@ async function processIndividualPrompts(
   activePlayerData: PlayerDocument[],
   discussionStages: DiscussionStage[]
 ): Promise<AtomicRoomModiticationAction[]> {
-  const gameData = room.gameData;
   try {
     // Check if this is an analyze learning objectives prompt
     if (promptConfig.analyzeLearningObjectives) {
@@ -472,7 +471,7 @@ async function updateStudentSubmissionLog(
   phaseStepId: string,
   newDataToAdd: Record<string, string>
 ): Promise<void> {
-  const res = await StudentSubmissionLogModel.findOneAndUpdate(
+  await StudentSubmissionLogModel.findOneAndUpdate(
     { userId, roomId, roundNumber, phaseStepId },
     {
       $addToSet: {

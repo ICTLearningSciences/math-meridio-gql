@@ -59,6 +59,7 @@ import shareClassroomWithInstructor from "./mutation/share-classroom-with-instru
 import fetchGamePhaseReflections from "./query/fetch-game-phase-reflections";
 import setNeedsHelpInGameRoom from "./mutation/needs-help-in-game-room";
 import fetchLearningObjectives from "./query/fetch-learning-objectives";
+import dismissNotifications from "./mutation/dismiss-notifications";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -93,6 +94,7 @@ const PublicMutation = new GraphQLObjectType({
     refreshAccessToken,
     createClassroom,
     createNewClassInviteCode,
+    dismissNotifications,
     revokeClassInviteCode,
     joinClassroom,
     leaveClassroom,

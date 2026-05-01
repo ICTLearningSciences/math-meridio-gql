@@ -13,48 +13,69 @@ import {
   PaginateQuery,
   pluginPagination,
 } from "./Paginatation";
-import { DateType } from "../types/date";
+import DateType from "../types/date";
 
-export interface ClassEvent extends Document {
+export enum NotificationType {
+  NONE = "",
+  JOIN = "JOIN",
+  LEAVE = "LEAVE",
+  REPORT = "REPORT",
+  REQUEST_HELP = "REQUEST_HELP",
+}
+
+export interface NotificationEvent extends Document {
   classId: string;
   roomId: string;
   userId: string;
   event: string;
   eventAt: Date;
+  dismissedAt: Date;
+  eventType: NotificationType;
 }
 
-export interface ClassEventModel extends Model<ClassEvent> {
+export interface NotificationEventModel extends Model<NotificationEvent> {
   paginate(
-    query?: PaginateQuery<ClassEvent>,
+    query?: PaginateQuery<NotificationEvent>,
     options?: PaginateOptions
-  ): Promise<PaginatedResolveResult<ClassEvent>>;
+  ): Promise<PaginatedResolveResult<NotificationEvent>>;
 }
 
-export const ClassEventSchema = new Schema<ClassEvent, ClassEventModel>(
+export const NotificationEventSchema = new Schema<
+  NotificationEvent,
+  NotificationEventModel
+>(
   {
     classId: { type: String },
     roomId: { type: String },
     userId: { type: String, required: true },
     event: { type: String, required: true },
-    eventAt: { type: Date, required: true },
+    eventAt: { type: Date },
+    dismissedAt: { type: Date },
+    eventType: {
+      type: String,
+      enum: Object.values(NotificationType),
+      default: NotificationType.NONE,
+    },
   },
   { timestamps: true, collation: { locale: "en", strength: 2 } }
 );
 
-pluginPagination(ClassEventSchema);
+pluginPagination(NotificationEventSchema);
 
-export const ClassEventType = new GraphQLObjectType({
-  name: "ClassEventType",
+export const NotificationEventType = new GraphQLObjectType({
+  name: "NotificationEventType",
   fields: () => ({
     classId: { type: GraphQLString },
     roomId: { type: GraphQLString },
     userId: { type: GraphQLString },
     event: { type: GraphQLString },
     eventAt: { type: DateType },
+    dismissedAt: { type: DateType },
+    eventType: { type: GraphQLString },
   }),
 });
 
-export default mongoose.model<ClassEvent, ClassEventModel>(
-  "ClassEvent",
-  ClassEventSchema
+export default mongoose.model<NotificationEvent, NotificationEventModel>(
+  "NotificationEvent",
+  NotificationEventSchema
 );

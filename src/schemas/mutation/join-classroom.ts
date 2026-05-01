@@ -7,7 +7,9 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLObjectType, GraphQLString } from "graphql";
 import PlayerModel, { EducationalRole } from "../models/Player";
 import ClassModel, { Class, ClassType } from "../models/classes/Class";
-import ClassEventModel from "../models/ClassEvent";
+import NotificationEventModel, {
+  NotificationType,
+} from "../models/NotificationEvent";
 import ClassMembershipModel, {
   ClassMembership,
   ClassMembershipStatus,
@@ -113,12 +115,13 @@ export const joinClassroom = {
       await classroom.save();
 
       const player = await PlayerModel.findById(userId);
-      await ClassEventModel.create({
+      await NotificationEventModel.create({
         classId: classroom._id,
         userId: userId,
         event: `${player?.name || "Player"} joined classroom ${
           classroom?.name
         }`,
+        eventType: NotificationType.JOIN,
         eventAt: new Date(),
       });
 

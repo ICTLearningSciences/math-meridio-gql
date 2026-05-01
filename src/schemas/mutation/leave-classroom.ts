@@ -13,7 +13,9 @@ import ClassMembershipModel, {
   ClassMembershipType,
 } from "../models/classes/ClassMembership";
 import RoomModel from "../models/Room";
-import ClassEventModel from "../models/ClassEvent";
+import NotificationEventModel, {
+  NotificationType,
+} from "../models/NotificationEvent";
 
 export const leaveClassroom = {
   type: ClassMembershipType,
@@ -74,10 +76,11 @@ export const leaveClassroom = {
       );
 
       const player = await PlayerModel.findById(userId);
-      await ClassEventModel.create({
+      await NotificationEventModel.create({
         classId: classroom._id,
         userId: userId,
         event: `${player?.name || "Player"} left classroom ${classroom?.name}`,
+        eventType: NotificationType.LEAVE,
         eventAt: new Date(),
       });
 

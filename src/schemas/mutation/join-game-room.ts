@@ -9,7 +9,9 @@ import { Room, RoomType } from "../models/Room";
 import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
 import { addPlayerToRoomAtomically } from "../../authoritative-server/authority/step-process-pure-functions";
-import ClassEventModel from "../models/ClassEvent";
+import NotificationEventModel, {
+  NotificationType,
+} from "../models/NotificationEvent";
 
 export const joinGameRoom = {
   type: RoomType,
@@ -43,10 +45,11 @@ export const joinGameRoom = {
         return room;
       }
 
-      await ClassEventModel.create({
+      await NotificationEventModel.create({
         roomId: room._id,
         userId: userId,
         event: `${player?.name || "Player"} joined room ${room?.name}`,
+        eventType: NotificationType.JOIN,
         eventAt: new Date(),
       });
 

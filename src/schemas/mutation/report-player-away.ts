@@ -8,7 +8,9 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLID, GraphQLObjectType, GraphQLString } from "graphql";
 import RoomModel from "../models/Room";
 import { Room, RoomType } from "../models/Room";
-import ClassEventModel from "../models/ClassEvent";
+import NotificationEventModel, {
+  NotificationType,
+} from "../models/NotificationEvent";
 import PlayerModel from "../models/Player";
 
 export const reportPlayerAway = {
@@ -30,12 +32,13 @@ export const reportPlayerAway = {
 
     const player = await PlayerModel.findOne({ _id: context.userId });
     const otherPlayer = await PlayerModel.findOne({ _id: args.playerId });
-    await ClassEventModel.create({
+    await NotificationEventModel.create({
       roomId: args.roomId,
       userId: context.userId,
       event: `${player?.name || "Player"} in room ${
         room?.name
       } has reported another player ${otherPlayer?.name} as away`,
+      eventType: NotificationType.REPORT,
       eventAt: new Date(),
     });
 

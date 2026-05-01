@@ -11,6 +11,10 @@ import GamePhaseReflectionsModel, {
   GamePhaseReflections,
   GamePhaseReflectionsType,
 } from "../../schemas/models/GamePhaseReflections";
+import NotificationEventModel, {
+  NotificationType,
+} from "../models/NotificationEvent";
+import PlayerModel from "../models/Player";
 
 export const submitGamePhaseReflection = {
   type: GamePhaseReflectionsType,
@@ -39,6 +43,7 @@ export const submitGamePhaseReflection = {
     if (!roomIsInGamePhaseReflection)
       throw new Error("Room is not in game phase reflection");
 
+    const phaseNumber = room.gameData.phaseProgression.phasesStarted.length - 1;
     let phaseId = "";
     if (room.gameData.phaseProgression.phasesStarted?.length > 0) {
       phaseId =
@@ -62,6 +67,17 @@ export const submitGamePhaseReflection = {
         new: true,
       }
     );
+
+    const player = await PlayerModel.findOne({ _id: context.userId });
+    await NotificationEventModel.create({
+      roomId: args.roomId,
+      userId: context.userId,
+      event: `${player?.name || "Player"} in room ${
+        room?.name
+      } has submitted their reflection for phase ${phaseNumber}`,
+      eventType: NotificationType.NONE,
+      eventAt: new Date(),
+    });
 
     if (!phase) throw new Error("Failed to find game phase reflection");
     return phase;
