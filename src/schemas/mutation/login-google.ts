@@ -91,7 +91,10 @@ export const loginGoogle = {
         googleId: googleResponse.id,
       });
       let isInstructor = false;
-      if (args.educationalLoginRole === EducationalRole.INSTRUCTOR) {
+      if (
+        existingUser &&
+        args.educationalLoginRole === EducationalRole.INSTRUCTOR
+      ) {
         isInstructor = validateInstructorLogin(googleResponse, existingUser);
       }
       const user = await PlayerModel.findOneAndUpdate(
