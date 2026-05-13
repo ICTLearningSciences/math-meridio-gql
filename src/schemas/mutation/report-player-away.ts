@@ -8,6 +8,10 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLID, GraphQLObjectType, GraphQLString } from "graphql";
 import RoomModel from "../models/Room";
 import { Room, RoomType } from "../models/Room";
+import NotificationEventModel, {
+  NotificationType,
+} from "../models/NotificationEvent";
+import PlayerModel from "../models/Player";
 
 export const reportPlayerAway = {
   type: RoomType,
@@ -17,13 +21,26 @@ export const reportPlayerAway = {
   },
   resolve: async (
     _root: GraphQLObjectType,
-    args: { roomId: string; playerId: string }
+    args: { roomId: string; playerId: string },
+    context: { userId: string }
   ): Promise<Room> => {
     const room = await RoomModel.findOne({
       _id: args.roomId,
       deletedRoom: false,
     });
     if (!room) throw new Error("Invalid room");
+
+    const player = await PlayerModel.findOne({ _id: context.userId });
+    const otherPlayer = await PlayerModel.findOne({ _id: args.playerId });
+    await NotificationEventModel.create({
+      roomId: args.roomId,
+      userId: context.userId,
+      event: `${player?.name || "Player"} in room ${
+        room?.name
+      } has reported another player ${otherPlayer?.name} as away`,
+      eventType: NotificationType.REPORT,
+      eventAt: new Date(),
+    });
 
     return await RoomModel.findOneAndUpdate(
       {

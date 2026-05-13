@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 import { GraphQLObjectType, GraphQLString } from "graphql";
-import { EducationalRole } from "../models/Player";
+import PlayerModel, { EducationalRole } from "../models/Player";
 import ClassModel from "../models/classes/Class";
 import ClassMembershipModel, {
   ClassMembership,
@@ -13,6 +13,9 @@ import ClassMembershipModel, {
   ClassMembershipType,
 } from "../models/classes/ClassMembership";
 import RoomModel from "../models/Room";
+import NotificationEventModel, {
+  NotificationType,
+} from "../models/NotificationEvent";
 
 export const leaveClassroom = {
   type: ClassMembershipType,
@@ -71,6 +74,15 @@ export const leaveClassroom = {
           $pull: { "gameData.players": userId },
         }
       );
+
+      const player = await PlayerModel.findById(userId);
+      await NotificationEventModel.create({
+        classId: classroom._id,
+        userId: userId,
+        event: `${player?.name || "Player"} left classroom ${classroom?.name}`,
+        eventType: NotificationType.LEAVE,
+        eventAt: new Date(),
+      });
 
       return classMembership;
     } catch (error) {

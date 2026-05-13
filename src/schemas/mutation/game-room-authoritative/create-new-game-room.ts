@@ -41,7 +41,7 @@ export function initializeGroupGameRoomWithoutGameId(
 ): Room {
   let room: Room = {
     _id: new mongoose.Types.ObjectId().toString(),
-    name: `Group #${groupId} Solution Space`,
+    name: `Group #${groupId + 1} Solution Space`,
     ...(classId ? { classId } : {}),
     phase: RoomPhase.NO_ACTIVE_PROCESSING,
     versionNumber: 1,

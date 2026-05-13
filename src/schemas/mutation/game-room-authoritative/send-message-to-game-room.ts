@@ -6,8 +6,9 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import { GraphQLString, GraphQLObjectType, GraphQLID } from "graphql";
+import ClassModel from "../../models/classes/Class";
 import RoomModel, { Room, RoomType } from "../../models/Room";
-import PlayerModel from "../../models/Player";
+import PlayerModel, { EducationalRole } from "../../models/Player";
 import { getCurStageAndStep } from "../../../authoritative-server/authority/user-action-pure-functions";
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
 import {
@@ -41,6 +42,13 @@ export const sendMessageToGameRoom = {
       deletedRoom: false,
     });
     if (!__room) throw new Error("Failed to find room");
+    const myClass = await ClassModel.findOne({
+      _id: __room.classId,
+    });
+    if (myClass?.archivedAt) {
+      throw new Error("Classroom has been archived");
+    }
+
     let room = await updateNumWordsSentInPhases(
       __room.toObject(),
       context.userId,
@@ -49,7 +57,20 @@ export const sendMessageToGameRoom = {
     const player = await PlayerModel.findOne({ _id: context.userId });
     if (!player) throw new Error("Unauthorized User");
     if (!room.gameData.players.includes(context.userId)) {
-      throw new Error("User is not a player in the room");
+      if (player.educationalRole === EducationalRole.STUDENT) {
+        throw new Error("User is not a player in the room");
+      } else {
+        const myClass = await ClassModel.findOne({
+          _id: room.classId,
+          $or: [
+            { teacherId: context.userId },
+            { sharedWithInstructorIds: context.userId },
+          ],
+        });
+        if (!myClass) {
+          throw new Error("User is not a teacher in the room");
+        }
+      }
     }
     const _discussionStages = await DiscussionStageModel.find();
     const discussionStages = _discussionStages.map((stage) => stage.toObject());

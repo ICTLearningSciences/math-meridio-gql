@@ -5,8 +5,11 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 import { GraphQLObjectType, GraphQLString } from "graphql";
-import { EducationalRole } from "../models/Player";
+import PlayerModel, { EducationalRole } from "../models/Player";
 import ClassModel, { Class, ClassType } from "../models/classes/Class";
+import NotificationEventModel, {
+  NotificationType,
+} from "../models/NotificationEvent";
 import ClassMembershipModel, {
   ClassMembership,
   ClassMembershipStatus,
@@ -110,6 +113,17 @@ export const joinClassroom = {
       // Increment the uses field for the invite code
       inviteCodeData.uses += 1;
       await classroom.save();
+
+      const player = await PlayerModel.findById(userId);
+      await NotificationEventModel.create({
+        classId: classroom._id,
+        userId: userId,
+        event: `${player?.name || "Player"} joined classroom ${
+          classroom?.name
+        }`,
+        eventType: NotificationType.JOIN,
+        eventAt: new Date(),
+      });
 
       // Return created/updated ClassMembership document and class document
       return {

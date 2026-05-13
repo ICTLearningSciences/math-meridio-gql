@@ -93,7 +93,7 @@ export const assignClassGroupsAndStart = {
           classMembershipsByGroupId
         )) {
           const room = rooms.find(
-            (r) => r.name === `Group #${groupId} Solution Space`
+            (r) => r.name === `Group #${groupId + 1} Solution Space`
           );
           // Create new room
           if (!room) {

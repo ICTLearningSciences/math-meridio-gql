@@ -8,6 +8,9 @@ import { GraphQLObjectType, GraphQLString } from "graphql";
 import { Room, RoomType } from "../models/Room";
 import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
+import NotificationEventModel, {
+  NotificationType,
+} from "../models/NotificationEvent";
 
 export const leaveGameRoom = {
   type: RoomType,
@@ -48,6 +51,14 @@ export const leaveGameRoom = {
       { $pull: { "gameData.players": player._id.toString() } },
       { new: true }
     );
+
+    await NotificationEventModel.create({
+      roomId: _room._id,
+      userId: userId,
+      event: `${player?.name || "Player"} left room ${_room?.name}`,
+      eventAt: new Date(),
+      eventType: NotificationType.LEAVE,
+    });
 
     return roomWithoutUser;
   },
