@@ -23,7 +23,6 @@ import ClassMembershipModel from "../models/classes/ClassMembership";
 export interface GoogleResponse {
   id: string;
   name: string;
-  email: string;
   given_name: string;
 }
 
@@ -56,15 +55,8 @@ export enum LoginType {
   SIGN_UP = "SIGN_UP",
 }
 
-function validateInstructorLogin(
-  googleResponse: GoogleResponse,
-  existingUser?: Player
-) {
-  const instructorEmails = process.env.INSTRUCTOR_EMAILS.split(",");
-  if (instructorEmails.includes(googleResponse.email)) {
-    return true;
-  }
-  if (existingUser.educationalRole === EducationalRole.INSTRUCTOR) {
+function validateInstructorLogin(existingUser?: Player) {
+  if (existingUser?.educationalRole === EducationalRole.INSTRUCTOR) {
     return true;
   }
   throw new Error("User is not an instructor");
@@ -95,7 +87,7 @@ export const loginGoogle = {
         existingUser &&
         args.educationalLoginRole === EducationalRole.INSTRUCTOR
       ) {
-        isInstructor = validateInstructorLogin(googleResponse, existingUser);
+        isInstructor = validateInstructorLogin(existingUser);
       }
       const user = await PlayerModel.findOneAndUpdate(
         {
@@ -105,7 +97,6 @@ export const loginGoogle = {
           $set: {
             googleId: googleResponse.id,
             name: googleResponse.name,
-            email: googleResponse.email,
             lastLoginAt: new Date(),
             loginService: LoginService.GOOGLE,
             ...(isInstructor
@@ -121,7 +112,7 @@ export const loginGoogle = {
 
       // update all existing classMemberships for the user
       await ClassMembershipModel.updateMany(
-        { userEmail: user.email },
+        { userId: user._id },
         { $set: { userId: user._id.toString() } }
       );
 

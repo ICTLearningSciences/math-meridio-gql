@@ -41,7 +41,6 @@ export const joinClassroom = {
     },
     context: {
       userId: string;
-      userEmail: string;
       userEducationalRole: EducationalRole;
     }
   ): Promise<JoinClassroomResponse> => {
@@ -97,7 +96,6 @@ export const joinClassroom = {
           classId: classroom._id,
           userId: userId,
           status: ClassMembershipStatus.MEMBER,
-          userEmail: context.userEmail,
         });
       } else {
         // Ensure student is not BLOCKED

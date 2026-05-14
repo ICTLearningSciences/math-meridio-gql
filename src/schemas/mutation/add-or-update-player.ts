@@ -33,7 +33,6 @@ const AvatarInputType = new GraphQLInputObjectType({
 const PlayerInputType = new GraphQLInputObjectType({
   name: "PlayerInput",
   fields: () => ({
-    clientId: { type: GraphQLString },
     name: { type: GraphQLString },
     description: { type: GraphQLString },
     avatar: { type: new GraphQLList(AvatarInputType) },
@@ -56,11 +55,6 @@ export const addOrUpdatePlayer = {
     if (args.playerFieldsToUpdate.googleId) {
       throw new Error("Google ID cannot be updated");
     }
-    if (args.playerFieldsToUpdate.email) {
-      throw new Error("Email cannot be updated");
-    }
-    delete args.playerFieldsToUpdate.googleId;
-    delete args.playerFieldsToUpdate.email;
     delete args.playerFieldsToUpdate._id;
     return await PlayerModel.findOneAndUpdate(
       {

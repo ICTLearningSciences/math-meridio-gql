@@ -156,7 +156,6 @@ describe("fetch room", () => {
             gameData {
               gameId
               players {
-                clientId
                 name
                 description
                 avatar {

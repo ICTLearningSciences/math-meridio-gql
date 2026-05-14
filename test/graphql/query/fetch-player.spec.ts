@@ -61,7 +61,6 @@ describe("fetch player", () => {
         query: `
         query FetchPlayer($id: String!) {
           fetchPlayer(id: $id) {
-            clientId
             name
             description
             avatar {

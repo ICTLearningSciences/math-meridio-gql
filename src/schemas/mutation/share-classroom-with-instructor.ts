@@ -4,7 +4,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
-import { GraphQLObjectType, GraphQLString } from "graphql";
+import { GraphQLID, GraphQLObjectType, GraphQLString } from "graphql";
 import { EducationalRole } from "../models/Player";
 import ClassModel, { Class, ClassType } from "../models/classes/Class";
 import { canModifyClassroom } from "../../helpers";
@@ -14,13 +14,13 @@ export const shareClassroomWithInstructor = {
   type: ClassType,
   args: {
     classId: { type: GraphQLString },
-    instructorEmail: { type: GraphQLString },
+    instructorId: { type: GraphQLID },
   },
   resolve: async (
     _root: GraphQLObjectType,
     args: {
       classId: string;
-      instructorEmail: string;
+      instructorId: string;
     },
     context: {
       userId: string;
@@ -29,7 +29,7 @@ export const shareClassroomWithInstructor = {
   ): Promise<Class> => {
     try {
       const userId = context.userId;
-      const { classId, instructorEmail } = args;
+      const { classId, instructorId } = args;
 
       // Get classroom document
       const classroom = await ClassModel.findById(classId);
@@ -43,7 +43,7 @@ export const shareClassroomWithInstructor = {
       }
 
       // Get instructor document
-      const instructor = await PlayerModel.findOne({ email: instructorEmail });
+      const instructor = await PlayerModel.findOne({ _id: instructorId });
       if (!instructor) {
         throw new Error("Instructor not found");
       }

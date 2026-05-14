@@ -192,8 +192,8 @@ export const fullClassroomData = `
 `;
 
 export const shareClassroomWithInstructorMutation = `
-  mutation ShareClassroomWithInstructor($classId: String!, $instructorEmail: String!) {
-    shareClassroomWithInstructor(classId: $classId, instructorEmail: $instructorEmail) {
+  mutation ShareClassroomWithInstructor($classId: String!, $instructorId: ID!) {
+    shareClassroomWithInstructor(classId: $classId, instructorId: $instructorId) {
       ${fullClassroomData}
     }
   }
