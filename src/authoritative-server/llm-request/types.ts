@@ -120,6 +120,7 @@ export enum MessageDisplayType {
 
 export enum SenderType {
   PLAYER = "PLAYER",
+  INSTRUCTOR = "INSTRUCTOR",
   SYSTEM = "SYSTEM",
 }
 
