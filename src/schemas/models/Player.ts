@@ -42,12 +42,10 @@ export interface Avatar extends Document {
 }
 
 export interface Player {
-  clientId: string;
   name: string;
   description: string;
   avatar: Avatar[];
   googleId: string;
-  email: string;
   userRole: UserRole;
   lastLoginAt: Date;
   loginService: LoginService;
@@ -69,12 +67,10 @@ export const AvatarSchema = new Schema<Avatar>(
 
 export const PlayerSchema = new Schema<PlayerDocument, PlayerModel>(
   {
-    clientId: { type: String },
     name: { type: String },
     description: { type: String },
     avatar: { type: [AvatarSchema] },
     googleId: { type: String, unique: true },
-    email: { type: String },
     userRole: {
       type: String,
       enum: [UserRole.USER, UserRole.ADMIN],
@@ -126,12 +122,10 @@ export const PlayerType = new GraphQLObjectType({
   name: "PlayerType",
   fields: () => ({
     _id: { type: GraphQLID },
-    clientId: { type: GraphQLString },
     name: { type: GraphQLString },
     description: { type: GraphQLString },
     avatar: { type: new GraphQLList(AvatarType) },
     googleId: { type: GraphQLString },
-    email: { type: GraphQLString },
     userRole: {
       type: GraphQLString,
       enum: [UserRole.USER, UserRole.ADMIN],

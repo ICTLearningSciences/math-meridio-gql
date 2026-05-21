@@ -40,7 +40,6 @@ custom:
       DOMAIN: "meridiomath.org"
       JWT_SECRET: ${ssm:/mathmeridio/dev/jwt_secret, ''}
       REFRESH_TOKEN_NAME: "refreshTokenDev"
-      INSTRUCTOR_EMAILS: ${ssm:/mathmeridio/dev/instructor_emails, ''}
 
     dev:
       MONGO_URI: ${ssm:/mathmeridio/dev/mongo_uri, ''}
@@ -49,7 +48,6 @@ custom:
       DOMAIN: "meridiomath.org"
       JWT_SECRET: ${ssm:/mathmeridio/dev/jwt_secret, ''}
       REFRESH_TOKEN_NAME: "refreshTokenDev"
-      INSTRUCTOR_EMAILS: ${ssm:/mathmeridio/dev/instructor_emails, ''}
       LLM_API_ENDPOINT: "https://api-dev.abewriting.org/docs"
 
     qa:
@@ -59,7 +57,6 @@ custom:
       DOMAIN: "meridiomath.org"
       JWT_SECRET: ${ssm:/mathmeridio/qa/jwt_secret, ''}
       REFRESH_TOKEN_NAME: "refreshTokenQa"
-      INSTRUCTOR_EMAILS: ${ssm:/mathmeridio/qa/instructor_emails, ''}
       LLM_API_ENDPOINT: "https://api-qa.abewriting.org/docs"
     prod:
       MONGO_URI: ${ssm:/mathmeridio/prod/mongo_uri, ''}
@@ -68,7 +65,6 @@ custom:
       DOMAIN: "meridiomath.org"
       JWT_SECRET: ${ssm:/mathmeridio/prod/jwt_secret, ''}
       REFRESH_TOKEN_NAME: "refreshTokenProd"
-      INSTRUCTOR_EMAILS: ${ssm:/mathmeridio/prod/instructor_emails, ''}
       LLM_API_ENDPOINT: "https://api.abewriting.org/docs"
 provider:
   name: aws
@@ -100,7 +96,6 @@ provider:
     WEBACL_ARN: ${ssm:/shared-mathm/api_firewall_arn, ''}
     JWT_SECRET: ${self:custom.stages.${self:provider.stage}.JWT_SECRET}
     REFRESH_TOKEN_NAME: ${self:custom.stages.${self:provider.stage}.REFRESH_TOKEN_NAME}
-    INSTRUCTOR_EMAILS: ${self:custom.stages.${self:provider.stage}.INSTRUCTOR_EMAILS}
     LLM_API_ENDPOINT: ${self:custom.stages.${self:provider.stage}.LLM_API_ENDPOINT}
 
     ABE_SECRET_HEADER_NAME: ${ssm:/abewriting-abe/secret_header_name, ''}

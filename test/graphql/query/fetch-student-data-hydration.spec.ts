@@ -40,7 +40,6 @@ const fetchStudentDataHydrationQuery = `
         students {
             _id
             name
-            email
         }
         classMemberships {
             classId

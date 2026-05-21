@@ -11,6 +11,7 @@ import { ChatMessage, GameData } from "../../schemas/models/Room";
 import * as crypto from "node:crypto"; // Use 'node:crypto' for ESM or require('crypto') for CommonJS
 import { replaceStoredDataInString } from "./helpers/helpers";
 import { DiscussionStageStepType } from "../../schemas/models/DiscussionStage/types";
+import { EducationalRole } from "../../schemas/models/Player";
 
 export function getGameDataCopy(gameData: GameData): GameData {
   return JSON.parse(JSON.stringify(gameData));
@@ -54,12 +55,16 @@ export function buildUserMessage(
   newMessage: string,
   senderId: string,
   senderName: string,
+  senderRole: EducationalRole,
   sessionId: string,
   phaseId: string
 ): ChatMessage {
   return {
     messageId: crypto.randomUUID(),
-    sender: SenderType.PLAYER,
+    sender:
+      senderRole === EducationalRole.STUDENT
+        ? SenderType.PLAYER
+        : SenderType.INSTRUCTOR,
     senderId: senderId,
     senderName: senderName,
     fromStepId: "",

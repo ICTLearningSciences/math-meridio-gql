@@ -337,8 +337,8 @@ export const GameDataType = new GraphQLObjectType({
       type: GraphQLScalarType,
       resolve: function (game: GameDataDocument) {
         return Object.entries(game.playersStatusRecord).reduce(
-          (acc, [playerEmail, playerStatus]) => {
-            acc[playerEmail] = {
+          (acc, [userId, playerStatus]) => {
+            acc[userId] = {
               ...playerStatus,
               computedState: getPlayerComputedState(playerStatus),
             };
@@ -347,7 +347,7 @@ export const GameDataType = new GraphQLObjectType({
           {} as PlayerStatusRecord
         );
       },
-    }, // keyed by player email
+    }, // keyed by player userId
     curGameState: { type: CurGameStateType },
     chat: { type: new GraphQLList(ChatMessageType) },
     persistTruthGlobalStateData: { type: new GraphQLList(GraphQLString) },

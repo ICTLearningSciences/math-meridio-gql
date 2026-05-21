@@ -83,7 +83,6 @@ export interface JwtData {
   userId: string;
   userRole: string;
   userEducationalRole: string;
-  userEmail: string;
 }
 
 export async function getDataFromRequest(
@@ -92,17 +91,17 @@ export async function getDataFromRequest(
   try {
     const splitAuthHeader = req.headers.authorization?.split(" ");
     if (
-      splitAuthHeader.length === 2 &&
+      splitAuthHeader?.length === 2 &&
       splitAuthHeader[0].toLowerCase() === "bearer"
     ) {
       const token = req.headers.authorization?.split(" ")[1];
+      if (!token || !process.env.JWT_SECRET) return undefined;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const decodedJwt: any = jwt.verify(token, process.env.JWT_SECRET);
       return {
         userId: decodedJwt.id,
         userRole: decodedJwt.userRole,
         userEducationalRole: decodedJwt.educationalRole,
-        userEmail: decodedJwt.email,
       };
     }
     return undefined;

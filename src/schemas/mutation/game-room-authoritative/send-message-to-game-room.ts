@@ -112,6 +112,7 @@ export const sendMessageToGameRoom = {
             args.message,
             context.userId,
             player.name,
+            player.educationalRole,
             args.sessionId,
             phaseId
           ),

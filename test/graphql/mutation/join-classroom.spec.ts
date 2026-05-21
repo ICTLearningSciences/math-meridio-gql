@@ -30,7 +30,6 @@ const joinClassroomQuery = `
         classMembership {
             classId
             userId
-            userEmail 
             status
         }
         classroom {
@@ -87,8 +86,7 @@ describe("join a classroom", () => {
       studentUserId,
       UserRole.USER,
       EducationalRole.STUDENT,
-      undefined,
-      "student@example.com"
+      undefined
     );
   });
 
@@ -115,9 +113,6 @@ describe("join a classroom", () => {
     expect(response.body.data.joinClassroom).to.have.property("classroom");
     expect(response.body.data.joinClassroom.classMembership.status).to.equal(
       ClassMembershipStatus.MEMBER
-    );
-    expect(response.body.data.joinClassroom.classMembership.userEmail).to.equal(
-      "student@example.com"
     );
     expect(response.body.data.joinClassroom.classMembership.userId).to.equal(
       studentUserId
