@@ -40,7 +40,7 @@ export interface Class extends Document {
 
 export const InviteCodeSchema = new Schema<InviteCode>(
   {
-    code: { type: String },
+    code: { type: String, uppercase: true },
     validUntil: { type: Date },
     maxUses: { type: Number },
     uses: { type: Number },
