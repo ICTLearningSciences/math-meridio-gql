@@ -4,23 +4,35 @@ Permission to use, copy, modify, and distribute this software and its documentat
 
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
+import { GraphQLObjectType } from "graphql";
+import PlayerModel, { EducationalRole } from "../../models/Player";
+import updatePlayerRole from "./update-player-role";
+import { UserRole } from "../../types/types";
 
-import { GraphQLObjectType, GraphQLSchema } from "graphql";
-import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
-
-const PrivateRootQuery = new GraphQLObjectType({
-  name: "PrivateRootQueryType",
-  fields: {},
-});
-
-const PrivateMutation = new GraphQLObjectType({
-  name: "PrivateMutation",
+export const Admin: GraphQLObjectType = new GraphQLObjectType({
+  name: "AdminMutation",
   fields: {
-    addOrUpdateDiscussionStage,
+    updatePlayerRole,
   },
 });
 
-export default new GraphQLSchema({
-  query: PrivateRootQuery,
-  mutation: PrivateMutation,
-});
+export const admin = {
+  type: Admin,
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+  resolve: async (_: GraphQLObjectType, _args: any, context: any) => {
+    if (!context.userId) {
+      throw new Error("Only authorized users");
+    }
+    const user = await PlayerModel.findById(context.userId);
+    if (
+      !user ||
+      user.userRole !== UserRole.ADMIN ||
+      user.educationalRole !== EducationalRole.INSTRUCTOR
+    ) {
+      throw new Error("Only admin users");
+    }
+    return context;
+  },
+};
+
+export default admin;

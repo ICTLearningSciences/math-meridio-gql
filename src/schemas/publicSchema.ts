@@ -59,6 +59,7 @@ import fetchGamePhaseReflections from "./query/fetch-game-phase-reflections";
 import setNeedsHelpInGameRoom from "./mutation/needs-help-in-game-room";
 import fetchLearningObjectives from "./query/fetch-learning-objectives";
 import dismissNotifications from "./mutation/dismiss-notifications";
+import admin from "./mutation/admin";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -80,6 +81,7 @@ const PublicRootQuery = new GraphQLObjectType({
 const PublicMutation = new GraphQLObjectType({
   name: "PublicMutation",
   fields: {
+    admin,
     deleteRoom,
     reportPlayerAway,
     clearAwayStatus,
