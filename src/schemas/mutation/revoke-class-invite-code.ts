@@ -43,7 +43,7 @@ export const revokeClassInviteCode = {
 
       // Find the invite code
       const inviteCodeIndex = classroom.inviteCodes.findIndex(
-        (code) => code.code === classroomCode
+        (code) => code.code === classroomCode.toUpperCase()
       );
 
       if (inviteCodeIndex === -1) {

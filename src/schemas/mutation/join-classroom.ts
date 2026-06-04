@@ -46,7 +46,7 @@ export const joinClassroom = {
   ): Promise<JoinClassroomResponse> => {
     try {
       const userId = context.userId;
-      const { inviteCode } = args;
+      const inviteCode = args.inviteCode.toUpperCase();
 
       // Fetch classroom by inviteCode
       const classroom = await ClassModel.findOne({
