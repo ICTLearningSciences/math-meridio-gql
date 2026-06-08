@@ -65,7 +65,6 @@ export const assignClassGroupsAndStart = {
       // Update group assignments
       const classMemberships = await ClassMembershipModel.find({
         classId: classId,
-        userId: { $in: groups.map((g) => g.userId) },
       });
       for (const member of classMemberships) {
         const updatedMember = groups.find(
@@ -73,7 +72,7 @@ export const assignClassGroupsAndStart = {
         );
         if (updatedMember) {
           member.groupId = updatedMember.groupId;
-          member.save();
+          await member.save();
         }
       }
 
@@ -84,16 +83,17 @@ export const assignClassGroupsAndStart = {
         acc[membership.groupId].push(membership);
         return acc;
       }, {} as Record<number, ClassMembership[]>);
-      let createdRooms: Room[] = [];
 
+      let createdRooms: Room[] = [];
       // Update existing classroom assignments
       if (classroom.startedAt !== undefined) {
         const rooms = await RoomModel.find({ classId: classId });
+        createdRooms = rooms;
         for (const [groupId, memberships] of Object.entries(
           classMembershipsByGroupId
         )) {
           const room = rooms.find(
-            (r) => r.name === `Group #${groupId + 1} Solution Space`
+            (r) => r.name === `Group #${Number(groupId) + 1} Solution Space`
           );
           // Create new room
           if (!room) {
@@ -116,10 +116,11 @@ export const assignClassGroupsAndStart = {
                 const player = await PlayerModel.findOne({
                   _id: member.userId,
                 });
-                await addPlayerToRoomAtomically(room, player);
+                if (!player) continue;
+                const r = await addPlayerToRoomAtomically(room, player);
+                createdRooms.push(r);
               }
             }
-            createdRooms.push(await room.save());
           }
         }
       }
