@@ -54,6 +54,7 @@ describe("assign class groups and start", () => {
   let otherInstructorAccessToken: string;
   let studentUserId: string;
   let otherStudentUserId: string;
+  let thirdStudentUserId: string;
   let studentAccessToken: string;
   let classId: string;
 
@@ -66,11 +67,17 @@ describe("assign class groups and start", () => {
     otherInstructorUserId = new ObjectId().toString();
     studentUserId = new ObjectId().toString();
     otherStudentUserId = new ObjectId().toString();
+    thirdStudentUserId = new ObjectId().toString();
     classId = new ObjectId().toString();
 
     await createUser(studentUserId, UserRole.USER, EducationalRole.STUDENT);
     await createUser(
       otherStudentUserId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
+    await createUser(
+      thirdStudentUserId,
       UserRole.USER,
       EducationalRole.STUDENT
     );
@@ -94,6 +101,11 @@ describe("assign class groups and start", () => {
     await createClassMembership(
       classId,
       otherStudentUserId,
+      ClassMembershipStatus.MEMBER
+    );
+    await createClassMembership(
+      classId,
+      thirdStudentUserId,
       ClassMembershipStatus.MEMBER
     );
 

@@ -60,6 +60,7 @@ import setNeedsHelpInGameRoom from "./mutation/needs-help-in-game-room";
 import fetchLearningObjectives from "./query/fetch-learning-objectives";
 import dismissNotifications from "./mutation/dismiss-notifications";
 import admin from "./mutation/admin";
+import copyAndArchiveClassroom from "./mutation/copy-classroom";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -103,6 +104,7 @@ const PublicMutation = new GraphQLObjectType({
     unblockStudentFromClass,
     assignStudentToGroup,
     assignClassGroupsAndStart,
+    copyAndArchiveClassroom,
     adjustClassroomArchiveStatus,
     updateClassNameDescription,
     createNewGameRoom,
