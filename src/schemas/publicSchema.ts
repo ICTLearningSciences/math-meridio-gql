@@ -61,6 +61,7 @@ import fetchLearningObjectives from "./query/fetch-learning-objectives";
 import dismissNotifications from "./mutation/dismiss-notifications";
 import admin from "./mutation/admin";
 import copyAndArchiveClassroom from "./mutation/copy-classroom";
+import dismissNeedsHelp from "./mutation/dismiss-needs-help";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -120,6 +121,7 @@ const PublicMutation = new GraphQLObjectType({
     viewGameRoomSimulation,
     submitGamePhaseReflection,
     setNeedsHelpInGameRoom,
+    dismissNeedsHelp,
     createNewLearningObjective,
     updateLearningObjective,
   },
