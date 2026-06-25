@@ -171,7 +171,7 @@ describe("assign class groups and start", () => {
 
     expect(response.body.data.assignClassGroupsAndStart.createdRooms[0])
       .to.have.property("name")
-      .to.equal("Group #2 Solution Space");
+      .to.equal("Group #1 Solution Space");
 
     expect(
       response.body.data.assignClassGroupsAndStart.createdRooms[0].gameData

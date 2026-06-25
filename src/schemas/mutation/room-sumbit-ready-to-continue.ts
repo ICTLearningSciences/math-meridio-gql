@@ -7,6 +7,7 @@ The full terms of this copyright and license should always be found in the root 
 
 import { GraphQLBoolean, GraphQLObjectType, GraphQLString } from "graphql";
 import RoomModel from "../models/Room";
+import ClassModel from "../models/classes/Class";
 
 export const submitReadyToContinue = {
   type: GraphQLBoolean,
@@ -26,9 +27,35 @@ export const submitReadyToContinue = {
     if (!room) {
       throw new Error("Room not found");
     }
+
     if (!room.gameData.players.includes(context.userId)) {
-      throw new Error("User is not a player in the room");
+      const classRoom = await ClassModel.findOne({ _id: room.classId });
+      if (classRoom?.teacherId !== context.userId) {
+        throw new Error("User is not a player in the room");
+      }
+      const studentReflections: Record<string, string> = {};
+      for (const player of room.gameData.players) {
+        studentReflections[player] = room.gameData.curGameState
+          .studentReflections
+          ? room.gameData.curGameState.studentReflections[player] || ""
+          : "";
+      }
+      await RoomModel.findOneAndUpdate(
+        { _id: args.roomId, deletedRoom: false },
+        {
+          $set: {
+            "gameData.curGameState.curState":
+              "WAITING_FOR_STUDENT_READY_TO_CONTINUE",
+            "gameData.curGameState.studentReadyToContinue": true,
+            "gameData.curGameState.playersLeftToRespond": [],
+            "gameData.curGameState.studentReflections": studentReflections,
+          },
+        },
+        { new: true }
+      );
+      return true;
     }
+
     if (
       room.gameData.curGameState.curState !==
       "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
