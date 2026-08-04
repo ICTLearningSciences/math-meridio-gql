@@ -62,6 +62,7 @@ import dismissNotifications from "./mutation/dismiss-notifications";
 import admin from "./mutation/admin";
 import copyAndArchiveClassroom from "./mutation/copy-classroom";
 import dismissNeedsHelp from "./mutation/dismiss-needs-help";
+import login from "./mutation/login";
 
 const PublicRootQuery = new GraphQLObjectType({
   name: "PublicRootQueryType",
@@ -93,6 +94,7 @@ const PublicMutation = new GraphQLObjectType({
     addOrUpdateDiscussionStage,
     shareClassroomWithInstructor,
     loginGoogle,
+    login,
     refreshAccessToken,
     createClassroom,
     createNewClassInviteCode,
