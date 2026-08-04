@@ -5,7 +5,6 @@ service: meridiomath-gql
 plugins:
   - serverless-offline
   - serverless-domain-manager
-  - serverless-prune-plugin
 
 custom:
   serverless-offline-ssm:
