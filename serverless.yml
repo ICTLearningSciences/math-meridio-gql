@@ -1,11 +1,9 @@
 # serverless.yml
-
+org: ictlearningsciences
 service: meridiomath-gql
 
 plugins:
-  - serverless-offline-ssm
   - serverless-offline
-  - serverless-plugin-typescript
   - serverless-domain-manager
   - serverless-prune-plugin
 
@@ -69,7 +67,7 @@ provider:
   name: aws
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'dev'}
-  runtime: nodejs16.x
+  runtime: nodejs24.x
   endpointType: regional
   tracing:
     lambda: true

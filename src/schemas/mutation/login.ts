@@ -17,6 +17,7 @@ import {
 } from "../../schemas/types/user-access-token";
 import ClassMembershipModel from "../models/classes/ClassMembership";
 import requireEnv from "../../utils/require-env";
+import { CognitoIdTokenPayload } from "aws-jwt-verify/jwt-model";
 
 export const login = {
   type: UserAccessTokenType,
@@ -33,20 +34,22 @@ export const login = {
     try {
       // Verifier that expects valid access tokens:
       const verifier = CognitoJwtVerifier.create({
-        tokenUse: "access",
+        tokenUse: "id",
         userPoolId: requireEnv("USER_POOL_ID"),
         clientId: requireEnv("USER_POOL_CLIENT_ID"),
       });
 
-      const payload = await verifier.verify(args.accessToken);
+      const payload: CognitoIdTokenPayload = await verifier.verify(
+        args.accessToken
+      );
       const user = await PlayerModel.findOneAndUpdate(
         {
           googleId: payload.username,
         },
         {
           $set: {
-            googleId: payload.username,
-            name: payload.username,
+            googleId: payload.sub,
+            name: payload.name || payload["cognito:username"],
             lastLoginAt: new Date(),
             loginService: LoginService.COGNITO,
           },
