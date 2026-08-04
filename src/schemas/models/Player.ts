@@ -31,6 +31,7 @@ export enum EducationalRole {
 
 export enum LoginService {
   GOOGLE = "GOOGLE",
+  COGNITO = "COGNITO",
 }
 
 export interface Avatar extends Document {
@@ -79,7 +80,7 @@ export const PlayerSchema = new Schema<PlayerDocument, PlayerModel>(
     lastLoginAt: { type: Date },
     loginService: {
       type: String,
-      enum: [LoginService.GOOGLE],
+      enum: Object.values(LoginService),
       default: LoginService.GOOGLE,
     },
     educationalRole: {
