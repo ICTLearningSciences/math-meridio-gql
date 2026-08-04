@@ -20,7 +20,7 @@ import {
   isDiscussionStage,
 } from "../../schemas/models/DiscussionStage/types";
 import { PlayerDocument } from "../../schemas/models/Player";
-import { GameData } from "../../schemas/models/Room";
+import { GameData, RoomDocument } from "../../schemas/models/Room";
 import {
   replaceStoredDataInString,
   recursivelyConvertExpectedDataToAiPromptString,
@@ -48,10 +48,9 @@ import { findRequestUserInputStepByStepId } from "../../helpers";
 import { DiscussionStage } from "../../schemas/models/DiscussionStage/types";
 import { getGameById } from "../games/game-helpers";
 import StudentSubmissionLogModel from "../../schemas/models/StudentSubmissionLog";
-import { Room } from "../../schemas/models/Room";
 
 export async function processPromptStep(
-  room: Room,
+  room: RoomDocument,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -99,7 +98,7 @@ export async function processPromptStep(
 // Process a single prompt in GROUP mode
 async function processGroupPrompt(
   promptConfig: PromptConfiguration,
-  room: Room,
+  room: RoomDocument,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -219,7 +218,7 @@ async function processGroupPrompt(
       for (const player of activePlayerData) {
         atomicRoomModificationActions.push({
           actionType: RoomModificationEnum.ADD_TO_PLAYER_STATE_DATA,
-          playerId: player._id,
+          playerId: `${player._id}`,
           newData: newDataToAdd,
         } as UpdatePlayerGameStateDataRoomAtomicAction);
       }
@@ -243,7 +242,7 @@ async function processGroupPrompt(
 // Process prompts in INDIVIDUALLY mode (one per student, in parallel)
 async function processIndividualPrompts(
   promptConfig: PromptConfiguration,
-  room: Room,
+  room: RoomDocument,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -301,7 +300,7 @@ async function processIndividualPrompts(
 async function processAnalyzeLearningObjectivePrompt(
   promptConfig: PromptConfiguration,
   player: PlayerDocument,
-  room: Room,
+  room: RoomDocument,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (
@@ -455,8 +454,8 @@ async function processAnalyzeLearningObjectivePrompt(
   if (Object.keys(coveredLearningObjectives).length > 0) {
     await updateStudentSubmissionLog(
       playerId,
-      room._id,
-      room.gameData.curGameState.curRoundNumber,
+      `${room._id}`,
+      room.gameData.curGameState.curRoundNumber || 0,
       room.gameData.phaseProgression.curPhaseStepId,
       coveredLearningObjectives
     );
@@ -486,7 +485,7 @@ async function updateStudentSubmissionLog(
 async function processSingleStudentPrompt(
   promptConfig: PromptConfiguration,
   player: PlayerDocument,
-  room: Room,
+  room: RoomDocument,
   curStep: PromptStageStep,
   targetAiServiceModel: TargetAiModelServiceType,
   executePrompt: (

@@ -82,7 +82,7 @@ export const copyAndArchiveClassroom = {
         userId,
         groupId - 1,
         r.gameData.players,
-        newClass._id
+        `${newClass._id}`
       );
       roomsToCreate.push(gameRoom);
     }

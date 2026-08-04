@@ -60,7 +60,7 @@ describe("view a game room simulation", () => {
     const newGameRoom = await RoomModel.create(
       initializeGameRoom(studentUserId, "unit-test", "", discussionStages, 0)
     );
-    roomId = newGameRoom._id;
+    roomId = `${newGameRoom._id}`;
     const response = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${studentAccessToken}`)

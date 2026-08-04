@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 import { GraphQLObjectType, GraphQLString } from "graphql";
-import { Room, RoomType } from "../models/Room";
+import { RoomDocument, RoomType } from "../models/Room";
 import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
 import { addPlayerToRoomAtomically } from "../../authoritative-server/authority/step-process-pure-functions";
@@ -26,7 +26,7 @@ export const joinGameRoom = {
     context: {
       userId: string;
     }
-  ): Promise<Room> => {
+  ): Promise<RoomDocument> => {
     try {
       const userId = context.userId;
       const { roomId } = args;
@@ -41,7 +41,7 @@ export const joinGameRoom = {
         throw new Error("Room not found");
       }
 
-      if (room.gameData.players.includes(player._id)) {
+      if (room.gameData.players.includes(`${player._id}`)) {
         return room;
       }
 
@@ -53,7 +53,8 @@ export const joinGameRoom = {
         eventAt: new Date(),
       });
 
-      return await addPlayerToRoomAtomically(room, player);
+      const r = await addPlayerToRoomAtomically(room, player);
+      if (!r) throw new Error("invalid room");
     } catch (error) {
       throw new Error(error);
     }

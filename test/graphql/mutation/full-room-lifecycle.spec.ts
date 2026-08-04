@@ -1020,8 +1020,7 @@ describe("full room lifecycle", () => {
           [`gameData.playersStatusRecord.${studentTwoId}.lastHeartbeatAt`]:
             new Date(Date.now() - 30000),
         },
-      },
-      { new: true }
+      }
     );
 
     const pingAfterStudentTwoHeartbeatSet = await pingRoomProcess(
@@ -2040,7 +2039,7 @@ describe("full room lifecycle", () => {
     // ENSURE curGameState data is all set correctly (roundNumber 2, etc.)
     const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
     await delay(1000);
-    currentRoom = await RoomModel.findById(newRoomId).lean();
+    currentRoom = await RoomModel.findById(newRoomId);
     expect(currentRoom?.gameData.curGameState.curState).to.equal(
       "END_OF_PHASE_REFLECTION"
     );

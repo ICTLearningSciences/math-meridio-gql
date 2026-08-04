@@ -37,6 +37,7 @@ import {
   GameData,
   GameStateData,
   Room,
+  RoomDocument,
 } from "../../schemas/models/Room";
 import { syncLlmRequest } from "../llm-request/llm-request";
 import {
@@ -53,11 +54,12 @@ import {
   PlayerStatusData,
 } from "../../schemas/types/types";
 import { processPromptStep } from "./prompt-process-pure-functions";
+import mongoose from "mongoose";
 
 export async function applyAtomicRoomModificationActions(
   _gameData: GameData,
   atomicRoomModificationActions: AtomicRoomModiticationAction[],
-  roomId: string
+  roomId: mongoose.Types.ObjectId
 ): Promise<GameData> {
   // Aggregate messages to add
   const messagesToAdd: ChatMessage[] = [];
@@ -318,7 +320,7 @@ export function defaultPlayerStatusRecord(): PlayerStatusData {
 export async function updatePlayersHeartbeat(
   roomId: string,
   playerId: string
-): Promise<Room> {
+): Promise<RoomDocument> {
   let needToInitializePlayerStatusRecord = false;
   let room = await RoomModel.findOne({ _id: roomId, deletedRoom: false });
   if (!room) {
@@ -350,14 +352,15 @@ export async function updatePlayersHeartbeat(
       { new: true }
     );
   }
+  if (!room) throw new Error("invalid room");
   return room.toObject();
 }
 
 export async function updateNumWordsSentInPhases(
-  room: Room,
+  room: RoomDocument,
   playerId: string,
   incomingMessage: string
-): Promise<Room> {
+): Promise<RoomDocument> {
   const curPhaseStepId = room.gameData.phaseProgression.curPhaseStepId;
   if (!curPhaseStepId) {
     return room;
@@ -418,11 +421,11 @@ export function addPlayerToRoomNonAtomically(
 }
 
 export async function addPlayerToRoomAtomically(
-  room: Room,
+  room: RoomDocument,
   player: PlayerDocument
-): Promise<Room> {
-  if (room.gameData.players.includes(player._id)) {
-    return await RoomModel.findOneAndUpdate(
+): Promise<RoomDocument> {
+  if (room.gameData.players.includes(`${player._id}`)) {
+    const r = await RoomModel.findOneAndUpdate(
       { _id: room._id },
       {
         $set: {
@@ -432,14 +435,19 @@ export async function addPlayerToRoomAtomically(
       },
       { new: true }
     );
+    if (!r) throw new Error("invalid room");
+    return r;
   }
 
   let shouldUpdateStatusRecord = false;
-  if (!Object.keys(room.gameData.playersStatusRecord).includes(player._id)) {
+  if (
+    !Object.keys(room.gameData.playersStatusRecord).includes(`${player._id}`)
+  ) {
     shouldUpdateStatusRecord = true;
   }
 
-  const oldPlayerData = room.gameData.playersGameStateData[player._id] || {};
+  const oldPlayerData =
+    room.gameData.playersGameStateData[`${player._id}`] || {};
   const updatedRoom = await RoomModel.findByIdAndUpdate(
     room._id,
     {
@@ -461,22 +469,24 @@ export async function addPlayerToRoomAtomically(
     },
     { new: true }
   );
+  if (!updatedRoom) throw new Error("invalid room");
   return updatedRoom.toObject();
 }
 
 export async function processCurStep(
-  room: Room,
+  room: RoomDocument,
   discussionStages: DiscussionStage[],
   targetAiServiceModel: TargetAiModelServiceType,
   playerIdToUpdate: string,
   sessionId: string,
   activePlayerData: PlayerDocument[]
-): Promise<Room> {
+): Promise<RoomDocument> {
   let gameData = getGameDataCopy(room.gameData);
   const { curStage, curStep } = getCurStageAndStep(gameData, discussionStages);
   if (!isDiscussionStage(curStage)) {
     return room;
   }
+  if (!curStep) throw new Error("invalid step");
   switch (curStep.stepType) {
     case DiscussionStageStepType.START_OF_PHASE:
       const startOfPhaseStepActions: AtomicRoomModiticationAction[] =
@@ -554,24 +564,17 @@ export async function processCurStep(
     default:
       throw new Error(`Unknown step type: ${curStep}`);
   }
-  return {
-    ...room,
-    gameData: gameData,
-  };
+  room.gameData = gameData;
+  return room;
 }
 
-export function processSimulationStep(room: Room): Room {
-  return {
-    ...room,
-    gameData: {
-      ...room.gameData,
-      curGameState: {
-        curState: "WAITING_FOR_SIMULATION",
-        playersLeftToRespond: [],
-        studentReadyToContinue: false,
-      },
-    },
+export function processSimulationStep(room: RoomDocument): RoomDocument {
+  room.gameData.curGameState = {
+    curState: "WAITING_FOR_SIMULATION",
+    playersLeftToRespond: [],
+    studentReadyToContinue: false,
   };
+  return room;
 }
 
 export interface RequestUserInputStepCompletionStatus {
@@ -586,10 +589,10 @@ export interface EndOfPhaseReflectionStepCompletionStatus {
 }
 
 export async function transitionToEndOfPhaseReflectionState(
-  room: Room,
+  room: RoomDocument,
   curStep: EndOfPhaseReflectionStep,
   numStepGamePhaseReflections: number
-) {
+): Promise<RoomDocument> {
   if (room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION") {
     return room;
   }
@@ -606,23 +609,23 @@ export async function transitionToEndOfPhaseReflectionState(
     reflections: {},
   });
 
-  return (
-    await RoomModel.findOneAndUpdate(
-      { _id: room._id },
-      {
-        $set: {
-          "gameData.curGameState": {
-            curState: "END_OF_PHASE_REFLECTION",
-            playersLeftToRespond: room.gameData.players,
-            curRoundNumber: roundNumber,
-            endOfPhaseStep: curStep,
-            selectedQuestion: selectedQuestion,
-          },
+  const r = await RoomModel.findOneAndUpdate(
+    { _id: room._id },
+    {
+      $set: {
+        "gameData.curGameState": {
+          curState: "END_OF_PHASE_REFLECTION",
+          playersLeftToRespond: room.gameData.players,
+          curRoundNumber: roundNumber,
+          endOfPhaseStep: curStep,
+          selectedQuestion: selectedQuestion,
         },
       },
-      { new: true }
-    )
-  ).toObject();
+    },
+    { new: true }
+  );
+  if (!r) throw new Error("invalid room");
+  return r.toObject();
 }
 
 export function getActivePlayersInRoom(gameData: GameData): string[] {
@@ -643,7 +646,7 @@ export function getActivePlayersInRoom(gameData: GameData): string[] {
  * @returns
  */
 export function endOfPhaseReflectionStepStatus(
-  room: Room,
+  room: RoomDocument,
   curRoundGameReflections: GamePhaseReflections
 ): EndOfPhaseReflectionStepCompletionStatus {
   if (room.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION") {
@@ -763,13 +766,13 @@ export function isSimulationStageComplete(_gameData: GameData): boolean {
  * This means we process prompts, system messages, and conditionals until we reach the next stalling phase, of which will still have its message added to the chat.
  */
 export async function processStepsUntilNextStallingPhase(
-  room: Room,
+  room: RoomDocument,
   discussionStages: DiscussionStage[],
   targetAiServiceModel: TargetAiModelServiceType,
   playerIdToUpdate: string,
   sessionId: string,
   activePlayerData: PlayerDocument[]
-): Promise<Room> {
+): Promise<RoomDocument> {
   let latestRoom = room;
   let stepAndStage = getCurStageAndStep(latestRoom.gameData, discussionStages);
   const curGame = getGameById(latestRoom.gameData.gameId, discussionStages);
@@ -779,6 +782,7 @@ export async function processStepsUntilNextStallingPhase(
       (stage) =>
         stage.stage.clientId === latestRoom.gameData.globalStateData.curStageId
     );
+    if (!curStage) throw new Error("invalid stage");
     latestRoom = await updateRoomWithNextStep(
       latestRoom,
       curStage,

@@ -7,7 +7,7 @@ The full terms of this copyright and license should always be found in the root 
 
 import { GraphQLString, GraphQLObjectType, GraphQLID } from "graphql";
 import ClassModel from "../../models/classes/Class";
-import RoomModel, { Room, RoomType } from "../../models/Room";
+import RoomModel, { RoomDocument, RoomType } from "../../models/Room";
 import PlayerModel, { EducationalRole } from "../../models/Player";
 import { getCurStageAndStep } from "../../../authoritative-server/authority/user-action-pure-functions";
 import DiscussionStageModel from "../../models/DiscussionStage/DiscussionStage";
@@ -36,7 +36,7 @@ export const sendMessageToGameRoom = {
       message: string;
     },
     context: { userId: string }
-  ): Promise<Room> => {
+  ): Promise<RoomDocument> => {
     const __room = await RoomModel.findOne({
       _id: args.roomId,
       deletedRoom: false,

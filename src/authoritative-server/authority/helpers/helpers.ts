@@ -13,9 +13,9 @@ import {
 import { Schema, Validator } from "jsonschema";
 import {
   ChatMessage,
-  Room,
   RoomPhase,
   RoomModel as RoomModelType,
+  RoomDocument,
 } from "../../../schemas/models/Room";
 import { PlayerComputedState } from "../../../schemas/types/types";
 import { getPlayerComputedState } from "../../../helpers";
@@ -175,7 +175,7 @@ export function getSimulationViewedKey(stageId: string): string {
  */
 export interface ProcessingLockResult {
   success: boolean;
-  room: Room | null;
+  room: RoomDocument | null;
   reason?:
     | "ALREADY_PROCESSING"
     | "MAX_RETRIES"
@@ -277,10 +277,10 @@ export async function acquireProcessingLock(
 }
 
 export async function updateRoomPlayerStatusedRecord(
-  room: Room,
+  room: RoomDocument,
   pingingUserId: string,
   RoomModel: RoomModelType
-): Promise<Room> {
+): Promise<RoomDocument> {
   const curPhaseStepId = room.gameData.phaseProgression.curPhaseStepId;
   const curPhaseTitle = room.gameData.phaseProgression.curPhaseTitle;
 
