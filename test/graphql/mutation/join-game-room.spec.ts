@@ -116,7 +116,7 @@ describe("join a game room", () => {
     expect(response.status).to.equal(200);
     expect(response.body).to.have.deep.nested.property(
       "errors[0].message",
-      "Error: User Not Found"
+      "User Not Found"
     );
   });
 });

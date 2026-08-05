@@ -27,37 +27,29 @@ export const joinGameRoom = {
       userId: string;
     }
   ): Promise<RoomDocument> => {
-    try {
-      const userId = context.userId;
-      const { roomId } = args;
-
-      const player = await PlayerModel.findOne({ _id: userId });
-      if (!player) {
-        throw new Error("User Not Found");
-      }
-
-      const room = await RoomModel.findOne({ _id: roomId, deletedRoom: false });
-      if (!room) {
-        throw new Error("Room not found");
-      }
-
-      if (room.gameData.players.includes(`${player._id}`)) {
-        return room;
-      }
-
-      await NotificationEventModel.create({
-        roomId: room._id,
-        userId: userId,
-        event: `${player?.name || "Player"} joined room ${room?.name}`,
-        eventType: NotificationType.JOIN,
-        eventAt: new Date(),
-      });
-
-      const r = await addPlayerToRoomAtomically(room, player);
-      if (!r) throw new Error("invalid room");
-    } catch (error) {
-      throw new Error(error);
+    const userId = context.userId;
+    const { roomId } = args;
+    const player = await PlayerModel.findOne({ _id: userId });
+    if (!player) {
+      throw new Error("User Not Found");
     }
+    const room = await RoomModel.findOne({ _id: roomId, deletedRoom: false });
+    if (!room) {
+      throw new Error("Room not found");
+    }
+    if (room.gameData.players.includes(`${player._id}`)) {
+      return room;
+    }
+    await NotificationEventModel.create({
+      roomId: room._id,
+      userId: userId,
+      event: `${player?.name || "Player"} joined room ${room?.name}`,
+      eventType: NotificationType.JOIN,
+      eventAt: new Date(),
+    });
+    const r = await addPlayerToRoomAtomically(room, player);
+    if (!r) throw new Error("invalid room");
+    return r;
   },
 };
 

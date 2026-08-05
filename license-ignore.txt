@@ -2,8 +2,14 @@
 *
 
 # But not these files...
-!*/*.ts
-!*/*.js
-!*/*.tsx
-!*/*.jsx
-!*/*.html
+!src/**/*.ts
+!src/**/*.js
+!src/**/*.tsx
+!src/**/*.jsx
+!src/**/*.html
+
+!test/**/*.ts
+!test/**/*.js
+!test/**/*.tsx
+!test/**/*.jsx
+!test/**/*.html

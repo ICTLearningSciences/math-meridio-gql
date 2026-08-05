@@ -66,6 +66,7 @@ export const pingGameRoomProcess = {
         context.userId,
         RoomModel
       );
+
       const activePlayers = Object.entries(
         room.gameData.playersStatusRecord
       ).filter(
@@ -75,13 +76,11 @@ export const pingGameRoomProcess = {
       if (activePlayers.length === 0) {
         return room;
       }
-
       const activePlayerDocuments = (
         await PlayerModel.find({
           _id: { $in: activePlayers.map(([playerId, _]) => playerId) },
         })
       ).map((player) => player.toObject());
-
       if (!room.gameData.gameId) {
         return room;
       }
@@ -90,7 +89,6 @@ export const pingGameRoomProcess = {
       const discussionStages = _discussionStages.map((stage) =>
         stage.toObject()
       );
-
       if (
         !room.gameData.phaseProgression.startingPhaseStepsOrdered.length &&
         room.gameData.gameId
@@ -113,16 +111,13 @@ export const pingGameRoomProcess = {
       }
 
       let stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
-      let _stepRoundGamePhaseReflections =
+      let stepRoundGamePhaseReflections =
         await GamePhaseReflectionsModel.findOne({
           roomId: roomId,
           stepId: stageAndStep.curStep?.stepId,
           roundNumber: room.gameData.curGameState.curRoundNumber,
         });
-      let stepRoundGamePhaseReflections =
-        _stepRoundGamePhaseReflections?.toObject();
-      if (!stepRoundGamePhaseReflections)
-        throw new Error("invalid game phase reflections");
+
       let isDiscussionStage = _isDiscussionStage(stageAndStep.curStage);
       let isRequestUserInputStep =
         isDiscussionStage &&
@@ -145,9 +140,10 @@ export const pingGameRoomProcess = {
         stageAndStep.curStep?.stepType ===
           DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
         room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION";
-      let endOfPhaseReflectionStepStatus = isEndOfPhaseReflectionStep
-        ? _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections)
-        : undefined;
+      let endOfPhaseReflectionStepStatus =
+        isEndOfPhaseReflectionStep && stepRoundGamePhaseReflections
+          ? _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections)
+          : undefined;
 
       const isWaitingForEndOfPhaseReflectionReadyUp =
         isDiscussionStage &&
@@ -254,18 +250,15 @@ export const pingGameRoomProcess = {
         isDiscussionStage &&
         stageAndStep.curStep?.stepType ===
           DiscussionStageStepType.END_OF_PHASE_REFLECTION;
-      _stepRoundGamePhaseReflections = await GamePhaseReflectionsModel.findOne({
+      stepRoundGamePhaseReflections = await GamePhaseReflectionsModel.findOne({
         roomId: roomId,
         stepId: stageAndStep.curStep?.stepId,
         roundNumber: room.gameData.curGameState.curRoundNumber,
       });
-      stepRoundGamePhaseReflections =
-        _stepRoundGamePhaseReflections?.toObject();
-      if (!stepRoundGamePhaseReflections)
-        throw new Error("invalid game phase reflection");
-      endOfPhaseReflectionStepStatus = isEndOfPhaseReflectionStep
-        ? _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections)
-        : undefined;
+      endOfPhaseReflectionStepStatus =
+        isEndOfPhaseReflectionStep && stepRoundGamePhaseReflections
+          ? _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections)
+          : undefined;
 
       // if we are now in a request user input step and it is not complete, check the status of the request user input step.
       if (isRequestUserInputStep && !requestUserInputStageStatus?.isComplete) {
