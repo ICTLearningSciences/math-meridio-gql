@@ -12,7 +12,7 @@ import ClassMembershipModel, {
   ClassMembershipStatus,
   ClassMembershipType,
 } from "../models/classes/ClassMembership";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import RoomModel, { RoomDocument, RoomType } from "../models/Room";
 import PlayerModel, { Player } from "../models/Player";
 import { BasketballStateHandler } from "../../authoritative-server/games/basketball-game";
 import { ConcertTicketSalesStateHandler } from "../../authoritative-server/games/concert-ticket-game";
@@ -37,7 +37,7 @@ const StudentDataHydrationType = new GraphQLObjectType({
 
 interface StudentDataHydration {
   classes: Class[];
-  rooms: Room[];
+  rooms: RoomDocument[];
   students: Player[];
   classMemberships: ClassMembership[];
   gameList: StaticGame[];
@@ -71,7 +71,7 @@ export default {
       });
 
       // Fetch all rooms created within the classes
-      const rooms = await RoomModel.find({
+      const rooms: RoomDocument[] = await RoomModel.find({
         classId: { $in: classIds },
       });
 

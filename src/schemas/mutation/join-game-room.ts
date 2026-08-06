@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 import { GraphQLObjectType, GraphQLString } from "graphql";
-import { Room, RoomType } from "../models/Room";
+import { RoomDocument, RoomType } from "../models/Room";
 import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
 import { addPlayerToRoomAtomically } from "../../authoritative-server/authority/step-process-pure-functions";
@@ -26,37 +26,30 @@ export const joinGameRoom = {
     context: {
       userId: string;
     }
-  ): Promise<Room> => {
-    try {
-      const userId = context.userId;
-      const { roomId } = args;
-
-      const player = await PlayerModel.findOne({ _id: userId });
-      if (!player) {
-        throw new Error("User Not Found");
-      }
-
-      const room = await RoomModel.findOne({ _id: roomId, deletedRoom: false });
-      if (!room) {
-        throw new Error("Room not found");
-      }
-
-      if (room.gameData.players.includes(player._id)) {
-        return room;
-      }
-
-      await NotificationEventModel.create({
-        roomId: room._id,
-        userId: userId,
-        event: `${player?.name || "Player"} joined room ${room?.name}`,
-        eventType: NotificationType.JOIN,
-        eventAt: new Date(),
-      });
-
-      return await addPlayerToRoomAtomically(room, player);
-    } catch (error) {
-      throw new Error(error);
+  ): Promise<RoomDocument> => {
+    const userId = context.userId;
+    const { roomId } = args;
+    const player = await PlayerModel.findOne({ _id: userId });
+    if (!player) {
+      throw new Error("User Not Found");
     }
+    const room = await RoomModel.findOne({ _id: roomId, deletedRoom: false });
+    if (!room) {
+      throw new Error("Room not found");
+    }
+    if (room.gameData.players.includes(`${player._id}`)) {
+      return room;
+    }
+    await NotificationEventModel.create({
+      roomId: room._id,
+      userId: userId,
+      event: `${player?.name || "Player"} joined room ${room?.name}`,
+      eventType: NotificationType.JOIN,
+      eventAt: new Date(),
+    });
+    const r = await addPlayerToRoomAtomically(room, player);
+    if (!r) throw new Error("invalid room");
+    return r;
   },
 };
 

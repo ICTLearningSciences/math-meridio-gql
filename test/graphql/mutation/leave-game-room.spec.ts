@@ -63,26 +63,28 @@ describe("leave a game room", () => {
       initializeGameRoom(studentUserId, "unit-test", "", discussionStages, 0)
     );
     const player = await PlayerModel.findById(studentUserId);
-    const roomWithStudent = await addPlayerToRoomAtomically(
-      newGameRoom,
-      player
-    );
-    roomId = roomWithStudent._id;
-    const response = await request(app)
-      .post("/graphql")
-      .set("Authorization", `Bearer ${studentAccessToken}`)
-      .send({
-        query: leaveGameRoomMutation,
-        variables: {
-          roomId: roomId,
-        },
-      });
-    expect(response.status).to.equal(200);
-    expect(response.body.data.leaveGameRoom).to.have.property("_id");
-    expect(
-      response.body.data.leaveGameRoom.gameData.players.map(
-        (player: PlayerDocument) => player._id
-      )
-    ).to.not.include(studentUserId);
+    if (player) {
+      const roomWithStudent = await addPlayerToRoomAtomically(
+        newGameRoom,
+        player
+      );
+      roomId = `${roomWithStudent._id}`;
+      const response = await request(app)
+        .post("/graphql")
+        .set("Authorization", `Bearer ${studentAccessToken}`)
+        .send({
+          query: leaveGameRoomMutation,
+          variables: {
+            roomId: roomId,
+          },
+        });
+      expect(response.status).to.equal(200);
+      expect(response.body.data.leaveGameRoom).to.have.property("_id");
+      expect(
+        response.body.data.leaveGameRoom.gameData.players.map(
+          (player: PlayerDocument) => player._id
+        )
+      ).to.not.include(studentUserId);
+    }
   });
 });

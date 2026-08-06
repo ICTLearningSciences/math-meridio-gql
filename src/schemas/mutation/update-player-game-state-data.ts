@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 import { GraphQLNonNull, GraphQLObjectType, GraphQLString } from "graphql";
-import { GameStateData, Room, RoomType } from "../models/Room";
+import { GameStateData, RoomDocument, RoomType } from "../models/Room";
 import RoomModel from "../../schemas/models/Room";
 import PlayerModel from "../../schemas/models/Player";
 import GraphQLJson from "graphql-type-json";
@@ -27,7 +27,7 @@ export const updatePlayerGameStateData = {
     context: {
       userId: string;
     }
-  ): Promise<Room> => {
+  ): Promise<RoomDocument> => {
     try {
       const userId = context.userId;
       const { roomId, playerId, newPlayerGameStateData } = args;

@@ -8,8 +8,8 @@ import { GraphQLString, GraphQLObjectType } from "graphql";
 import { CookieOptions, Response } from "express";
 import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
-import { PlayerDocument, PlayerType } from "../models/Player";
 import DateType from "./date";
+import PlayerSchema, { PlayerDocument, PlayerType } from "../models/Player";
 import RefreshTokenSchema from "../models/RefreshToken";
 import requireEnv from "../../utils/require-env";
 
@@ -32,8 +32,10 @@ export async function getRefreshedAccessToken(
   res: Response
 ): Promise<UserAccessToken> {
   const refreshToken = await getRefreshToken(token);
-  const { user } = refreshToken;
-
+  const user = await PlayerSchema.findById(refreshToken.user);
+  if (!user) {
+    throw new Error("invalid access token");
+  }
   // replace old refresh token with a new one and save
   const newRefreshToken = await generateRefreshToken(user);
   await newRefreshToken.save();
@@ -56,9 +58,7 @@ export async function revokeToken(token: string): Promise<void> {
 }
 
 async function getRefreshToken(token: string) {
-  const refreshToken = await RefreshTokenSchema.findOne({ token }).populate(
-    "user"
-  );
+  const refreshToken = await RefreshTokenSchema.findOne({ token });
   if (!refreshToken || !refreshToken.isActive) {
     throw "invalid token";
   }

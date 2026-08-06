@@ -27,7 +27,7 @@ import { AbstractGameData } from "./authoritative-server/llm-request/types";
 import StudentSubmissionLogModel, {
   StudentSubmissionLog,
 } from "./schemas/models/StudentSubmissionLog";
-import { ChatMessage, Room } from "./schemas/models/Room";
+import { ChatMessage, RoomDocument } from "./schemas/models/Room";
 import {
   LearningObjective,
   LearningObjectiveDocument,
@@ -224,7 +224,7 @@ export function findRequestUserInputStepByStepId(
 export async function initializeStudentSubmissionLog(
   senderStudentId: string,
   message: string,
-  room: Room,
+  room: RoomDocument,
   _discussionStages: DiscussionStage[],
   allLearningObjectives: LearningObjectiveDocument[]
 ): Promise<StudentSubmissionLog | null> {
@@ -234,7 +234,7 @@ export async function initializeStudentSubmissionLog(
     .filter((s) => isDiscussionStage(s)) as DiscussionStage[];
   const allLearningObjectivesMap = allLearningObjectives.reduce(
     (acc, objective) => {
-      acc[objective._id] = objective;
+      acc[`${objective._id}`] = objective;
       return acc;
     },
     {} as Record<string, LearningObjective>

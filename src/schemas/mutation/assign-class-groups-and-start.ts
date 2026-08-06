@@ -13,13 +13,13 @@ import ClassMembershipModel, {
 } from "../models/classes/ClassMembership";
 import { canModifyClassroom } from "../../helpers";
 import { initializeGroupGameRoomWithoutGameId } from "./game-room-authoritative/create-new-game-room";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import RoomModel, { Room, RoomDocument, RoomType } from "../models/Room";
 import PlayerModel from "../models/Player";
 import { addPlayerToRoomAtomically } from "../../authoritative-server/authority/step-process-pure-functions";
 
 export interface AssignClassGroupsAndStartResponse {
   updatedClassroom: Class;
-  createdRooms: Room[];
+  createdRooms: RoomDocument[];
 }
 
 export const AssignClassGroupsAndStartResponseType = new GraphQLObjectType({
@@ -84,7 +84,7 @@ export const assignClassGroupsAndStart = {
         return acc;
       }, {} as Record<number, ClassMembership[]>);
 
-      let createdRooms: Room[] = [];
+      let createdRooms: RoomDocument[] = [];
       // Update existing classroom assignments
       if (classroom.startedAt !== undefined) {
         const rooms = await RoomModel.find({ classId: classId });
@@ -101,7 +101,7 @@ export const assignClassGroupsAndStart = {
               userId,
               Number(groupId),
               memberships.map((m) => m.userId),
-              classroom._id
+              `${classroom._id}`
             );
             createdRooms.push(await RoomModel.create(gameRoom));
           }
@@ -134,7 +134,7 @@ export const assignClassGroupsAndStart = {
             userId,
             Number(groupId),
             memberships.map((m) => m.userId),
-            classroom._id
+            `${classroom._id}`
           );
           roomsToCreate.push(gameRoom);
         }

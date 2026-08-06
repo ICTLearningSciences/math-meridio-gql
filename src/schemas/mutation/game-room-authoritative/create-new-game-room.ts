@@ -7,7 +7,12 @@ The full terms of this copyright and license should always be found in the root 
 
 import { GraphQLString, GraphQLObjectType } from "graphql";
 import ClassModel from "../../models/classes/Class";
-import RoomModel, { Room, RoomPhase, RoomType } from "../../models/Room";
+import RoomModel, {
+  Room,
+  RoomDocument,
+  RoomPhase,
+  RoomType,
+} from "../../models/Room";
 import PlayerModel from "../../models/Player";
 import {
   addPlayerToRoomAtomically,
@@ -42,7 +47,7 @@ export function initializeGroupGameRoomWithoutGameId(
   let room: Room = {
     _id: new mongoose.Types.ObjectId().toString(),
     name: `Group #${groupId} Solution Space`,
-    ...(classId ? { classId } : {}),
+    classId: classId ? new mongoose.Types.ObjectId(classId) : undefined,
     phase: RoomPhase.NO_ACTIVE_PROCESSING,
     versionNumber: 1,
     gameData: {
@@ -98,7 +103,7 @@ export function initializeGameRoom(
   return {
     _id: new mongoose.Types.ObjectId().toString(),
     name: `${game.name} Solution Space ${numExistingGameRooms + 1}`,
-    ...(classId ? { classId } : {}),
+    classId: classId ? new mongoose.Types.ObjectId(classId) : undefined,
     phase: RoomPhase.NO_ACTIVE_PROCESSING,
     versionNumber: 1,
     gameData: {
@@ -149,7 +154,7 @@ export const createNewGameRoom = {
       sessionId: string;
     },
     context: { userId: string }
-  ): Promise<Room> => {
+  ): Promise<RoomDocument> => {
     const rooms = await RoomModel.find({
       "gameData.gameId": args.gameId,
       deletedRoom: false,
@@ -169,8 +174,10 @@ export const createNewGameRoom = {
       discussionStages,
       rooms.length
     );
-    const newRoom: Room = await (await RoomModel.create(_newRoom)).toObject();
-    const roomWithPlayerAdded: Room = await addPlayerToRoomAtomically(
+    const newRoom: RoomDocument = await (
+      await RoomModel.create(_newRoom)
+    ).toObject();
+    const roomWithPlayerAdded: RoomDocument = await addPlayerToRoomAtomically(
       newRoom,
       player
     );
@@ -180,7 +187,7 @@ export const createNewGameRoom = {
     });
 
     // Process the first step.
-    const roomWithFirstStepProcessed: Room = await processCurStep(
+    const roomWithFirstStepProcessed: RoomDocument = await processCurStep(
       roomWithPlayerAdded,
       discussionStages,
       {
@@ -202,7 +209,7 @@ export const createNewGameRoom = {
         DiscussionStageStepType.REQUEST_USER_INPUT
     ) {
       // Now process all other steps until we reach a request user input step or simulation stage or end of phase reflection step.
-      const roomWithProcessedSteps: Room =
+      const roomWithProcessedSteps: RoomDocument =
         await processStepsUntilNextStallingPhase(
           roomWithFirstStepProcessed,
           discussionStages,
@@ -214,17 +221,22 @@ export const createNewGameRoom = {
           args.sessionId,
           playerDocuments
         );
-      return await RoomModel.findOneAndUpdate(
+      const r = await RoomModel.findOneAndUpdate(
         { _id: roomWithProcessedSteps._id },
         { $set: { gameData: roomWithProcessedSteps.gameData } },
         { new: true }
       );
+      if (!r) throw new Error("invalid room");
+      return r;
     }
-    return await RoomModel.findOneAndUpdate(
+
+    const r = await RoomModel.findOneAndUpdate(
       { _id: roomWithFirstStepProcessed._id },
       { $set: { gameData: roomWithFirstStepProcessed.gameData } },
       { new: true }
     );
+    if (!r) throw new Error("invalid room");
+    return r;
   },
 };
 

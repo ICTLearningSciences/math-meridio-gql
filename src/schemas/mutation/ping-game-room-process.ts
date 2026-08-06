@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 import { GraphQLObjectType, GraphQLString } from "graphql";
-import { Room, RoomPhase, RoomType } from "../models/Room";
+import { RoomDocument, RoomPhase, RoomType } from "../models/Room";
 import RoomModel from "../../schemas/models/Room";
 import {
   isDiscussionStage as _isDiscussionStage,
@@ -51,10 +51,13 @@ export const pingGameRoomProcess = {
       userId: string;
       userEducationalRole: EducationalRole;
     }
-  ): Promise<Room> => {
+  ): Promise<RoomDocument> => {
     try {
       const { roomId, sessionId } = args;
-      let room = await updatePlayersHeartbeat(roomId, context.userId);
+      let room: RoomDocument | null = await updatePlayersHeartbeat(
+        roomId,
+        context.userId
+      );
       if (room.gameData.players.length === 0) {
         return room;
       }
@@ -63,6 +66,7 @@ export const pingGameRoomProcess = {
         context.userId,
         RoomModel
       );
+
       const activePlayers = Object.entries(
         room.gameData.playersStatusRecord
       ).filter(
@@ -72,13 +76,11 @@ export const pingGameRoomProcess = {
       if (activePlayers.length === 0) {
         return room;
       }
-
       const activePlayerDocuments = (
         await PlayerModel.find({
           _id: { $in: activePlayers.map(([playerId, _]) => playerId) },
         })
       ).map((player) => player.toObject());
-
       if (!room.gameData.gameId) {
         return room;
       }
@@ -87,7 +89,6 @@ export const pingGameRoomProcess = {
       const discussionStages = _discussionStages.map((stage) =>
         stage.toObject()
       );
-
       if (
         !room.gameData.phaseProgression.startingPhaseStepsOrdered.length &&
         room.gameData.gameId
@@ -96,40 +97,38 @@ export const pingGameRoomProcess = {
           room.gameData.gameId,
           discussionStages
         );
-        room = (
-          await RoomModel.findOneAndUpdate(
-            { _id: args.roomId },
-            {
-              $set: {
-                "gameData.phaseProgression.startingPhaseStepsOrdered":
-                  startingPhases,
-              },
+        room = await RoomModel.findOneAndUpdate(
+          { _id: args.roomId },
+          {
+            $set: {
+              "gameData.phaseProgression.startingPhaseStepsOrdered":
+                startingPhases,
             },
-            { new: true }
-          )
-        ).toObject();
+          },
+          { new: true }
+        );
+        if (!room) throw new Error("invalid room");
       }
 
       let stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
-      let _stepRoundGamePhaseReflections =
+      let stepRoundGamePhaseReflections =
         await GamePhaseReflectionsModel.findOne({
           roomId: roomId,
           stepId: stageAndStep.curStep?.stepId,
           roundNumber: room.gameData.curGameState.curRoundNumber,
         });
-      let stepRoundGamePhaseReflections =
-        _stepRoundGamePhaseReflections?.toObject();
+
       let isDiscussionStage = _isDiscussionStage(stageAndStep.curStage);
       let isRequestUserInputStep =
         isDiscussionStage &&
         stageAndStep.curStep?.stepType ===
           DiscussionStageStepType.REQUEST_USER_INPUT;
-      let requestUserInputStageStatus =
-        isRequestUserInputStep &&
-        _isRequestUserInputStepComplete(
-          room.gameData,
-          stageAndStep.curStep as RequestUserInputStageStep
-        );
+      let requestUserInputStageStatus = isRequestUserInputStep
+        ? _isRequestUserInputStepComplete(
+            room.gameData,
+            stageAndStep.curStep as RequestUserInputStageStep
+          )
+        : undefined;
       let isSimulationStage =
         stageAndStep.curStage.clientId === WAIT_FOR_SIMULATION_STAGE_CLIENT_ID;
       let isSimulationStageComplete =
@@ -142,8 +141,9 @@ export const pingGameRoomProcess = {
           DiscussionStageStepType.END_OF_PHASE_REFLECTION &&
         room.gameData.curGameState.curState === "END_OF_PHASE_REFLECTION";
       let endOfPhaseReflectionStepStatus =
-        isEndOfPhaseReflectionStep &&
-        _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections);
+        isEndOfPhaseReflectionStep && stepRoundGamePhaseReflections
+          ? _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections)
+          : undefined;
 
       const isWaitingForEndOfPhaseReflectionReadyUp =
         isDiscussionStage &&
@@ -158,11 +158,12 @@ export const pingGameRoomProcess = {
       const isCompleteRequestUserInputStep =
         isDiscussionStage &&
         isRequestUserInputStep &&
-        requestUserInputStageStatus.isComplete;
+        requestUserInputStageStatus?.isComplete;
       const isCompleteSimulationStage =
         isSimulationStage && isSimulationStageComplete;
       const isCompleteEndOfPhaseReflectionStep =
-        isEndOfPhaseReflectionStep && endOfPhaseReflectionStepStatus.isComplete;
+        isEndOfPhaseReflectionStep &&
+        endOfPhaseReflectionStepStatus?.isComplete;
       const isCompleteEndOfPhaseReflectionReadyUp =
         isWaitingForEndOfPhaseReflectionReadyUp &&
         isEndOfPhaseReflectionReadyUpComplete;
@@ -177,7 +178,7 @@ export const pingGameRoomProcess = {
                 "WAITING_FOR_STUDENT_READY_TO_CONTINUE",
               "gameData.curGameState.studentReadyToContinue": false,
               "gameData.curGameState.studentReflections":
-                endOfPhaseReflectionStepStatus.studentReflections,
+                endOfPhaseReflectionStepStatus?.studentReflections,
             },
           },
           { new: true }
@@ -197,7 +198,7 @@ export const pingGameRoomProcess = {
           return lockResult.room || room;
         }
         room = lockResult.room;
-
+        if (!room) throw new Error("invalid room");
         // check if we are ready to move on from the current step and continue processing.
         room = await processStepsUntilNextStallingPhase(
           room,
@@ -225,6 +226,7 @@ export const pingGameRoomProcess = {
         );
       }
 
+      if (!room) throw new Error("invalid room");
       // After some processing occurred, re-check the rooms state and see if we need to update the rooms curGameState
       stageAndStep = getCurStageAndStep(room.gameData, discussionStages);
       isDiscussionStage = _isDiscussionStage(stageAndStep.curStage);
@@ -232,12 +234,12 @@ export const pingGameRoomProcess = {
         isDiscussionStage &&
         stageAndStep.curStep?.stepType ===
           DiscussionStageStepType.REQUEST_USER_INPUT;
-      requestUserInputStageStatus =
-        isRequestUserInputStep &&
-        _isRequestUserInputStepComplete(
-          room.gameData,
-          stageAndStep.curStep as RequestUserInputStageStep
-        );
+      requestUserInputStageStatus = isRequestUserInputStep
+        ? _isRequestUserInputStepComplete(
+            room.gameData,
+            stageAndStep.curStep as RequestUserInputStageStep
+          )
+        : undefined;
       isSimulationStage =
         stageAndStep.curStage.clientId === WAIT_FOR_SIMULATION_STAGE_CLIENT_ID;
       isSimulationStageComplete =
@@ -248,19 +250,18 @@ export const pingGameRoomProcess = {
         isDiscussionStage &&
         stageAndStep.curStep?.stepType ===
           DiscussionStageStepType.END_OF_PHASE_REFLECTION;
-      _stepRoundGamePhaseReflections = await GamePhaseReflectionsModel.findOne({
+      stepRoundGamePhaseReflections = await GamePhaseReflectionsModel.findOne({
         roomId: roomId,
         stepId: stageAndStep.curStep?.stepId,
         roundNumber: room.gameData.curGameState.curRoundNumber,
       });
-      stepRoundGamePhaseReflections =
-        _stepRoundGamePhaseReflections?.toObject();
       endOfPhaseReflectionStepStatus =
-        isEndOfPhaseReflectionStep &&
-        _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections);
+        isEndOfPhaseReflectionStep && stepRoundGamePhaseReflections
+          ? _endOfPhaseReflectionStepStatus(room, stepRoundGamePhaseReflections)
+          : undefined;
 
       // if we are now in a request user input step and it is not complete, check the status of the request user input step.
-      if (isRequestUserInputStep && !requestUserInputStageStatus.isComplete) {
+      if (isRequestUserInputStep && !requestUserInputStageStatus?.isComplete) {
         const newGameState = (stageAndStep.curStep as RequestUserInputStageStep)
           .requireInputType;
 
@@ -271,7 +272,7 @@ export const pingGameRoomProcess = {
               "gameData.curGameState": {
                 curState: newGameState,
                 playersLeftToRespond:
-                  requestUserInputStageStatus.playersLeftToRespond || [],
+                  requestUserInputStageStatus?.playersLeftToRespond || [],
               },
             },
           },
@@ -279,14 +280,17 @@ export const pingGameRoomProcess = {
         );
       }
 
+      if (!room) throw new Error("invalid room");
       // if we are now in a game phase reflection state and it is not complete, check and update the status of the request user input step
       if (
         isEndOfPhaseReflectionStep &&
-        !endOfPhaseReflectionStepStatus.isComplete &&
-        room.gameData.curGameState.curState !==
+        !endOfPhaseReflectionStepStatus?.isComplete &&
+        room?.gameData.curGameState.curState !==
           "WAITING_FOR_STUDENT_READY_TO_CONTINUE"
       ) {
-        if (room.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION") {
+        if (
+          room?.gameData.curGameState.curState !== "END_OF_PHASE_REFLECTION"
+        ) {
           const numStepGamePhaseReflections =
             await GamePhaseReflectionsModel.countDocuments({
               roomId: roomId,
@@ -305,15 +309,16 @@ export const pingGameRoomProcess = {
               $set: {
                 "gameData.curGameState.curState": "END_OF_PHASE_REFLECTION",
                 "gameData.curGameState.playersLeftToRespond":
-                  endOfPhaseReflectionStepStatus.playersLeftToRespond,
+                  endOfPhaseReflectionStepStatus?.playersLeftToRespond,
                 "gameData.curGameState.studentReflections":
-                  endOfPhaseReflectionStepStatus.studentReflections,
+                  endOfPhaseReflectionStepStatus?.studentReflections,
               },
             },
             { new: true }
           );
         }
       }
+      if (!room) throw new Error("invalid room");
       return room;
     } catch (error) {
       console.error("Error pinging game room: ", error);

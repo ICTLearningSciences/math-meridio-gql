@@ -6,7 +6,7 @@ The full terms of this copyright and license should always be found in the root 
 */
 import { GraphQLObjectType, GraphQLString } from "graphql";
 import { EducationalRole } from "../models/Player";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import RoomModel, { RoomDocument, RoomType } from "../models/Room";
 import DiscussionStageModel from "../models/DiscussionStage/DiscussionStage";
 import { getGameById } from "../../authoritative-server/games/game-helpers";
 import { getFirstStepId } from "../../authoritative-server/authority/helpers/helpers";
@@ -21,6 +21,7 @@ import {
   isDiscussionStage,
 } from "../models/DiscussionStage/types";
 import PlayerModel from "../models/Player";
+
 export const assignGameToGameRoom = {
   type: RoomType,
   args: {
@@ -37,7 +38,7 @@ export const assignGameToGameRoom = {
       userId: string;
       userEducationalRole: EducationalRole;
     }
-  ): Promise<Room> => {
+  ): Promise<RoomDocument> => {
     try {
       const { roomId, gameId } = args;
       const _discussionStages = await DiscussionStageModel.find();
@@ -95,23 +96,24 @@ export const assignGameToGameRoom = {
           DiscussionStageStepType.REQUEST_USER_INPUT
       ) {
         // Now process all other steps until we reach a request user input step or simulation stage or end of phase reflection step.
-        const roomWithProcessedSteps: Room =
-          await processStepsUntilNextStallingPhase(
-            roomWithFirstStepProcessed,
-            discussionStages,
-            {
-              serviceName: AiServiceNames.OPEN_AI,
-              model: "gpt-4o-mini",
-            },
-            context.userId,
-            "assign-game-to-game-room",
-            playerDocuments
-          );
-        return await RoomModel.findOneAndUpdate(
+        const roomWithProcessedSteps = await processStepsUntilNextStallingPhase(
+          roomWithFirstStepProcessed,
+          discussionStages,
+          {
+            serviceName: AiServiceNames.OPEN_AI,
+            model: "gpt-4o-mini",
+          },
+          context.userId,
+          "assign-game-to-game-room",
+          playerDocuments
+        );
+        const r = await RoomModel.findOneAndUpdate(
           { _id: roomWithProcessedSteps._id },
           { $set: { gameData: roomWithProcessedSteps.gameData } },
           { new: true }
         );
+        if (!r) throw new Error("invalid room");
+        return r;
       }
     } catch (error) {
       throw new Error(error);

@@ -77,6 +77,7 @@ describe("full room lifecycle", () => {
       UserRole.USER,
       EducationalRole.STUDENT
     );
+
     const createNewGameRoomResponse = await createNewGameRoom(
       app,
       "unit-test",
@@ -84,6 +85,7 @@ describe("full room lifecycle", () => {
     );
     expect(createNewGameRoomResponse.status).to.equal(200);
     expect(createNewGameRoomResponse.body.data.createNewGameRoom).to.exist;
+
     const newRoomId = createNewGameRoomResponse.body.data.createNewGameRoom._id;
     const newRoom = await RoomModel.findById(newRoomId);
     expect(newRoom).to.exist;
@@ -94,7 +96,6 @@ describe("full room lifecycle", () => {
     );
     // 2nd step is the first request user input step, so we expect the current step id to be 2.
     expect(newRoom?.gameData.globalStateData.curStepId).to.equal("2");
-
     // Check that the chat log has the correct messages.
     expect(newRoom?.gameData.chat).to.have.length(2);
     expect(newRoom?.gameData.chat[0].message).to.equal(
@@ -1020,8 +1021,7 @@ describe("full room lifecycle", () => {
           [`gameData.playersStatusRecord.${studentTwoId}.lastHeartbeatAt`]:
             new Date(Date.now() - 30000),
         },
-      },
-      { new: true }
+      }
     );
 
     const pingAfterStudentTwoHeartbeatSet = await pingRoomProcess(
@@ -2040,7 +2040,7 @@ describe("full room lifecycle", () => {
     // ENSURE curGameState data is all set correctly (roundNumber 2, etc.)
     const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
     await delay(1000);
-    currentRoom = await RoomModel.findById(newRoomId).lean();
+    currentRoom = await RoomModel.findById(newRoomId);
     expect(currentRoom?.gameData.curGameState.curState).to.equal(
       "END_OF_PHASE_REFLECTION"
     );

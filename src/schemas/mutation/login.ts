@@ -38,13 +38,12 @@ export const login = {
         userPoolId: requireEnv("USER_POOL_ID"),
         clientId: requireEnv("USER_POOL_CLIENT_ID"),
       });
-
       const payload: CognitoIdTokenPayload = await verifier.verify(
         args.accessToken
       );
       const user = await PlayerModel.findOneAndUpdate(
         {
-          googleId: payload.username,
+          googleId: payload.sub,
         },
         {
           $set: {
