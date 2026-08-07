@@ -1,6 +1,6 @@
 # Math Meridio GQL
 
-Project Requirements:
+Project Requirements: 
 
 - [Make](https://askubuntu.com/questions/161104/how-do-i-install-make)
 - [nvm](https://github.com/nvm-sh/nvm) (to manage node versions)
