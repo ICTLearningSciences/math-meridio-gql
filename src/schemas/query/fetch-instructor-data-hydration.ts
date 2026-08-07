@@ -15,7 +15,7 @@ import ClassMembershipModel, {
   ClassMembership,
   ClassMembershipType,
 } from "../models/classes/ClassMembership";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import RoomModel, { RoomDocument, RoomType } from "../models/Room";
 import NotificationEventModel, {
   NotificationEvent,
   NotificationEventType,
@@ -43,7 +43,7 @@ const InstructorDataHydrationType = new GraphQLObjectType({
 
 interface InstructorDataHydration {
   classes: Class[];
-  rooms: Room[];
+  rooms: RoomDocument[];
   students: Player[];
   classMemberships: ClassMembership[];
   phaseReflections: GamePhaseReflections[];

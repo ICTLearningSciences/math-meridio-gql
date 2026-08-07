@@ -179,11 +179,11 @@ describe("assign class groups and start", () => {
     ).to.have.length(2);
     const studentOneExists =
       response.body.data.assignClassGroupsAndStart.createdRooms[0].gameData.players.some(
-        (player: PlayerDocument) => player._id === studentUserId
+        (player: PlayerDocument) => `${player._id}` === studentUserId
       );
     const studentTwoExists =
       response.body.data.assignClassGroupsAndStart.createdRooms[0].gameData.players.some(
-        (player: PlayerDocument) => player._id === otherStudentUserId
+        (player: PlayerDocument) => `${player._id}` === otherStudentUserId
       );
     expect(studentOneExists).to.equal(true);
     expect(studentTwoExists).to.equal(true);

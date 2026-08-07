@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 
-import { GameData, Room } from "../../schemas/models/Room";
+import { GameData, RoomDocument } from "../../schemas/models/Room";
 import {
   Checking,
   ConditionalActivityStep,
@@ -203,10 +203,10 @@ export function getNextStepFromConditionalStage(
 }
 
 export async function updateRoomStageAndOrStep(
-  room: Room,
+  room: RoomDocument,
   stageId?: string,
   stepId?: string
-): Promise<Room> {
+): Promise<RoomDocument> {
   const updateOperations: Record<string, any> = {};
   if (stageId) {
     updateOperations[`gameData.globalStateData.curStageId`] = stageId;
@@ -230,10 +230,10 @@ export async function updateRoomStageAndOrStep(
  * IMPORTANT: This function assumes the current step is complete.
  */
 export async function updateRoomWithNextStep(
-  room: Room,
+  room: RoomDocument,
   curStage: CurrentStage<IStage>,
   curStep?: DiscussionStageStep
-): Promise<Room> {
+): Promise<RoomDocument> {
   const collectedDiscussionData: CollectedDiscussionData =
     room.gameData.globalStateData.discussionData || {};
 

@@ -51,7 +51,7 @@ export const dismissNotifications = {
             dismissedAt: new Date(),
           },
         },
-        { multi: true, upsert: true }
+        { upsert: true }
       );
       return await NotificationEventModel.find({
         $or: [{ classId: { $in: classIds } }, { roomId: { $in: roomIds } }],

@@ -73,7 +73,7 @@ describe("join a game room", () => {
     const newGameRoom = await RoomModel.create(
       initializeGameRoom(studentUserId, "unit-test", "", discussionStages, 0)
     );
-    roomId = newGameRoom._id;
+    roomId = `${newGameRoom._id}`;
     const response = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${studentAccessToken}`)
@@ -116,7 +116,7 @@ describe("join a game room", () => {
     expect(response.status).to.equal(200);
     expect(response.body).to.have.deep.nested.property(
       "errors[0].message",
-      "Error: User Not Found"
+      "User Not Found"
     );
   });
 });

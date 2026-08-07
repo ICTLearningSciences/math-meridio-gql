@@ -6,7 +6,7 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 import { GraphQLID, GraphQLObjectType } from "graphql";
-import RoomModel, { Room, RoomType } from "../models/Room";
+import RoomModel, { RoomDocument, RoomType } from "../models/Room";
 
 export const fetchRoom = {
   type: RoomType,
@@ -16,7 +16,7 @@ export const fetchRoom = {
   resolve: async (
     _root: GraphQLObjectType,
     args: { roomId: string }
-  ): Promise<Room> => {
+  ): Promise<RoomDocument> => {
     const res = await RoomModel.findOne({
       _id: args.roomId,
       deletedRoom: false,

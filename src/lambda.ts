@@ -6,7 +6,7 @@ The full terms of this copyright and license should always be found in the root 
 */
 
 require("source-map-support/register");
-import serverlessExpress from "@vendia/serverless-express";
+import serverlessExpress from "@codegenie/serverless-express";
 import createApp, { appStart } from "./app";
 
 // eslint-disable-next-line   @typescript-eslint/no-explicit-any

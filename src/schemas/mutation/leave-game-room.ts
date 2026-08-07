@@ -5,7 +5,7 @@ Permission to use, copy, modify, and distribute this software and its documentat
 The full terms of this copyright and license should always be found in the root directory of this software deliverable as "license.txt" and if these terms are not found with this software, please contact the USC Stevens Center for the full license.
 */
 import { GraphQLObjectType, GraphQLString } from "graphql";
-import { Room, RoomType } from "../models/Room";
+import { RoomDocument, RoomType } from "../models/Room";
 import RoomModel from "../models/Room";
 import PlayerModel from "../models/Player";
 import NotificationEventModel, {
@@ -25,7 +25,7 @@ export const leaveGameRoom = {
     context: {
       userId: string;
     }
-  ): Promise<Room> => {
+  ): Promise<RoomDocument> => {
     const userId = context.userId;
     const { roomId } = args;
 
@@ -42,7 +42,7 @@ export const leaveGameRoom = {
       throw new Error("Room not found");
     }
 
-    if (!_room.gameData.players.includes(player._id)) {
+    if (!_room.gameData.players.includes(`${player._id}`)) {
       return _room;
     }
 
