@@ -44,7 +44,6 @@ export const copyAndArchiveClassroom = {
       classId: classroom._id,
     });
     const oldRooms = await RoomModel.find({ classId: classroom._id });
-
     // Create default invite code for class:
     const expirationDate = new Date();
     expirationDate.setFullYear(expirationDate.getFullYear() + 1);
@@ -54,7 +53,6 @@ export const copyAndArchiveClassroom = {
       maxUses: 50 - oldClassMemberships.length,
       uses: oldClassMemberships.length,
     };
-
     // Copy old classroom
     const newClass = await ClassModel.create({
       name: classroom.name,
@@ -62,9 +60,7 @@ export const copyAndArchiveClassroom = {
       sharedWithInstructorIds: classroom.sharedWithInstructorIds,
       teacherId: userId,
       inviteCodes: [inviteCode],
-      startedAt: new Date(),
     });
-
     await ClassMembershipModel.create(
       oldClassMemberships.map((m) => ({
         classId: newClass._id,
@@ -80,20 +76,18 @@ export const copyAndArchiveClassroom = {
       );
       const gameRoom = initializeGroupGameRoomWithoutGameId(
         userId,
-        groupId - 1,
+        groupId,
         r.gameData.players,
         `${newClass._id}`
       );
       roomsToCreate.push(gameRoom);
     }
     const createdRooms = await RoomModel.create(roomsToCreate);
-
     // Archive old classroom
     if (!classroom.archivedAt) {
       classroom.archivedAt = new Date();
       await classroom.save();
     }
-
     return {
       updatedClassroom: newClass,
       createdRooms,
