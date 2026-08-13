@@ -8,13 +8,11 @@ import { GraphQLObjectType, GraphQLString } from "graphql";
 import { EducationalRole } from "../models/Player";
 import ClassModel, { InviteCode } from "../models/classes/Class";
 import ClassMembershipModel from "../models/classes/ClassMembership";
-import RoomModel, { Room } from "../models/Room";
 import { generateInviteCode } from "./create-new-class-invite-code";
 import {
   AssignClassGroupsAndStartResponse,
   AssignClassGroupsAndStartResponseType,
 } from "./assign-class-groups-and-start";
-import { initializeGroupGameRoomWithoutGameId } from "./game-room-authoritative/create-new-game-room";
 
 export const copyAndArchiveClassroom = {
   type: AssignClassGroupsAndStartResponseType,
@@ -43,7 +41,6 @@ export const copyAndArchiveClassroom = {
     const oldClassMemberships = await ClassMembershipModel.find({
       classId: classroom._id,
     });
-    const oldRooms = await RoomModel.find({ classId: classroom._id });
     // Create default invite code for class:
     const expirationDate = new Date();
     expirationDate.setFullYear(expirationDate.getFullYear() + 1);
@@ -69,20 +66,6 @@ export const copyAndArchiveClassroom = {
         status: m.status,
       }))
     );
-    const roomsToCreate: Room[] = [];
-    for (const r of oldRooms) {
-      const groupId = Number.parseInt(
-        r.name.replace("Group #", "").replace(" Solution Space", "")
-      );
-      const gameRoom = initializeGroupGameRoomWithoutGameId(
-        userId,
-        groupId,
-        r.gameData.players,
-        `${newClass._id}`
-      );
-      roomsToCreate.push(gameRoom);
-    }
-    const createdRooms = await RoomModel.create(roomsToCreate);
     // Archive old classroom
     if (!classroom.archivedAt) {
       classroom.archivedAt = new Date();
@@ -90,7 +73,7 @@ export const copyAndArchiveClassroom = {
     }
     return {
       updatedClassroom: newClass,
-      createdRooms,
+      createdRooms: [],
     };
   },
 };
