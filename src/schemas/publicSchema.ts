@@ -20,7 +20,6 @@ import fetchPlayers from "./query/fetch-players";
 import addOrUpdatePlayer from "./mutation/add-or-update-player";
 
 import fetchDiscussionStages from "./query/fetch-discussion-stages";
-import addOrUpdateDiscussionStage from "./mutation/private/add-or-update-stage";
 
 import fetchInstructorDataHydration from "./query/fetch-instructor-data-hydration";
 import fetchStudentDataHydration from "./query/fetch-student-data-hydration";
@@ -91,7 +90,6 @@ const PublicMutation = new GraphQLObjectType({
     renameRoom,
     setPlayerPauseStatus,
     addOrUpdatePlayer,
-    addOrUpdateDiscussionStage,
     shareClassroomWithInstructor,
     loginGoogle,
     login,
