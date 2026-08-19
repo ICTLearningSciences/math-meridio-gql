@@ -15,7 +15,6 @@ dotenv.config();
 
 //START MIDDLEWARE
 import mongoose from "mongoose";
-import privateSchema from "./schemas/privateSchema";
 import { UserRole } from "./schemas/types/types";
 import { getDataFromRequest } from "./helpers";
 import { EducationalRole } from "./schemas/models/Player";
@@ -106,17 +105,6 @@ export function createApp(): Express {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(express.json());
   app.use(cors(corsOptions));
-  app.use(
-    "/graphqlPrivate",
-    authorization,
-    graphqlHTTP(async () => {
-      return {
-        schema: privateSchema,
-        graphiql: true,
-      };
-    })
-  );
-
   app.use(
     "/graphql",
     graphqlHTTP(async (req: Request, res) => {

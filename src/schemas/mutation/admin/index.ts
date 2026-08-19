@@ -7,12 +7,14 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLObjectType } from "graphql";
 import PlayerModel, { EducationalRole } from "../../models/Player";
 import updatePlayerRole from "./update-player-role";
+import addOrUpdateDiscussionStage from "./add-or-update-stage";
 import { UserRole } from "../../types/types";
 
 export const Admin: GraphQLObjectType = new GraphQLObjectType({
   name: "AdminMutation",
   fields: {
     updatePlayerRole,
+    addOrUpdateDiscussionStage,
   },
 });
 
@@ -29,7 +31,7 @@ export const admin = {
       user.userRole !== UserRole.ADMIN ||
       user.educationalRole !== EducationalRole.INSTRUCTOR
     ) {
-      throw new Error("Only admin users");
+      throw new Error("Only admin instructors");
     }
     return context;
   },

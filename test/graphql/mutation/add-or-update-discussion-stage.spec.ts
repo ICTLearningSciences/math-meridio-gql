@@ -26,13 +26,49 @@ import {
   RequireInputType,
 } from "../../../src/schemas/models/DiscussionStage/objects";
 
+import { getToken, createUser } from "../../helpers";
+import mongoose from "mongoose";
+import { UserRole } from "../../../src/schemas/types/types";
+import { EducationalRole } from "../../../src/schemas/models/Player";
+const { ObjectId } = mongoose.Types;
+
+const AddOrUpdateDiscussionStage = `
+  mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
+    admin {
+      addOrUpdateDiscussionStage(stage: $stage) {
+        ${fullDiscussionStageQueryData}
+      }
+    }
+  }
+`;
+
 describe("update discussion stage", () => {
   let app: Express;
+  let adminUserId: string;
+  let adminAccessToken: string;
+  let userId: string;
+  let userAccessToken: string;
 
   beforeEach(async () => {
     await mongoUnit.load(require("../../fixtures/mongodb/data-default.js"));
     app = await createApp();
     await appStart();
+
+    adminUserId = new ObjectId().toString();
+    await createUser(adminUserId, UserRole.ADMIN, EducationalRole.INSTRUCTOR);
+    adminAccessToken = await getToken(
+      adminUserId,
+      UserRole.ADMIN,
+      EducationalRole.INSTRUCTOR
+    );
+
+    userId = new ObjectId().toString();
+    await createUser(userId, UserRole.USER, EducationalRole.STUDENT);
+    userAccessToken = await getToken(
+      userId,
+      UserRole.USER,
+      EducationalRole.STUDENT
+    );
   });
 
   afterEach(async () => {
@@ -110,11 +146,7 @@ describe("update discussion stage", () => {
     const response = await request(app)
       .post("/graphql")
       .send({
-        query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
-          addOrUpdateDiscussionStage(stage: $stage) {
-              ${fullDiscussionStageQueryData}
-              }
-         }`,
+        query: AddOrUpdateDiscussionStage,
         variables: {
           stage: discussionStage,
         },
@@ -122,11 +154,11 @@ describe("update discussion stage", () => {
     expect(response.status).to.equal(200);
     expect(response.body).to.have.deep.nested.property(
       "errors[0].message",
-      "Unauthorized"
+      "Only authorized users"
     );
   });
 
-  it("fails if incorrect passed", async () => {
+  it("fails if user is not an admin", async () => {
     const flowsListData: FlowItem[] = [
       {
         clientId: "67890",
@@ -195,13 +227,9 @@ describe("update discussion stage", () => {
     };
     const response = await request(app)
       .post("/graphql")
-      .set("Authorization", `bearer wronggqlsecret`)
+      .set("Authorization", `Bearer ${userAccessToken}`)
       .send({
-        query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
-          addOrUpdateDiscussionStage(stage: $stage) {
-              ${fullDiscussionStageQueryData}
-              }
-         }`,
+        query: AddOrUpdateDiscussionStage,
         variables: {
           stage: discussionStage,
         },
@@ -209,7 +237,7 @@ describe("update discussion stage", () => {
     expect(response.status).to.equal(200);
     expect(response.body).to.have.deep.nested.property(
       "errors[0].message",
-      "Unauthorized"
+      "Only admin instructors"
     );
   });
 
@@ -315,18 +343,14 @@ describe("update discussion stage", () => {
     };
     const response = await request(app)
       .post("/graphql")
-      .set("Authorization", `bearer fakegqlsecret`)
+      .set("Authorization", `Bearer ${adminAccessToken}`)
       .send({
-        query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
-          addOrUpdateDiscussionStage(stage: $stage) {
-              ${fullDiscussionStageQueryData}
-              }
-         }`,
+        query: AddOrUpdateDiscussionStage,
         variables: {
           stage: discussionStage,
         },
       });
-    expect(response.body.data.addOrUpdateDiscussionStage).to.eql(
+    expect(response.body.data.admin.addOrUpdateDiscussionStage).to.eql(
       discussionStage
     );
     const stagesPost = await DiscussionStageModel.find();
@@ -341,11 +365,12 @@ describe("update discussion stage", () => {
     const response2 = await request(app)
       .post("/graphql")
       .send({
-        query: `query FetchDiscussionStages{
-          fetchDiscussionStages { 
+        query: `
+          query FetchDiscussionStages{
+            fetchDiscussionStages { 
               ${fullDiscussionStageQueryData}
-                  }
-        }`,
+            }
+          }`,
         variables: {
           limit: 2,
         },
@@ -386,52 +411,53 @@ describe("update discussion stage", () => {
     ];
     const response = await request(app)
       .post("/graphql")
-      .set("Authorization", `bearer fakegqlsecret`)
+      .set("Authorization", `Bearer ${adminAccessToken}`)
       .send({
-        query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
-          addOrUpdateDiscussionStage(stage: $stage) {
-                        flowsList{
-                        clientId
-                        name
-                          steps{
-                            ... on SystemMessageStageStepType {
-                                lastStep
-                                stepId
-                                stepType
-                                message
-                            }
-
-                            ... on RequestUserInputStageStepType {
-                                lastStep
-                                stepId
-                                stepType
-                                message
-                            }
-
-                            ... on PromptStageStepType{
-                                lastStep
-                                stepId
-                                stepType
-                                prompts{
-                                  promptText
-                                  processPromptAs
-                                  responseFormat
-                                  includeChatLogContext
-                                  outputDataType
-                                  jsonResponseData
-                                  customSystemRole
-                                  analyzeLearningObjectives
-                                  includeMessageContext{
-                                    type
-                                    stepIds
-                                    includeMessagesFromOtherUsers
-                                  }
-                                }
-                            }
+        query: `
+          mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
+            admin {
+              addOrUpdateDiscussionStage(stage: $stage) {
+                flowsList{
+                clientId
+                name
+                  steps{
+                    ... on SystemMessageStageStepType {
+                      lastStep
+                      stepId
+                      stepType
+                      message
+                    }
+                    ... on RequestUserInputStageStepType {
+                      lastStep
+                      stepId
+                      stepType
+                      message
+                    }
+                    ... on PromptStageStepType{
+                      lastStep
+                      stepId
+                      stepType
+                      prompts{
+                        promptText
+                        processPromptAs
+                        responseFormat
+                        includeChatLogContext
+                        outputDataType
+                        jsonResponseData
+                        customSystemRole
+                        analyzeLearningObjectives
+                        includeMessageContext{
+                          type
+                          stepIds
+                          includeMessagesFromOtherUsers
                         }
-                        }
+                      }
+                    }
+                  }
+                }
               }
-         }`,
+            }
+          }`,
         variables: {
           stage: {
             _id: "5ffdf1231ee2c62320b49e1f",
@@ -440,7 +466,7 @@ describe("update discussion stage", () => {
         },
       });
     expect(response.status).to.equal(200);
-    expect(response.body.data.addOrUpdateDiscussionStage).to.eql({
+    expect(response.body.data.admin.addOrUpdateDiscussionStage).to.eql({
       flowsList: flowsListData,
     });
   });
@@ -460,13 +486,9 @@ describe("update discussion stage", () => {
     };
     const response = await request(app)
       .post("/graphql")
-      .set("Authorization", `bearer fakegqlsecret`)
+      .set("Authorization", `Bearer ${adminAccessToken}`)
       .send({
-        query: `mutation AddOrUpdateDiscussionStage($stage: DiscussionStageInputType!) {
-        addOrUpdateDiscussionStage(stage: $stage) {
-            ${fullDiscussionStageQueryData}
-            }
-       }`,
+        query: AddOrUpdateDiscussionStage,
         variables: {
           stage: updateDiscussionStage,
         },

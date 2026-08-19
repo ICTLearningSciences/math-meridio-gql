@@ -14,7 +14,6 @@ import BuiltStageModel, {
 } from "../../models/DiscussionStage/DiscussionStage";
 import { DiscussionStage } from "../../models/DiscussionStage/types";
 import { idOrNew } from "../../../helpers";
-import { Request } from "express";
 dotenv.config();
 
 export const addOrUpdateDiscussionStage = {
@@ -27,16 +26,8 @@ export const addOrUpdateDiscussionStage = {
     _: any,
     args: {
       stage: DiscussionStage;
-    },
-    context: {
-      req: Request;
     }
   ) {
-    if (
-      context.req.headers.authorization !== `bearer ${process.env.GQL_SECRET}`
-    ) {
-      throw new Error("Unauthorized");
-    }
     try {
       const id = idOrNew(args.stage._id);
       delete args.stage._id;
