@@ -218,7 +218,7 @@ describe("fetch student data hydration", () => {
     // Check gameList
     expect(
       response.body.data.fetchStudentDataHydration.gameList
-    ).to.have.lengthOf(2);
+    ).to.have.lengthOf(3);
     const gameIds = response.body.data.fetchStudentDataHydration.gameList.map(
       (g: any) => g.id
     );

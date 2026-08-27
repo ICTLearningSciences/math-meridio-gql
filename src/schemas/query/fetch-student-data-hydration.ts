@@ -22,6 +22,7 @@ import NotificationEventModel, {
   NotificationEvent,
   NotificationEventType,
 } from "../models/NotificationEvent";
+import { SocialMediaInfluencerStateHandler } from "authoritative-server/games/social-media-game";
 
 const StudentDataHydrationType = new GraphQLObjectType({
   name: "StudentDataHydration",
@@ -93,7 +94,8 @@ export default {
         [],
         true
       );
-      const games = [basketBallGame, concertTicketSalesGame];
+      const socialMediaGame = new SocialMediaInfluencerStateHandler([], true);
+      const games = [basketBallGame, concertTicketSalesGame, socialMediaGame];
       const gameList = games.map((game) => ({
         id: game.id,
         name: game.name,

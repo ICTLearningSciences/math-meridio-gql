@@ -8,6 +8,7 @@ The full terms of this copyright and license should always be found in the root 
 import { GraphQLList, GraphQLString, GraphQLObjectType } from "graphql";
 import { BasketballStateHandler } from "../../authoritative-server/games/basketball-game";
 import { ConcertTicketSalesStateHandler } from "../../authoritative-server/games/concert-ticket-game";
+import { SocialMediaInfluencerStateHandler } from "authoritative-server/games/social-media-game";
 
 export const GameType = new GraphQLObjectType({
   name: "GameType",
@@ -27,7 +28,8 @@ export const fetchGamesList = {
   resolve: async (): Promise<StaticGame[]> => {
     const basketBallGame = new BasketballStateHandler([], true);
     const concertTicketSalesGame = new ConcertTicketSalesStateHandler([], true);
-    const games = [basketBallGame, concertTicketSalesGame];
+    const socialMediaGame = new SocialMediaInfluencerStateHandler([], true);
+    const games = [basketBallGame, concertTicketSalesGame, socialMediaGame];
     return games.map((game) => ({
       id: game.id,
       name: game.name,

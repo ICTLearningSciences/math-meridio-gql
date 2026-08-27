@@ -15,6 +15,7 @@ import { UnitTestEndOfPhaseReflectionGame } from "./unit-test-end-of-phase";
 import { UnitTestMultiplePromptGame } from "./unit-test-multiple-prompt-game";
 import { UnitTestLearningObjectivesGame } from "./unit-test-lo-game";
 import { UnitTestChatContextGame } from "./unit-test-chat-context-game";
+import { SocialMediaInfluencerStateHandler } from "./social-media-game";
 
 export const WAIT_FOR_SIMULATION_STAGE_CLIENT_ID = "wait-for-simulation";
 
@@ -28,6 +29,12 @@ export function getGameById(
       return new BasketballStateHandler(discussionStages, skipStages);
     case "concert-ticket-sales":
       return new ConcertTicketSalesStateHandler(discussionStages, skipStages);
+    case "social-media-influencer":
+      return new SocialMediaInfluencerStateHandler(
+        discussionStages,
+        skipStages
+      );
+
     case "unit-test":
       return new UnitTestGame(discussionStages);
     case "unit-test-multiple-users":
