@@ -27,6 +27,7 @@ import GamePhaseReflectionsModel, {
 import { ConcertTicketSalesStateHandler } from "../../authoritative-server/games/concert-ticket-game";
 import { BasketballStateHandler } from "../../authoritative-server/games/basketball-game";
 import { GameType, StaticGame } from "./fetch-games-list";
+import { SocialMediaInfluencerStateHandler } from "authoritative-server/games/social-media-game";
 
 const InstructorDataHydrationType = new GraphQLObjectType({
   name: "InstructorDataHydration",
@@ -103,7 +104,8 @@ export default {
         [],
         true
       );
-      const games = [basketBallGame, concertTicketSalesGame];
+      const socialMediaGame = new SocialMediaInfluencerStateHandler([], true);
+      const games = [basketBallGame, concertTicketSalesGame, socialMediaGame];
       const gameList = games.map((game) => ({
         id: game.id,
         name: game.name,

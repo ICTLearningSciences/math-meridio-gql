@@ -204,7 +204,7 @@ describe("fetch instructor data hydration", () => {
     // Check gameList
     expect(
       response.body.data.fetchInstructorDataHydration.gameList
-    ).to.have.lengthOf(2);
+    ).to.have.lengthOf(3);
     const gameIds =
       response.body.data.fetchInstructorDataHydration.gameList.map(
         (g: any) => g.id
